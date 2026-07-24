@@ -57,6 +57,16 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
   #topbar{gap:4px;padding:0 6px}
   .tb-btn{min-width:38px;padding:0 7px}
 }
+@media (max-width:389px){
+  #topbar{gap:2px;padding:0 4px}
+  .tb-btn{min-width:34px;padding:0 4px}
+  #btnExport{font-size:11px;padding:0 7px}
+}
+@media (max-width:339px){
+  /* last resort: let the bar scroll rather than clip the Export button */
+  #topbar{overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+  #topbar::-webkit-scrollbar{display:none}
+}
 
 /* ---------- STAGE ---------- */
 #stage{flex:1;position:relative;overflow:hidden;background:
@@ -401,6 +411,9 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 .preset-row .strip{display:flex;gap:2px;height:16px;border-radius:4px;overflow:hidden}
 .preset-row .strip i{flex:1;display:block}
 .preset-row .pr-hint{display:block;font-size:9.5px;color:var(--dim);margin-top:5px}
+.preset-row.ct-row{border:1px solid transparent}
+.preset-row.ct-row.on{border-color:var(--accent-2);background:var(--line)}
+.preset-row.ct-row.on b{color:var(--accent-2)}
 
 /* ---------- SUPPORT ---------- */
 .sup-btn{
@@ -498,6 +511,9 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 <body>
 
 <div id="topbar">
+  <button class="tb-btn" id="btnHome" title="หน้าแรก">
+    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg>
+  </button>
   <button class="tb-btn" id="btnLayers" title="เลเยอร์">
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
   </button>
@@ -1732,6 +1748,95 @@ function exportGif(){
   gif.render();
 }
 
+/* ══════════════ CHARACTER TEMPLATES ══════════════ */
+/* Each template sets canvas size, layer split, frames, and animation tags
+   so a character project starts ready to draw instead of ready to configure. */
+const CHAR_TEMPLATES = {
+  'ตัวจิ๋ว 16×16': {
+    w:16, h:16, note:'ไอคอน · RPG มุมบน ขนาดเล็ก',
+    layers:['ตัวละคร','เงา'],
+    clips:[['idle',2],['walk',4]]
+  },
+  'ตัวเล็ก 16×24': {
+    w:16, h:24, note:'RPG มุมบน มาตรฐาน',
+    layers:['ตัวละคร','เงา'],
+    clips:[['idle',2],['walk',4],['attack',3]]
+  },
+  'มาตรฐาน 32×32': {
+    w:32, h:32, note:'platformer · RPG ทั่วไป',
+    layers:['ตัวละคร','เงา'],
+    clips:[['idle',4],['walk',6],['jump',3],['attack',4]]
+  },
+  'สูง 32×48': {
+    w:32, h:48, note:'สัดส่วนใกล้คนจริง',
+    layers:['ตัวละคร','เงา'],
+    clips:[['idle',4],['walk',6],['run',6],['attack',4]]
+  },
+  'ใหญ่ 48×48': {
+    w:48, h:48, note:'บอส · ตัวละครหลักรายละเอียดสูง',
+    layers:['ตัวละคร','เงา'],
+    clips:[['idle',4],['walk',8],['attack',6],['hurt',2]]
+  },
+  'ครึ่งตัว 64×64': {
+    w:64, h:64, note:'portrait · หน้าตัวละคร',
+    layers:['ตัวละคร','พื้นหลัง'],
+    clips:[['idle',4],['talk',4]]
+  }
+};
+
+function templateFrameCount(t){
+  return t.clips.reduce((a,[,n]) => a+n, 0);
+}
+function templateTags(t){
+  let from = 0;
+  return t.clips.map(([name,n]) => {
+    const tag = {name, from, to: from+n-1};
+    from += n;
+    return tag;
+  });
+}
+/* Build the project described by a template. */
+function applyCharTemplate(key, opts){
+  const t = CHAR_TEMPLATES[key];
+  if(!t) return false;
+  opts = opts || {};
+  const frames = templateFrameCount(t);
+
+  S.W = t.w; S.H = t.h;
+  S.frameCount = frames;
+  S.layers = t.layers.map((name, i) => ({
+    name,
+    visible: true,
+    opacity: 1,
+    frames: Array.from({length: frames}, () => new Uint8ClampedArray(t.w*t.h*4))
+  }));
+  // bottom layer of the pair is the shadow/background, so draw on the top one
+  S.curLayer = 0;
+  S.curFrame = 0;
+  S.tags = templateTags(t);
+  S.tileMode = false;
+  S.sel = null; S.float = null; S.floatRect = null;
+  S.undoStack = []; S.redoStack = [];
+  if(opts.palette && PRESET_PALETTES[opts.palette]){
+    S.palette = PRESET_PALETTES[opts.palette].slice();
+  }
+  S.recent = [];
+
+  buf.width = t.w; buf.height = t.h;
+  scratch.width = t.w; scratch.height = t.h;
+  bufDirty = true;
+
+  $('fps').value = S.fps; $('fpsVal').textContent = S.fps + ' fps';
+  $('btnTile').classList.remove('on');
+  fitToScreen();
+  renderAll();
+  buildPalette();
+  renderRecent();
+  updateUndoBtns();
+  markProjectDirty();
+  return {frames, clips: t.clips.length};
+}
+
 /* ══════════════ SAVE / LOAD ══════════════ */
 const STORE_PREFIX = 'pxloom:';
 const STORE_INDEX  = 'pxloom:index';
@@ -2564,6 +2669,167 @@ function openModal(html){ $('modalCard').innerHTML = html; $('modal').classList.
 function closeModal(){ $('modal').classList.remove('on'); }
 $('modal').addEventListener('pointerdown', e=>{ if(e.target.id==='modal') closeModal(); });
 
+/* Home screen — the hub for starting or reopening work.
+   Unlike showNewProject it never discards anything on its own; every
+   destructive path routes through a guard. */
+function showHome(){
+  const saved = readIndex();
+  const hasWork = S.layers.some(L => L.frames.some(f => f.some(v => v !== 0)));
+  const dirty = dirtySinceSave && hasWork;
+
+  openModal(`
+    <h2 style="background:linear-gradient(92deg,var(--accent-2),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">Pixel Loom</h2>
+    <p class="sub">
+      ${hasWork
+        ? `กำลังแก้: <b>${curProjectName || 'งานที่ยังไม่ได้ตั้งชื่อ'}</b> · ${S.W}×${S.H} · ${S.frameCount} เฟรม${dirty ? ' · <span style="color:var(--danger)">ยังไม่ได้บันทึก</span>' : ''}`
+        : 'ยังไม่มีงานที่กำลังทำ'}
+    </p>
+
+    ${hasWork ? '<button class="big-btn" id="hmBack">กลับไปวาดต่อ</button>' : ''}
+    ${dirty ? '<button class="big-btn ghost" id="hmSave">บันทึกงานปัจจุบัน</button>' : ''}
+
+    <div class="hr"></div>
+    <div class="sec-lbl">เริ่มงานใหม่</div>
+    <button class="exp-opt" id="hmChar">
+      <span class="ic" style="background:#7c5cff">\u{1F464}</span>
+      <span class="tx"><b>เทมเพลตตัวละคร</b><span>ตั้งขนาด เฟรม และช่วงอนิเมชั่นให้พร้อม</span></span>
+    </button>
+    <button class="exp-opt" id="hmBlank">
+      <span class="ic" style="background:var(--panel);border:1px solid var(--line)">+</span>
+      <span class="tx"><b>ผืนผ้าใบเปล่า</b><span>กำหนดขนาดเอง</span></span>
+    </button>
+    <button class="exp-opt" id="hmImage">
+      <span class="ic" style="background:#ff9f1c;color:#0d0e14">PNG</span>
+      <span class="tx"><b>เริ่มจากภาพ</b><span>เปิด PNG/JPG มาแก้ต่อ หรือ trace</span></span>
+    </button>
+    <input type="file" id="hmImgInput" accept="image/*" style="display:none">
+
+    <div class="hr"></div>
+    <div class="sec-lbl">งานที่บันทึกไว้ (${saved.length})</div>
+    <div id="hmList"></div>
+
+    ${hasAutosave() ? '<button class="sup-btn" id="hmRestore" style="margin-top:4px">กู้งานล่าสุดที่ค้างไว้</button>' : ''}
+    <button class="sup-btn" id="hmSupport"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.7 1.1-1a5.5 5.5 0 0 0 0-7.9Z"/></svg> สนับสนุนผู้พัฒนา</button>
+    ${hasWork ? '<button class="big-btn ghost" id="hmClose">ปิด</button>' : ''}
+  `);
+
+  // Any path that replaces the project confirms first when work is unsaved.
+  const guard = fn => () => {
+    if(dirty && !confirm('งานปัจจุบันยังไม่ได้บันทึก จะเริ่มใหม่ทับไหม?')) return;
+    if(hasWork) saveRestorePoint('ก่อนเริ่มงานใหม่');
+    closeModal();
+    setTimeout(fn, 30);
+  };
+
+  if($('hmBack')) $('hmBack').onclick = closeModal;
+  if($('hmClose')) $('hmClose').onclick = closeModal;
+  if($('hmSave')) $('hmSave').onclick = ()=>{ closeModal(); setTimeout(showSaveLoad, 30); };
+  $('hmChar').onclick = guard(showCharTemplates);
+  $('hmBlank').onclick = guard(showNewProject);
+  $('hmImage').onclick = ()=>$('hmImgInput').click();
+  $('hmImgInput').onchange = e => {
+    const f = e.target.files[0];
+    if(!f) return;
+    e.target.value = '';
+    if(dirty && !confirm('งานปัจจุบันยังไม่ได้บันทึก จะเริ่มใหม่ทับไหม?')) return;
+    toast('กำลังอ่านภาพ…');
+    loadImageFile(f)
+      .then(img => { closeModal(); showImportImage(img); })
+      .catch(err => toast(err.message, 3200));
+  };
+  if($('hmRestore')) $('hmRestore').onclick = ()=>{
+    if(dirty && !confirm('งานปัจจุบันยังไม่ได้บันทึก จะกู้ทับไหม?')) return;
+    if(restoreAutosave()){ closeModal(); toast('กู้งานล่าสุดแล้ว'); }
+    else toast('กู้ไม่สำเร็จ');
+  };
+  $('hmSupport').onclick = showSupport;
+
+  const list = $('hmList');
+  if(!saved.length){
+    list.innerHTML = '<p class="empty-note">ยังไม่มีงานที่บันทึกไว้</p>';
+  } else {
+    for(const pj of saved.slice(0, 6)){
+      const el = document.createElement('div');
+      el.className = 'proj';
+      el.innerHTML = `
+        <div class="pth">${pj.thumb ? '<img src="'+pj.thumb+'" style="width:100%;height:100%;image-rendering:pixelated;display:block">' : ''}</div>
+        <div class="pi">
+          <b>${pj.name}</b>
+          <span>${pj.w}×${pj.h} · ${pj.frames} เฟรม · ${fmtTime(pj.saved)}</span>
+        </div>`;
+      el.onclick = ()=>{
+        if(dirty && !confirm('งานปัจจุบันยังไม่ได้บันทึก จะโหลดทับไหม?')) return;
+        try { loadProject(pj.id); closeModal(); toast('โหลด "'+pj.name+'" แล้ว'); }
+        catch(err){ toast(err.message, 2600); }
+      };
+      list.appendChild(el);
+    }
+    if(saved.length > 6){
+      const more = document.createElement('button');
+      more.className = 'sup-btn';
+      more.style.marginTop = '2px';
+      more.textContent = 'ดูทั้งหมด ('+saved.length+')';
+      more.onclick = ()=>{ closeModal(); setTimeout(showSaveLoad, 30); };
+      list.appendChild(more);
+    }
+  }
+}
+
+function showCharTemplates(){
+  let chosen = 'มาตรฐาน 32×32';
+  let withPalette = true;
+
+  openModal(`
+    <h2>เทมเพลตตัวละคร</h2>
+    <p class="sub">ตั้งขนาด เลเยอร์ เฟรม และช่วงอนิเมชั่นให้พร้อม เปิดมาวาดได้เลย</p>
+    <div id="ctList"></div>
+
+    <label class="lock-row"><input type="checkbox" id="ctPal" checked> ใส่จานสีวาดคนให้ด้วย</label>
+
+    <div class="rz-preview" id="ctPrev"></div>
+    <button class="big-btn" id="ctGo">สร้าง</button>
+    <button class="big-btn ghost" id="ctCancel">ยกเลิก</button>
+  `);
+
+  function update(){
+    const t = CHAR_TEMPLATES[chosen];
+    const frames = templateFrameCount(t);
+    const tags = templateTags(t);
+    const mem = (t.w*t.h*4*frames*t.layers.length)/1048576;
+    $('ctPrev').innerHTML =
+      `<b>${chosen}</b><br>` +
+      `ผืนผ้าใบ <b>${t.w}×${t.h}</b> · <b>${frames}</b> เฟรม · <b>${t.layers.length}</b> เลเยอร์ (${t.layers.join(', ')})<br>` +
+      `ช่วงอนิเมชั่น: ${tags.map(x=>`${x.name} ${x.from}-${x.to}`).join(' · ')}<br>` +
+      `RAM ≈ <b>${mem.toFixed(2)} MB</b>`;
+  }
+
+  const list = $('ctList');
+  for(const [name, t] of Object.entries(CHAR_TEMPLATES)){
+    const frames = templateFrameCount(t);
+    const b = document.createElement('button');
+    b.className = 'preset-row ct-row' + (name===chosen ? ' on' : '');
+    b.innerHTML = `<b>${name}</b>
+      <span class="pr-hint">${t.note} · ${frames} เฟรม · ${t.clips.map(c=>c[0]).join('/')}</span>`;
+    b.onclick = ()=>{
+      chosen = name;
+      list.querySelectorAll('.ct-row').forEach(x=>x.classList.toggle('on', x===b));
+      update();
+    };
+    list.appendChild(b);
+  }
+
+  $('ctPal').onchange = e => { withPalette = e.target.checked; };
+  $('ctGo').onclick = ()=>{
+    closeModal();
+    setTimeout(()=>{
+      const r = applyCharTemplate(chosen, withPalette ? {palette:'ชุดวาดคน (รวม)'} : {});
+      if(r) toast(`สร้าง "${chosen}" · ${r.frames} เฟรม ${r.clips} ช่วง`);
+    }, 30);
+  };
+  $('ctCancel').onclick = ()=>{ closeModal(); setTimeout(showHome, 30); };
+  update();
+}
+
 function showNewProject(){
   openModal(`
     <h2>โปรเจกต์ใหม่</h2>
@@ -2582,11 +2848,13 @@ function showNewProject(){
     </div>
     <p class="warn" id="npWarn"></p>
     <button class="big-btn" id="npGo">เริ่มวาด</button>
+    <button class="big-btn ghost" id="npChar">เทมเพลตตัวละคร</button>
     <button class="big-btn ghost" id="npImage">เริ่มจากภาพ (PNG/JPG)</button>
     <input type="file" id="npImgInput" accept="image/*" style="display:none">
     ${hasAutosave() ? '<button class="big-btn ghost" id="npRestore">กู้งานล่าสุดที่ค้างไว้</button>' : ''}
     ${readIndex().length ? '<button class="big-btn ghost" id="npOpen">เปิดงานที่บันทึกไว้ ('+readIndex().length+')</button>' : ''}
   `);
+  $('npChar').onclick = ()=>{ closeModal(); showCharTemplates(); };
   $('npImage').onclick = ()=>$('npImgInput').click();
   $('npImgInput').onchange = (e)=>{
     const f = e.target.files[0];
@@ -2647,6 +2915,17 @@ function showSaveLoad(){
     </div>
     <button class="big-btn" id="slSave">${curProjectId ? 'บันทึกทับ' : 'บันทึกลงเครื่อง'}</button>
     ${curProjectId ? '<button class="big-btn ghost" id="slSaveNew">บันทึกเป็นชิ้นใหม่</button>' : ''}
+
+    <div class="hr"></div>
+    <div class="sec-lbl">เริ่มงานใหม่</div>
+    <button class="exp-opt" id="slNewChar">
+      <span class="ic" style="background:#7c5cff">👤</span>
+      <span class="tx"><b>เทมเพลตตัวละคร</b><span>ตั้งขนาด เฟรม และช่วงอนิเมชั่นให้พร้อม</span></span>
+    </button>
+    <button class="exp-opt" id="slNewBlank">
+      <span class="ic" style="background:var(--panel);border:1px solid var(--line)">+</span>
+      <span class="tx"><b>ผืนผ้าใบเปล่า</b><span>กำหนดขนาดเอง</span></span>
+    </button>
 
     <div class="hr"></div>
     <div class="sec-lbl">ไฟล์</div>
@@ -2717,6 +2996,14 @@ function showSaveLoad(){
   $('slFileOut').onclick = ()=>{ exportProjectFile(); toast('ส่งออกไฟล์แล้ว'); };
   $('slFileIn').onclick = ()=>$('slFileInput').click();
   $('slFileInput').onchange = (e)=>{ if(e.target.files[0]) importProjectFile(e.target.files[0]); };
+  const guardNew = (fn)=>()=>{
+    if(dirtySinceSave && !confirm('งานปัจจุบันยังไม่ได้บันทึก จะเริ่มใหม่ทับไหม?')) return;
+    saveRestorePoint('ก่อนเริ่มงานใหม่');
+    closeModal();
+    setTimeout(fn, 30);
+  };
+  $('slNewChar').onclick = guardNew(showCharTemplates);
+  $('slNewBlank').onclick = guardNew(showNewProject);
   $('slImgIn').onclick = ()=>$('slImgInput').click();
   $('slImgInput').onchange = (e)=>{
     const f = e.target.files[0];
@@ -3540,6 +3827,7 @@ $('rbGo').onclick = ()=>{
   else toast('กู้ไม่สำเร็จ');
 };
 $('rbX').onclick = hideRestoreBar;
+$('btnHome').onclick = showHome;
 $('btnResize').onclick = showResize;
 $('btnTags').onclick = showTags;
 $('btnTile').onclick = ()=>{
@@ -3614,7 +3902,7 @@ buildPalette();
 renderRecent();
 resizeView();
 initProject(64, 64);
-showNewProject();
+showHome();
 </script>
 </body>
 </html>
