@@ -8,6 +8,19 @@
 <meta name="application-name" content="wadpixel">
 <meta name="theme-color" content="#12131a">
 <title>wadpixel</title>
+<script>
+/* Logo — embedded so the app stays a single portable HTML file.
+   Exposed as CSS var --logo for UI use, and wired to favicon / iOS home-screen icon. */
+const LOGO_URI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAMAAABlApw1AAAB/lBMVEUmIRsdnd771l8qYtLpYRtVLBvxnaKmVhDxqV3rXF0ha10epJ/j2ORblyyajG5bUi1YU8/joRr14J2YYmJpaWlWpufRtdJTU1RhXWSso9MgJ0qiKSpbOKVtVad9goovXSf1dYn7+/suhF5hPMSKXdliYmIibaejoZ+hmBaIyDWd02GzzeGgoJ6oOEbvzyJRN1NfrUjaM0hUxPiampo6OjotLS82Nzg7hTS20pXKJTqTcpHY2NUAAFUAAP8sxr4rzcJ4wmCJdXWCgnyCgn+4uMbJyb/99+oCAwgtOUbz59gAAAAcJTEPExgUGyUiKjXp2MgsMjpuuC/7ZWpNU1lxR8rz6+P9xgMqhuXPu6pIVWP8qQP8hQ/XxbRuamj6uAT4WW3xRVdKSUz6eQgnl+rmyrCsqq05RFH7mQ7u07iKiYr90wXZ1M7SZAJISEkcHSK4trN3wjIuqPDQycx2dXWXlpN3OyaxpZjvOlBkXFZZWVoqfOSnmYz5ZhD78tixYidqY1oAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASXgekAAAAgHRSTlP5/////////////v///////////xD//5j8//r///////8L////XP///////xP///////9WB3KY/////0EDAf///w0vXhIY//7+/wD+/v7+//7//////////////////////v/////+////////1Mf/////////////mf///////1JVVngAACeISURBVHjazZ2JY9rIkvAVx4DtwRDwhZM4sXO83MnMm2Pnze53f6tG0RkTxdgWduQAhiGzOMAQT2yP//Wt6kNqicM4m7eTmgkWQjT96+rqqr4k5eU4WSz89pdLYXFsFpXhGV9cfLkB8j35CmQFc/IUszQ5AMp1C4QYf73okA9n8RIa2PgBaBefWkhf3C4Fso1Sov8xYafEZ6VhEly1LS7dlkW6rhR5xy/FlzpVw33M0w+LE2pgw0JwB8j9bT+eneAXx2V8kCJSDIME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';
+(function(){
+  document.documentElement.style.setProperty('--logo', 'url(' + LOGO_URI + ')');
+  [['icon','192x192'],['apple-touch-icon','180x180']].forEach(([rel,sizes])=>{
+    const l = document.createElement('link');
+    l.rel = rel; l.sizes = sizes; l.type = 'image/png'; l.href = LOGO_URI;
+    document.head.appendChild(l);
+  });
+})();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 <style>
@@ -50,7 +63,10 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 .tb-btn:active{transform:scale(.94);background:var(--line)}
 .tb-btn[disabled]{opacity:.32;pointer-events:none}
 .tb-btn.on{background:var(--accent);color:#fff}
-#logo{font-weight:700;font-size:15px;letter-spacing:-.3px;margin-right:2px;padding-left:4px;
+#logoWrap{display:flex;align-items:center;gap:6px;flex:0 1 auto;min-width:0;padding-left:2px;margin-right:2px}
+.logo-mark{background:var(--logo) center/contain no-repeat;image-rendering:pixelated;flex:0 0 auto}
+#logoIc{width:24px;height:24px}
+#logo{font-weight:700;font-size:15px;letter-spacing:-.3px;
   background:linear-gradient(92deg,var(--accent-2),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent;
   white-space:nowrap;flex:0 1 auto;overflow:hidden}
 .spacer{flex:1;min-width:0}
@@ -92,6 +108,45 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
   color:var(--dim);backdrop-filter:blur(8px);pointer-events:none;
 }
 #zoomTag b{color:var(--text);font-weight:600}
+
+/* ---------- REFERENCE BAR ---------- */
+#refBar{
+  position:absolute;left:8px;right:8px;bottom:8px;z-index:18;
+  transform:translateY(150%);transition:transform .22s cubic-bezier(.3,.8,.4,1);
+  background:rgba(23,25,35,.94);border:1px solid var(--line);border-radius:12px;
+  padding:7px 9px;backdrop-filter:blur(10px);box-shadow:0 6px 20px rgba(0,0,0,.45);
+  display:flex;flex-direction:column;gap:6px;
+}
+#refBar.on{transform:translateY(0)}
+#refBar .rf-top{display:flex;align-items:center;gap:8px;min-width:0}
+#refBar .rf-nm{
+  flex:1;min-width:0;font-size:11px;color:var(--dim);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+#refBar .rf-nm b{color:var(--text);font-weight:600}
+#refBar .rf-row{display:flex;align-items:center;gap:7px}
+#refBar .rf-step{
+  flex:0 0 auto;width:34px;height:32px;border-radius:8px;background:var(--panel-2);
+  display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--text);
+}
+#refBar .rf-step:active{background:var(--line);transform:scale(.92)}
+#refBar .rf-txt{
+  flex:0 0 auto;height:32px;padding:0 10px;border-radius:8px;background:var(--panel-2);
+  display:flex;align-items:center;font-size:11px;color:var(--text);white-space:nowrap;
+}
+#refBar .rf-txt:active{background:var(--line)}
+#refBar input[type=range]{
+  flex:1;min-width:0;-webkit-appearance:none;height:3px;border-radius:2px;
+  background:var(--line);outline:none;
+}
+#refBar input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);
+}
+#refBar input[type=range]::-moz-range-thumb{width:18px;height:18px;border:none;border-radius:50%;background:var(--accent)}
+#refBar .rf-val{
+  flex:0 0 auto;font-size:11px;color:var(--dim);min-width:44px;text-align:right;
+  font-variant-numeric:tabular-nums;
+}
 
 /* ---------- TIMELINE ---------- */
 #timeline{
@@ -154,6 +209,12 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 .tool.on svg{stroke:#fff}
 .tool.fill svg{fill:var(--text);stroke:none}
 .tool.on.fill svg{fill:#fff}
+.tool{position:relative}
+.sym-tag{
+  position:absolute;right:2px;bottom:1px;font-size:8px;line-height:1;color:var(--accent-2);
+  font-weight:700;pointer-events:none;
+}
+.tool.on .sym-tag{color:#fff}
 
 /* ---------- PALETTE ---------- */
 #palette{
@@ -208,7 +269,13 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 .layer .opv{font-size:10px;color:var(--dim);min-width:30px;text-align:right;font-variant-numeric:tabular-nums}
 .layer .mv{width:26px;height:26px;border-radius:6px;background:var(--panel);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--dim)}
 .layer .mv:active{background:var(--line)}
+.layer.isref{border-style:dashed;border-color:var(--dim)}
+.layer .reftag{flex:0 0 auto;font-size:9px;letter-spacing:.3px;padding:3px 6px;border-radius:5px;
+  background:var(--panel);color:var(--dim);border:1px solid var(--line)}
+.layer .reftag.on{background:var(--accent-2);color:#fff;border-color:transparent}
+.layer.isref .nm{color:var(--dim);font-style:italic}
 #drawerFoot{flex:0 0 auto;padding:8px;border-top:1px solid var(--line);display:flex;gap:6px}
+#drawerFoot .tb-btn{flex:1;min-width:0;font-size:11.5px;padding:0 6px;white-space:nowrap}
 #drawerFoot .tb-btn{flex:1;height:38px}
 
 /* ---------- MODAL ---------- */
@@ -574,7 +641,7 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
   <button class="tb-btn" id="btnLayers" title="เลเยอร์">
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
   </button>
-  <span id="logo">wadpixel</span>
+  <span id="logoWrap"><i class="logo-mark" id="logoIc"></i><span id="logo">wadpixel</span></span>
   <div class="spacer"></div>
   <button class="tb-btn" id="btnOnion" title="Onion skin">
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="9" cy="12" r="6" opacity=".45"/><circle cx="15" cy="12" r="6"/></svg>
@@ -603,6 +670,22 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
     <div class="rtx"><b id="rbLabel">ปรับขนาดแล้ว</b><span>undo ย้อนไม่ได้ แต่กู้กลับได้</span></div>
     <button id="rbGo">กู้กลับ</button>
     <button class="rx" id="rbX">&times;</button>
+  </div>
+  <div id="refBar">
+    <div class="rf-top">
+      <div class="rf-nm"><b id="rfName">อ้างอิง</b> · ลากบนภาพเพื่อย้าย</div>
+      <button class="rf-txt" id="rfFit">พอดีจอ</button>
+      <button class="rf-txt" id="rfHide">ซ่อน</button>
+      <button class="rf-txt" id="rfDone">เสร็จ</button>
+    </div>
+    <div class="rf-row">
+      <button class="rf-step" id="rfMinus">−</button>
+      <input type="range" id="rfScale" min="5" max="800" value="100">
+      <button class="rf-step" id="rfPlus">+</button>
+      <span class="rf-val" id="rfVal">100%</span>
+      <button class="rf-step" id="rfFlipH" title="พลิกแนวนอน">↔</button>
+      <button class="rf-step" id="rfFlipV" title="พลิกแนวตั้ง">↕</button>
+    </div>
   </div>
   <div id="toast"></div>
 </div>
@@ -634,6 +717,8 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
   <button class="tool" id="btnFit" title="พอดีจอ"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
   <button class="tool" id="btnTile" title="โหมดต่อลาย (seamless)"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg></button>
   <button class="tool" id="btnResize" title="ปรับขนาดผืนผ้าใบ"><svg viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/><rect x="3" y="3" width="7" height="7" rx="1"/></svg></button>
+  <button class="tool" id="btnSym" title="วาดสมมาตร"><svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22" stroke-dasharray="3 3"/><path d="M9 6 4 12l5 6"/><path d="M15 6l5 6-5 6"/></svg><span class="sym-tag" id="symTag"></span></button>
+  <button class="tool" id="btnFlip" title="พลิกภาพ"><svg viewBox="0 0 24 24"><path d="M12 3v18" stroke-dasharray="3 3"/><path d="M8 7H3l5 10V7Z"/><path d="M16 7h5l-5 10V7Z"/></svg></button>
   <button class="tool" id="btnGrid" title="เส้นกริด"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1.5"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg></button>
 </div>
 
@@ -650,6 +735,8 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
   <div id="drawerFoot">
     <button class="tb-btn" id="btnAddLayer">+ เพิ่ม</button>
     <button class="tb-btn" id="btnDelLayer">ลบ</button>
+    <button class="tb-btn" id="btnRefImg" title="นำภาพมาเป็นตัวอย่างให้วาดทับ">+ ภาพอ้างอิง</button>
+    <input type="file" id="refImgInput" accept="image/*" style="display:none">
   </div>
 </aside>
 
@@ -683,6 +770,7 @@ const S = {
   color:'#2b2d42',
   showGrid:true,
   onion:false,
+  sym:0,           // mirror drawing: 0 off, 1 ↔, 2 ↕, 3 both
   tileMode:false,
   tags:[],
   palette:[],      // per-project colour set — filled from DEFAULT_PALETTE at boot
@@ -896,6 +984,76 @@ function initProject(w, h){
 
 /* ══════════════ PIXEL OPS ══════════════ */
 function curData(){ return S.layers[S.curLayer].frames[S.curFrame]; }
+/* Reference layers are read-only tracing guides: they show on canvas but are
+   never drawn into, never exported, and never counted as artwork. */
+function isRefLayer(li){ const L = S.layers[li != null ? li : S.curLayer]; return !!(L && L.ref); }
+function blockIfRef(){
+  if(!isRefLayer()) return false;
+  toast('เลเยอร์อ้างอิงวาดทับไม่ได้ — เลือกเลเยอร์อื่นก่อน', 2200);
+  return true;
+}
+function artLayers(){ return S.layers.filter(L => !L.ref); }
+/* A reference keeps its ORIGINAL pixels in L.src and a placement in
+   L.xf {x, y, s}. Every scale runs from the original, so zooming out and back
+   in never loses detail the way repeatedly resampling the canvas buffer would. */
+const REF_MIN = 0.05, REF_MAX = 8;
+function refFitScale(L){ return Math.min(S.W / L.src.w, S.H / L.src.h); }
+function refFit(L){
+  const s = refFitScale(L);
+  L.xf = {x: Math.round((S.W - L.src.w*s)/2), y: Math.round((S.H - L.src.h*s)/2), s};
+}
+/* Nearest-neighbour blit of L.src into a canvas-sized buffer shared by every
+   frame. Never smoothed — a blurry guide is useless at this scale. */
+function renderRefLayer(L){
+  if(!L || !L.src) return null;
+  const out = new Uint8ClampedArray(S.W*S.H*4);
+  const sd = L.src.data, sw = L.src.w, sh = L.src.h;
+  const s = L.xf.s, ox = L.xf.x, oy = L.xf.y;
+  const dw = Math.max(1, Math.round(sw*s)), dh = Math.max(1, Math.round(sh*s));
+  const x0 = Math.max(0, ox), y0 = Math.max(0, oy);
+  const x1 = Math.min(S.W, ox+dw), y1 = Math.min(S.H, oy+dh);
+  for(let y=y0;y<y1;y++){
+    const sy = Math.min(sh-1, Math.floor((y-oy)*sh/dh));
+    for(let x=x0;x<x1;x++){
+      const sx = Math.min(sw-1, Math.floor((x-ox)*sw/dw));
+      const si=(sy*sw+sx)*4, di=(y*S.W+x)*4;
+      out[di]=sd[si]; out[di+1]=sd[si+1]; out[di+2]=sd[si+2]; out[di+3]=sd[si+3];
+    }
+  }
+  for(let i=0;i<L.frames.length;i++) L.frames[i] = out;
+  return out;
+}
+/* Scale about the middle of what's on screen, so the guide grows in place
+   instead of sliding off toward the origin. */
+function setRefScale(L, ns){
+  ns = Math.max(REF_MIN, Math.min(REF_MAX, ns));
+  const cx = L.xf.x + L.src.w*L.xf.s/2, cy = L.xf.y + L.src.h*L.xf.s/2;
+  L.xf.s = ns;
+  L.xf.x = Math.round(cx - L.src.w*ns/2);
+  L.xf.y = Math.round(cy - L.src.h*ns/2);
+  renderRefLayer(L);
+  bufDirty = true; renderView(); updateRefBar(); markProjectDirty();
+}
+const REF_MAX_SRC = 512;
+function makeRefLayer(srcData, sw, sh, name, opacity){
+  // a guide never needs more detail than this, and the original is what gets
+  // saved into the project — a 2048px photo would eat the whole quota
+  if(Math.max(sw, sh) > REF_MAX_SRC){
+    const k = REF_MAX_SRC / Math.max(sw, sh);
+    const nw = Math.max(1, Math.round(sw*k)), nh = Math.max(1, Math.round(sh*k));
+    srcData = scaleCanvasData(srcData, sw, sh, nw, nh);
+    sw = nw; sh = nh;
+  }
+  const L = {
+    name: name, visible: true, opacity: opacity != null ? opacity : 0.4, ref: true,
+    src: {data: new Uint8ClampedArray(srcData), w: sw, h: sh},
+    xf: {x:0, y:0, s:1},
+    frames: new Array(S.frameCount).fill(null)
+  };
+  refFit(L);
+  renderRefLayer(L);
+  return L;
+}
 
 function setPixel(data, x, y, rgba){
   if(S.tileMode){
@@ -938,6 +1096,49 @@ function drawRect(data, x0,y0,x1,y1, rgba){
   for(let y=ay;y<=by;y++){ if(setPixel(data,ax,y,rgba))c=true; if(setPixel(data,bx,y,rgba))c=true; }
   return c;
 }
+/* ── MIRROR DRAWING ──────────────────────────────────────────────────
+   Every paint op goes through these instead of calling the primitives
+   directly, so symmetry is one switch rather than a branch per tool.
+   Axis sits on the canvas centre: x -> W-1-x, y -> H-1-y. */
+const SYM_LABEL = ['ปิด', 'สมมาตรซ้าย-ขวา', 'สมมาตรบน-ล่าง', 'สมมาตรสี่ทิศ'];
+const SYM_TAG = ['', '↔', '↕', '✛'];
+function symX(x){ return S.W-1-x; }
+function symY(y){ return S.H-1-y; }
+function symPts(x, y){
+  const out = [{x, y}];
+  if(S.sym === 1 || S.sym === 3) out.push({x:symX(x), y});
+  if(S.sym === 2 || S.sym === 3) out.push({x, y:symY(y)});
+  if(S.sym === 3) out.push({x:symX(x), y:symY(y)});
+  return out;
+}
+function symSetPixel(data, x, y, rgba){
+  for(const q of symPts(x, y)) setPixel(data, q.x, q.y, rgba);
+}
+function symDrawLine(data, x0,y0,x1,y1, rgba){
+  drawLine(data, x0,y0,x1,y1, rgba);
+  if(S.sym === 1 || S.sym === 3) drawLine(data, symX(x0),y0,symX(x1),y1, rgba);
+  if(S.sym === 2 || S.sym === 3) drawLine(data, x0,symY(y0),x1,symY(y1), rgba);
+  if(S.sym === 3) drawLine(data, symX(x0),symY(y0),symX(x1),symY(y1), rgba);
+}
+function symDrawRect(data, x0,y0,x1,y1, rgba){
+  drawRect(data, x0,y0,x1,y1, rgba);
+  if(S.sym === 1 || S.sym === 3) drawRect(data, symX(x0),y0,symX(x1),y1, rgba);
+  if(S.sym === 2 || S.sym === 3) drawRect(data, x0,symY(y0),x1,symY(y1), rgba);
+  if(S.sym === 3) drawRect(data, symX(x0),symY(y0),symX(x1),symY(y1), rgba);
+}
+function symFloodFill(data, x, y, rgba){
+  // the mirrored seed may already be inside the region the first fill
+  // covered — floodFill is a no-op there, which is the wanted result
+  for(const q of symPts(x, y)) floodFill(data, q.x, q.y, rgba);
+}
+function setSym(mode){
+  S.sym = mode & 3;
+  const b = $('btnSym');
+  b.classList.toggle('on', S.sym > 0);
+  $('symTag').textContent = SYM_TAG[S.sym];
+  bufDirty = true; renderView();
+}
+
 function floodFill(data, sx, sy, rgba){
   const target = getPixel(data, sx, sy);
   if(target[0]===rgba[0]&&target[1]===rgba[1]&&target[2]===rgba[2]&&target[3]===rgba[3]) return false;
@@ -1002,6 +1203,9 @@ function updateUndoBtns(){
 function compositeFrame(ctx, frameIdx, alphaMul=1){
   for(const layer of S.layers){
     if(!layer.visible) continue;
+    // the guide already sits under the current frame — ghosting it again for
+    // onion skin just muddies it
+    if(layer.ref && alphaMul !== 1) continue;
     const data = layer.frames[frameIdx];
     if(!data) continue;
     const imgData = new ImageData(new Uint8ClampedArray(data), S.W, S.H);
@@ -1121,6 +1325,18 @@ function renderView(){
     for(let y=gy0; y<=gy1; y++){ const py = Math.round(oy + y*z)+.5; vctx.moveTo(ox+gx0*z, py); vctx.lineTo(ox+gx1*z, py); }
     vctx.stroke();
   }
+  // mirror axes — dashed so they read as a guide, not as artwork
+  if(S.sym){
+    vctx.save();
+    vctx.strokeStyle = 'rgba(255,96,150,.8)'; vctx.lineWidth = 1.5;
+    vctx.setLineDash([7,5]);
+    vctx.beginPath();
+    if(S.sym === 1 || S.sym === 3){ const mx = Math.round(ox + cw/2)+.5; vctx.moveTo(mx, oy); vctx.lineTo(mx, oy+ch); }
+    if(S.sym === 2 || S.sym === 3){ const my = Math.round(oy + ch/2)+.5; vctx.moveTo(ox, my); vctx.lineTo(ox+cw, my); }
+    vctx.stroke();
+    vctx.restore();
+  }
+
   // border
   vctx.strokeStyle = 'rgba(124,92,255,.65)'; vctx.lineWidth = 2;
   vctx.strokeRect(ox-1, oy-1, cw+2, ch+2);
@@ -1159,6 +1375,7 @@ function fitToScreen(){
 const pointers = new Map();
 let drawing = false, lastPx = null, shapeStart = null, shapeBackup = null;
 let strokePushedUndo = false;
+let refDrag = null;          // live drag of a reference layer's placement
 let gestureUndoSeq = 0;      // undo entries newer than this belong to the live gesture
 let gestureLifted = false;   // did THIS gesture lift the floating selection?
 
@@ -1167,6 +1384,7 @@ let gestureLifted = false;   // did THIS gesture lift the floating selection?
    this costs nothing extra. */
 function cancelStroke(){
   clearTimeout(pressTimer);
+  if(refDrag){ refDrag = null; drawing = false; return; }
   let restored = false;
   while(S.undoStack.length && S.undoStack[S.undoStack.length-1].seq > gestureUndoSeq){
     const st = S.undoStack.pop();
@@ -1275,6 +1493,15 @@ view.addEventListener('pointerdown', e => {
     return;
   }
 
+  // on a reference layer a drag repositions the guide — nothing to paint
+  if(isRefLayer()){
+    clearTimeout(pressTimer);
+    const L = S.layers[S.curLayer];
+    if(!L.src){ blockIfRef(); return; }
+    refDrag = {ox:p.x, oy:p.y, x:L.xf.x, y:L.xf.y};
+    drawing = true;
+    return;
+  }
   pushUndo();
   strokePushedUndo = true;
   drawing = true;
@@ -1282,7 +1509,7 @@ view.addEventListener('pointerdown', e => {
 
   if(S.tool === 'fill'){
     clearTimeout(pressTimer);
-    floodFill(data, p.x, p.y, hexToRgba(S.color));
+    symFloodFill(data, p.x, p.y, hexToRgba(S.color));
     drawing = false;
     commitRecent();
     markDirty();
@@ -1291,7 +1518,7 @@ view.addEventListener('pointerdown', e => {
     shapeBackup = new Uint8ClampedArray(data);
   } else {
     const rgba = S.tool === 'eraser' ? [0,0,0,0] : hexToRgba(S.color);
-    setPixel(data, p.x, p.y, rgba);
+    symSetPixel(data, p.x, p.y, rgba);
     lastPx = p;
     markDirty();
   }
@@ -1324,6 +1551,18 @@ view.addEventListener('pointermove', e => {
   if(!drawing || gestureLocked) return;
   const p = toPixel(e.clientX, e.clientY);
 
+  if(refDrag){
+    const L = S.layers[S.curLayer];
+    if(L && L.src){
+      L.xf.x = refDrag.x + (p.x - refDrag.ox);
+      L.xf.y = refDrag.y + (p.y - refDrag.oy);
+      renderRefLayer(L);
+      bufDirty = true; renderView();
+    }
+    $('posVal').textContent = p.x + ',' + p.y;
+    return;
+  }
+
   if(S.tool === 'select' && S.selDrag){
     if(S.selDrag.mode === 'draw'){
       S.sel = normRect(S.selDrag.ox, S.selDrag.oy, p.x, p.y);
@@ -1352,13 +1591,13 @@ view.addEventListener('pointermove', e => {
   if(S.tool === 'line' || S.tool === 'rect'){
     data.set(shapeBackup);
     const rgba = hexToRgba(S.color);
-    if(S.tool === 'line') drawLine(data, shapeStart.x, shapeStart.y, p.x, p.y, rgba);
-    else drawRect(data, shapeStart.x, shapeStart.y, p.x, p.y, rgba);
+    if(S.tool === 'line') symDrawLine(data, shapeStart.x, shapeStart.y, p.x, p.y, rgba);
+    else symDrawRect(data, shapeStart.x, shapeStart.y, p.x, p.y, rgba);
     markDirty();
   } else {
     if(lastPx && (lastPx.x !== p.x || lastPx.y !== p.y)){
       const rgba = S.tool === 'eraser' ? [0,0,0,0] : hexToRgba(S.color);
-      drawLine(data, lastPx.x, lastPx.y, p.x, p.y, rgba);
+      symDrawLine(data, lastPx.x, lastPx.y, p.x, p.y, rgba);
       lastPx = p;
       markDirty();
     }
@@ -1385,6 +1624,11 @@ function endPointer(e){
       drawing = false;
       markDirty();
       updateSelBar();
+      return;
+    }
+    if(refDrag){
+      refDrag = null; drawing = false;
+      refreshThumbs(); markProjectDirty();
       return;
     }
     if(drawing){
@@ -1467,7 +1711,7 @@ function drawFrameThumb(canvas, idx){
   c.clearRect(0,0,S.W,S.H);
   c.fillStyle = '#fff'; c.fillRect(0,0,S.W,S.H);
   for(const layer of S.layers){
-    if(!layer.visible) continue;
+    if(!layer.visible || layer.ref) continue;
     const data = layer.frames[idx];
     if(!data) continue;
     sctx.putImageData(new ImageData(new Uint8ClampedArray(data), S.W, S.H), 0, 0);
@@ -1485,7 +1729,9 @@ function refreshThumbs(){
   if(le){ const c = le.querySelector('.thumb canvas'); if(c) drawLayerThumb(c, S.curLayer); }
 }
 function addFrame(){
-  for(const l of S.layers) l.frames.push(newFrameData());
+  // a reference layer holds one buffer shared by every frame — the guide
+  // must stay visible wherever the playhead goes, and it is never written to
+  for(const l of S.layers) l.frames.push(l.ref ? l.frames[0] : newFrameData());
   S.frameCount++;
   S.curFrame = S.frameCount - 1;
   bufDirty = true; renderAll(); markProjectDirty();
@@ -1493,7 +1739,7 @@ function addFrame(){
 function dupFrame(){
   const src = S.curFrame;
   for(const l of S.layers){
-    l.frames.splice(src+1, 0, new Uint8ClampedArray(l.frames[src]));
+    l.frames.splice(src+1, 0, l.ref ? l.frames[src] : new Uint8ClampedArray(l.frames[src]));
   }
   S.frameCount++;
   S.curFrame = src+1;
@@ -1653,7 +1899,7 @@ function renderLayers(){
   for(let li = S.layers.length-1; li >= 0; li--){
     const L = S.layers[li];
     const el = document.createElement('div');
-    el.className = 'layer' + (li===S.curLayer?' sel':'') + (L.visible?'':' hidden');
+    el.className = 'layer' + (li===S.curLayer?' sel':'') + (L.visible?'':' hidden') + (L.ref?' isref':'');
 
     const r1 = document.createElement('div'); r1.className = 'row1';
     const th = document.createElement('div'); th.className = 'thumb';
@@ -1672,7 +1918,30 @@ function renderLayers(){
       : '<svg viewBox="0 0 24 24"><path d="M9.9 5.2A9.6 9.6 0 0 1 12 5c6 0 10 7 10 7a17 17 0 0 1-3 3.7M6.6 6.6A17 17 0 0 0 2 12s4 7 10 7a9.6 9.6 0 0 0 4.3-1"/><line x1="2" y1="2" x2="22" y2="22"/></svg>';
     eye.onclick = ()=>{ L.visible = !L.visible; bufDirty=true; renderView(); renderLayers(); renderFrames(); };
 
-    r1.append(th, nm, eye);
+    const rf = document.createElement('button');
+    rf.className = 'reftag' + (L.ref ? ' on' : '');
+    rf.textContent = 'อ้างอิง';
+    rf.title = L.ref ? 'กดเพื่อเปลี่ยนเป็นเลเยอร์วาดปกติ' : 'กดเพื่อใช้เป็นภาพอ้างอิง (ไม่ติดไปตอน export)';
+    rf.onclick = ()=>{
+      if(L.ref){
+        // bake it down: what you see becomes real pixels on every frame
+        L.ref = false;
+        L.frames = L.frames.map(f => new Uint8ClampedArray(f));
+        delete L.src; delete L.xf;
+        L.opacity = 1;
+        L.name = L.name.replace(/^อ้างอิง: /, '');
+      } else {
+        L.ref = true;
+        L.src = {data: new Uint8ClampedArray(L.frames[S.curFrame]), w: S.W, h: S.H};
+        L.xf = {x:0, y:0, s:1};
+        renderRefLayer(L);
+        L.opacity = 0.4;
+      }
+      S.undoStack = []; S.redoStack = []; updateUndoBtns();
+      bufDirty = true; renderAll(); markProjectDirty();
+    };
+
+    r1.append(th, nm, rf, eye);
 
     const r2 = document.createElement('div'); r2.className='row2';
     const up = document.createElement('button'); up.className='mv'; up.textContent='▲';
@@ -1689,6 +1958,19 @@ function renderLayers(){
     el.append(r1, r2);
     list.appendChild(el);
   }
+  updateRefBar();
+}
+function updateRefBar(){
+  const bar = $('refBar');
+  if(!bar) return;
+  const L = S.layers[S.curLayer];
+  const on = !!(L && L.ref && L.src);
+  bar.classList.toggle('on', on);
+  if(!on) return;
+  $('rfName').textContent = L.name;
+  $('rfScale').value = Math.round(Math.max(REF_MIN, Math.min(REF_MAX, L.xf.s))*100);
+  $('rfVal').textContent = Math.round(L.xf.s*100) + '%';
+  $('rfHide').textContent = L.visible ? 'ซ่อน' : 'แสดง';
 }
 function moveLayer(li, dir){
   const ni = li + dir;
@@ -1904,7 +2186,7 @@ function applyPalette(colors){
 function extractPaletteFromArt(maxColors){
   const counts = new Map();
   for(const L of S.layers){
-    if(!L.visible) continue;
+    if(!L.visible || L.ref) continue;
     for(const f of L.frames){
       for(let i=0;i<f.length;i+=4){
         if(f[i+3] < 8) continue;
@@ -1937,7 +2219,7 @@ function flattenFrame(idx){
   const ctx = c.getContext('2d');
   ctx.imageSmoothingEnabled = false;
   for(const layer of S.layers){
-    if(!layer.visible) continue;
+    if(!layer.visible || layer.ref) continue;
     const data = layer.frames[idx];
     if(!data) continue;
     sctx.putImageData(new ImageData(new Uint8ClampedArray(data), S.W, S.H), 0, 0);
@@ -2176,12 +2458,19 @@ function serialize(name){
     frameCount: S.frameCount,
     tags: S.tags,
     tileMode: S.tileMode,
+    sym: S.sym,
     palette: S.palette,
     recent: S.recent,
     saved: Date.now(),
     layers: S.layers.map(L => ({
       n: L.name, v: L.visible, o: L.opacity,
-      f: L.frames.map(packFrame)
+      ...(L.ref && L.src ? {
+        r:1,
+        // the original pixels plus where they sit — not the rendered buffer
+        sw: L.src.w, sh: L.src.h, sd: packFrame(L.src.data),
+        xf: [L.xf.x, L.xf.y, L.xf.s]
+      } : {}),
+      f: (L.ref && L.src) ? [] : L.frames.map(packFrame)
     }))
   };
 }
@@ -2196,19 +2485,36 @@ function deserialize(obj){
   S.fps = obj.fps || 8;
   S.tags = Array.isArray(obj.tags) ? obj.tags : [];
   S.tileMode = !!obj.tileMode;
+  setSym(obj.sym || 0);
   S.palette = Array.isArray(obj.palette) ? obj.palette.slice(0,64) : DEFAULT_PALETTE.slice();
   S.recent = Array.isArray(obj.recent) ? obj.recent.slice(0,MAX_RECENT) : [];
-  S.frameCount = obj.frameCount || (obj.layers[0] && obj.layers[0].f.length) || 1;
+  S.frameCount = obj.frameCount || ((obj.layers.find(L=>!L.r)||obj.layers[0]).f.length) || 1;
+  if(!(S.frameCount > 0)) S.frameCount = 1;
   S.layers = obj.layers.map((L,i) => ({
     name: L.n || ('Layer '+(i+1)),
     visible: L.v !== false,
     opacity: typeof L.o === 'number' ? L.o : 1,
+    ref: !!L.r,
     frames: (()=> {
+      if(L.r){
+        // filled in below by renderRefLayer once the canvas size is bound
+        const fr = (L.f && L.f.length) ? L.f.map(p => unpackFrame(p, px)) : [];
+        while(fr.length < S.frameCount) fr.push(fr[0] || new Uint8ClampedArray(px*4));
+        return fr;
+      }
       const fr = L.f.map(p => unpackFrame(p, px));
       while(fr.length < S.frameCount) fr.push(new Uint8ClampedArray(px*4));
       return fr;
-    })()
+    })(),
+    ...(L.r ? {
+      src: L.sd
+        ? {data: unpackFrame(L.sd, L.sw*L.sh), w: L.sw, h: L.sh}
+        // saved before references were scalable: the baked buffer is the original
+        : {data: unpackFrame(L.f[0], px), w: obj.w, h: obj.h},
+      xf: Array.isArray(L.xf) ? {x:L.xf[0], y:L.xf[1], s:L.xf[2]} : {x:0, y:0, s:1}
+    } : {})
   }));
+  for(const L of S.layers) if(L.ref && L.src) renderRefLayer(L);
   if(!S.layers.length) S.layers = [{name:'Layer 1', visible:true, opacity:1, frames:[new Uint8ClampedArray(px*4)]}];
   S.curLayer = 0; S.curFrame = 0;
   S.undoStack = []; S.redoStack = [];
@@ -2448,7 +2754,7 @@ function cropData(src, sw, sh, rx, ry, rw, rh){
    silently destroy work the user had just toggled off. */
 function contentBounds(){
   let minX=S.W, minY=S.H, maxX=-1, maxY=-1;
-  for(const L of S.layers){
+  for(const L of artLayers()){
     for(const f of L.frames){
       for(let y=0;y<S.H;y++){
         const row = y*S.W;
@@ -2476,6 +2782,9 @@ function applyTransform(newW, newH, fn, label){
   S.W = newW; S.H = newH;
   buf.width = newW; buf.height = newH;
   scratch.width = newW; scratch.height = newH;
+  // the guide is redrawn from its original at the same placement rather than
+  // resampled along with the artwork
+  for(const L of S.layers) if(L.ref && L.src) renderRefLayer(L);
   S.undoStack = []; S.redoStack = [];
   updateUndoBtns();
   bufDirty = true;
@@ -2680,6 +2989,7 @@ function stampRegion(data, buffer, r){
 /* Lift selected pixels off the layer so they can be moved */
 function liftSelection(){
   if(!S.sel || S.float) return;
+  if(blockIfRef()) return;
   const r = clampRectToCanvas(S.sel);
   if(!r) return;
   pushUndo();
@@ -2716,6 +3026,7 @@ function deleteSelection(){
     return;
   }
   if(!S.sel) return;
+  if(blockIfRef()) return;
   const r = clampRectToCanvas(S.sel);
   if(!r) return;
   pushUndo();
@@ -2738,6 +3049,7 @@ function cutSelection(){
 }
 function pasteClip(){
   if(!S.clip){ toast('ยังไม่มีอะไรให้วาง'); return; }
+  if(blockIfRef()) return;
   commitFloat();
   // paste into the middle of the current view so it's always visible
   const vw = view.width/dpr, vh = view.height/dpr;
@@ -2759,6 +3071,7 @@ function selectAll(){
 }
 /* Flip / rotate operate on the float if present, else the whole layer frame */
 function transformSelection(kind){
+  if(!S.float && blockIfRef()) return;
   const hadFloat = !!S.float;
   if(!hadFloat && S.sel) liftSelection();
   let src, w, h;
@@ -2781,6 +3094,110 @@ function transformSelection(kind){
   else curData().set(out);
   markDirty(); refreshThumbs();
   toast(kind === 'flipH' ? 'พลิกแนวนอน' : 'พลิกแนวตั้ง');
+}
+
+/* ── FLIP ────────────────────────────────────────────────────────────
+   transformSelection() handles a marquee; this handles everything above
+   it: a whole cell, a layer's whole timeline, one frame across layers,
+   or the entire project. */
+function flipBuffer(src, w, h, kind){
+  const out = new Uint8ClampedArray(src.length);
+  for(let y=0;y<h;y++){
+    const ny = kind === 'flipV' ? h-1-y : y;
+    for(let x=0;x<w;x++){
+      const nx = kind === 'flipH' ? w-1-x : x;
+      const si=(y*w+x)*4, di=(ny*w+nx)*4;
+      out[di]=src[si]; out[di+1]=src[si+1]; out[di+2]=src[si+2]; out[di+3]=src[si+3];
+    }
+  }
+  return out;
+}
+/* A guide flips around the canvas centre too, so it stays lined up with the
+   artwork instead of jumping to wherever its own box happens to be. */
+function flipRefLayer(L, kind){
+  if(!L.src) return;
+  L.src.data = flipBuffer(L.src.data, L.src.w, L.src.h, kind);
+  const dw = Math.round(L.src.w*L.xf.s), dh = Math.round(L.src.h*L.xf.s);
+  if(kind === 'flipH') L.xf.x = S.W - (L.xf.x + dw);
+  else L.xf.y = S.H - (L.xf.y + dh);
+  renderRefLayer(L);
+}
+const FLIP_SCOPE_LABEL = {
+  cell:  'เฟรมนี้ เลเยอร์นี้',
+  layer: 'ทั้งเลเยอร์',
+  frame: 'เฟรมนี้ ทุกเลเยอร์',
+  all:   'ทั้งโปรเจกต์'
+};
+function doFlip(kind, scope){
+  commitFloat();
+  S.sel = null;
+  const wide = scope !== 'cell';
+  let saved = null;
+  // one cell is a normal undoable edit; anything wider is a restore point,
+  // same as resize — the undo stack only tracks a single layer+frame
+  if(wide) saved = saveRestorePoint('ก่อนพลิก' + (kind === 'flipH' ? 'แนวนอน' : 'แนวตั้ง'));
+  else if(!S.layers[S.curLayer].ref) pushUndo();
+
+  const targets = (scope === 'cell' || scope === 'layer')
+    ? [S.layers[S.curLayer]]
+    : S.layers;
+
+  for(const L of targets){
+    if(L.ref){ flipRefLayer(L, kind); continue; }
+    if(scope === 'cell' || scope === 'frame'){
+      L.frames[S.curFrame] = flipBuffer(L.frames[S.curFrame], S.W, S.H, kind);
+    } else {
+      L.frames = L.frames.map(f => flipBuffer(f, S.W, S.H, kind));
+    }
+  }
+
+  if(wide){ S.undoStack = []; S.redoStack = []; updateUndoBtns(); }
+  bufDirty = true; renderAll(); markProjectDirty();
+  if(wide && saved) showRestoreBar(saved);
+  toast(`พลิก${kind === 'flipH' ? 'แนวนอน' : 'แนวตั้ง'} · ${FLIP_SCOPE_LABEL[scope]}`);
+}
+function showFlipDialog(){
+  let kind = 'flipH', scope = 'cell';
+  const refOnly = S.layers[S.curLayer].ref;
+  openModal(`
+    <h2>พลิกภาพ</h2>
+    <p class="sub">เลเยอร์ตอนนี้: <b>${esc(S.layers[S.curLayer].name)}</b>${refOnly ? ' (อ้างอิง)' : ''}</p>
+
+    <div class="sec-lbl">ทิศทาง</div>
+    <div class="seg" id="flKind">
+      <button data-k="flipH" class="on">↔ แนวนอน</button>
+      <button data-k="flipV">↕ แนวตั้ง</button>
+    </div>
+
+    <div class="sec-lbl">ขอบเขต</div>
+    <div class="seg" id="flScope" style="flex-wrap:wrap">
+      <button data-s="cell" class="on">เฟรมนี้</button>
+      <button data-s="layer">ทั้งเลเยอร์</button>
+      <button data-s="frame">ทุกเลเยอร์</button>
+      <button data-s="all">ทั้งโปรเจกต์</button>
+    </div>
+
+    <div class="rz-preview" id="flPrev"></div>
+    <button class="big-btn" id="flGo">พลิก</button>
+    <button class="big-btn ghost" id="flCancel">ยกเลิก</button>
+  `);
+  const upd = ()=>{
+    let msg = `พลิก${kind === 'flipH' ? 'แนวนอน' : 'แนวตั้ง'} · ${FLIP_SCOPE_LABEL[scope]}`;
+    if(scope !== 'cell') msg += `<br><span class="warn-inline">undo ย้อนไม่ได้ แต่กู้กลับได้จากแถบด้านบน</span>`;
+    if(scope === 'frame' || scope === 'all') msg += `<br>ภาพอ้างอิงพลิกตามไปด้วย`;
+    $('flPrev').innerHTML = msg;
+  };
+  document.querySelectorAll('#flKind button').forEach(b=>{
+    b.onclick = ()=>{ kind = b.dataset.k;
+      document.querySelectorAll('#flKind button').forEach(x=>x.classList.toggle('on', x===b)); upd(); };
+  });
+  document.querySelectorAll('#flScope button').forEach(b=>{
+    b.onclick = ()=>{ scope = b.dataset.s;
+      document.querySelectorAll('#flScope button').forEach(x=>x.classList.toggle('on', x===b)); upd(); };
+  });
+  $('flGo').onclick = ()=>{ closeModal(); setTimeout(()=>doFlip(kind, scope), 20); };
+  $('flCancel').onclick = closeModal;
+  upd();
 }
 
 /* marching-ants style marquee overlay */
@@ -2864,10 +3281,30 @@ function placeImage(img, mode, fit, opts){
     return {w:sw, h:sh};
   }
 
+  // A reference is placed, not baked: keep the original pixels and let the
+  // ref bar scale them, so 'fit' never has to be decided up front.
+  if(mode === 'layer' && opts.ref){
+    if(S.layers.length >= 12) throw new Error('จำกัด 12 เลเยอร์ — ลบเลเยอร์เดิมก่อน');
+    const nm = (img.name || 'imported').replace(/\.[^.]+$/,'').slice(0,24);
+    const L = makeRefLayer(img.data, img.w, img.h, 'อ้างอิง: ' + (nm || 'นำเข้า'), opts.opacity);
+    S.layers.push(L);
+    // the pen stays where it was — a guide is not a place to draw, and the
+    // undo stack still points at real pixels
+    S.curLayer = S.layers.length - 1;
+    bufDirty = true; renderAll(); markProjectDirty();
+    return {w: Math.round(img.w*L.xf.s), h: Math.round(img.h*L.xf.s)};
+  }
+
   // reconcile size mismatch against the current canvas
   if(fit === 'scale' && (sw !== S.W || sh !== S.H)){
     src = scaleCanvasData(src, sw, sh, S.W, S.H);
     sw = S.W; sh = S.H;
+  } else if(fit === 'contain' && (sw !== S.W || sh !== S.H)){
+    // fit inside the canvas without distorting — what a tracing guide needs
+    const k = Math.min(S.W/sw, S.H/sh);
+    const nw = Math.max(1, Math.round(sw*k)), nh = Math.max(1, Math.round(sh*k));
+    src = scaleCanvasData(src, sw, sh, nw, nh);
+    sw = nw; sh = nh;
   } else if(fit === 'resize' && (sw > S.W || sh > S.H)){
     const nw = Math.max(S.W, sw), nh = Math.max(S.H, sh);
     const ow = S.W, oh = S.H;
@@ -2955,11 +3392,14 @@ $('modal').addEventListener('pointerdown', e=>{ if(e.target.id==='modal') closeM
    destructive path routes through a guard. */
 function showHome(){
   const saved = readIndex();
-  const hasWork = S.layers.some(L => L.frames.some(f => f.some(v => v !== 0)));
+  const hasWork = artLayers().some(L => L.frames.some(f => f.some(v => v !== 0)));
   const dirty = dirtySinceSave && hasWork;
 
   openModal(`
-    <h2 style="background:linear-gradient(92deg,var(--accent-2),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">wadpixel</h2>
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:2px">
+      <div class="logo-mark" style="width:56px;height:56px"></div>
+      <h2 style="margin:0;background:linear-gradient(92deg,var(--accent-2),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">wadpixel</h2>
+    </div>
     <p class="sub">
       ${hasWork
         ? `กำลังแก้: <b>${esc(curProjectName || 'งานที่ยังไม่ได้ตั้งชื่อ')}</b> · ${S.W}×${S.H} · ${S.frameCount} เฟรม${dirty ? ' · <span style="color:var(--danger)">ยังไม่ได้บันทึก</span>' : ''}`
@@ -3601,7 +4041,7 @@ async function exportAtlas(kind){
 function showImportImage(img){
   const sameSize = (img.w === S.W && img.h === S.H);
   const bigger = (img.w > S.W || img.h > S.H);
-  const hasWork = S.layers.some(L => L.frames.some(f => f.some(v => v !== 0)));
+  const hasWork = artLayers().some(L => L.frames.some(f => f.some(v => v !== 0)));
 
   let mode = hasWork ? 'layer' : 'newproject';
   let fit  = sameSize ? 'center' : (bigger ? 'resize' : 'center');
@@ -3623,11 +4063,12 @@ function showImportImage(img){
       <div class="seg" id="imFit">
         <button data-f="center"${fit==='center'?' class="on"':''}>วางกลาง</button>
         <button data-f="scale"${fit==='scale'?' class="on"':''}>ย่อ/ขยายให้พอดี</button>
+        <button data-f="contain"${fit==='contain'?' class="on"':''}>ย่อคงสัดส่วน</button>
         <button data-f="resize"${fit==='resize'?' class="on"':''}>ขยายผืนผ้าใบ</button>
       </div>
     </div>
 
-    <label class="lock-row" id="imRefWrap"><input type="checkbox" id="imRef"> ใช้เป็นภาพอ้างอิง (จาง 40% ล็อกไว้ trace)</label>
+    <label class="lock-row" id="imRefWrap"><input type="checkbox" id="imRef"> ใช้เป็นภาพอ้างอิง — จาง 40% วาดทับไม่ได้ และไม่ติดไปตอน export</label>
     <label class="lock-row"><input type="checkbox" id="imPal"> ดูดจานสีจากภาพนี้ด้วย</label>
 
     <div class="rz-preview" id="imPrev"></div>
@@ -3650,13 +4091,14 @@ function showImportImage(img){
     } else {
       let dim = `${img.w}×${img.h}`;
       if(fit === 'scale' && !sameSize) dim = `${S.W}×${S.H} (ย่อ/ขยายจาก ${img.w}×${img.h})`;
+      else if(fit === 'contain' && !sameSize) dim = `ย่อคงสัดส่วนให้อยู่ในผืนผ้าใบ ${S.W}×${S.H}`;
       else if(fit === 'resize' && bigger) dim = `${img.w}×${img.h} · ผืนผ้าใบจะขยายเป็น ${Math.max(S.W,img.w)}×${Math.max(S.H,img.h)}`;
       msg = mode === 'layer'
         ? `เพิ่มเป็นเลเยอร์ใหม่ที่เฟรม ${S.curFrame+1} · ${dim}`
         : `วางลอยให้ลากย้ายได้ · ${dim}`;
       if(fit === 'center' && bigger) msg += `<br><span class="warn-inline">ภาพใหญ่กว่าผืนผ้าใบ ส่วนที่เกินจะถูกตัด</span>`;
       if(fit === 'scale' && !sameSize) msg += `<br>ใช้ nearest-neighbour พิกเซลไม่เบลอ แต่ถ้าอัตราส่วนไม่ลงตัวจะไม่เท่ากันทุกช่อง`;
-      if(asRef && mode === 'layer') msg += `<br>ตั้ง opacity 40% ให้วาดทับได้`;
+      if(asRef && mode === 'layer') msg += `<br>วางทุกเฟรม จาง 40% ย่อ/ขยาย/ลากย้ายได้ทีหลัง และไม่รวมใน sheet/GIF/แชร์`;
     }
     prev.innerHTML = msg;
   }
@@ -3675,7 +4117,15 @@ function showImportImage(img){
       update();
     };
   });
-  $('imRef').onchange = e => { asRef = e.target.checked; update(); };
+  $('imRef').onchange = e => {
+    asRef = e.target.checked;
+    // a distorted guide is worse than no guide
+    if(asRef && !sameSize && fit === 'scale'){
+      fit = 'contain';
+      document.querySelectorAll('#imFit button').forEach(x=>x.classList.toggle('on', x.dataset.f===fit));
+    }
+    update();
+  };
   let takePal = false;
   $('imPal').onchange = e => { takePal = e.target.checked; };
 
@@ -3689,6 +4139,7 @@ function showImportImage(img){
       try {
         const r = placeImage(img, mode, fit, {
           center: true,
+          ref: (asRef && mode === 'layer'),
           opacity: (asRef && mode === 'layer') ? 0.4 : 1
         });
         if(takePal){
@@ -4153,7 +4604,7 @@ async function apiCall(url, opts){
 
 /* ══════ หน้าแชร์ ══════ */
 function showShare(){
-  const hasWork = S.layers.some(L => L.frames.some(f => f.some(v => v !== 0)));
+  const hasWork = artLayers().some(L => L.frames.some(f => f.some(v => v !== 0)));
   if(!hasWork){ toast('ยังไม่มีอะไรให้แชร์'); return; }
 
   let kind = S.frameCount > 1 ? 'gif' : 'sheet';
@@ -4375,7 +4826,56 @@ function showGallery(sort){
 /* ══════════════ WIRING ══════════════ */
 $('btnLayers').onclick = ()=>{ $('drawer').classList.add('on'); $('scrim').classList.add('on'); renderLayers(); };
 $('btnCloseDrawer').onclick = $('scrim').onclick = ()=>{ $('drawer').classList.remove('on'); $('scrim').classList.remove('on'); };
+$('btnSym').onclick = ()=>{
+  setSym(S.sym + 1);
+  toast('วาดสมมาตร: ' + SYM_LABEL[S.sym]);
+};
+$('btnFlip').onclick = showFlipDialog;
+(function wireRefBar(){
+  const cur = ()=> { const L = S.layers[S.curLayer]; return (L && L.ref && L.src) ? L : null; };
+  $('rfScale').oninput = e => { const L = cur(); if(L) setRefScale(L, (+e.target.value)/100); };
+  $('rfMinus').onclick = ()=> { const L = cur(); if(L) setRefScale(L, L.xf.s/1.15); };
+  $('rfPlus').onclick  = ()=> { const L = cur(); if(L) setRefScale(L, L.xf.s*1.15); };
+  $('rfFit').onclick   = ()=> {
+    const L = cur(); if(!L) return;
+    refFit(L); renderRefLayer(L);
+    bufDirty = true; renderView(); updateRefBar(); refreshThumbs(); markProjectDirty();
+  };
+  const flipRef = kind => {
+    const L = cur(); if(!L) return;
+    flipRefLayer(L, kind);
+    bufDirty = true; renderView(); refreshThumbs(); markProjectDirty();
+  };
+  $('rfFlipH').onclick = ()=> flipRef('flipH');
+  $('rfFlipV').onclick = ()=> flipRef('flipV');
+  $('rfDone').onclick  = ()=> {
+    // hop back to the nearest layer that can actually be drawn on
+    for(let i = S.layers.length-1; i >= 0; i--){
+      if(!S.layers[i].ref){ S.curLayer = i; renderLayers(); renderView(); return; }
+    }
+    toast('ยังไม่มีเลเยอร์วาดปกติ — กด + เพิ่ม');
+  };
+  $('rfHide').onclick  = ()=> {
+    const L = cur(); if(!L) return;
+    L.visible = !L.visible;
+    bufDirty = true; renderAll();
+  };
+})();
 $('btnAddLayer').onclick = addLayer;
+$('btnRefImg').onclick = ()=>$('refImgInput').click();
+$('refImgInput').onchange = e => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if(!f) return;
+  toast('กำลังอ่านภาพ…');
+  loadImageFile(f)
+    .then(img => {
+      const fit = (img.w === S.W && img.h === S.H) ? 'center' : 'contain';
+      const r = placeImage(img, 'layer', fit, {center:true, ref:true, opacity:0.4});
+      toast(`วางภาพอ้างอิงแล้ว — ลากเพื่อย้าย ใช้แถบล่างย่อ/ขยาย`, 2800);
+    })
+    .catch(err => toast(err.message, 3200));
+};
 $('btnDelLayer').onclick = delLayer;
 $('btnUndo').onclick = undo;
 $('btnRedo').onclick = redo;
