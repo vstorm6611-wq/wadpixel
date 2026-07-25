@@ -4,8 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="wadpixel">
+<meta name="application-name" content="wadpixel">
 <meta name="theme-color" content="#12131a">
-<title>Pixel Loom</title>
+<title>wadpixel</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 <style>
@@ -500,8 +502,55 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 #restoreBar button:active{transform:scale(.94)}
 #restoreBar .rx{background:transparent;color:var(--dim);padding:0 6px;font-size:19px;font-weight:400;min-width:32px}
 
-#toast{
-  position:absolute;bottom:14px;left:50%;
+/* ---------- GALLERY / SHARE ---------- */
+.gal-tabs{display:flex;gap:4px;background:var(--panel-2);padding:4px;border-radius:11px;margin-bottom:12px}
+.gal-tabs button{flex:1;height:34px;border-radius:8px;font-size:12px;font-weight:600;color:var(--dim);transition:background .12s,color .12s}
+.gal-tabs button.on{background:var(--accent);color:#fff}
+#galGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.gal-card{background:var(--panel-2);border-radius:11px;overflow:hidden;position:relative}
+.gal-card .im{
+  width:100%;aspect-ratio:1;background:
+    linear-gradient(45deg,#23252f 25%,transparent 25%,transparent 75%,#23252f 75%),
+    linear-gradient(45deg,#23252f 25%,#1a1c25 25%,#1a1c25 75%,#23252f 75%);
+  background-size:14px 14px;background-position:0 0,7px 7px;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+.gal-card .im img{max-width:100%;max-height:100%;image-rendering:pixelated;display:block}
+.gal-card .meta{padding:7px 8px 8px}
+.gal-card .meta b{display:block;font-size:11.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gal-card .meta span{display:block;font-size:10px;color:var(--dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gal-card .row{display:flex;gap:4px;margin-top:7px}
+.gal-card .row button{
+  flex:1;height:28px;border-radius:7px;background:var(--panel);font-size:10.5px;font-weight:600;
+  color:var(--dim);display:flex;align-items:center;justify-content:center;gap:4px;transition:background .12s
+}
+.gal-card .row button:active{background:var(--line)}
+.gal-card .row button.liked{color:var(--danger)}
+.gal-card .row button.del:active{background:var(--danger);color:#fff}
+.gal-card .row button svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.gal-card .row button.liked svg{fill:currentColor;stroke:none}
+.gal-card .badge{
+  position:absolute;top:5px;left:5px;background:rgba(13,14,20,.82);color:var(--accent-2);
+  font-size:8.5px;font-weight:700;letter-spacing:.5px;padding:2px 5px;border-radius:5px;backdrop-filter:blur(4px)
+}
+#galStatus{font-size:12px;color:var(--dim);text-align:center;margin-top:12px;min-height:16px;line-height:1.5}
+.field input.txt{font-variant-numeric:normal}
+.sh-pick{display:flex;gap:6px;margin-bottom:14px}
+.sh-pick button{
+  flex:1;padding:10px 6px;border-radius:10px;background:var(--panel-2);text-align:center;
+  font-size:12px;font-weight:600;color:var(--dim);line-height:1.5;transition:background .12s,color .12s
+}
+.sh-pick button.on{background:var(--accent);color:#fff}
+.sh-pick button small{display:block;font-size:9.5px;font-weight:500;opacity:.75;margin-top:1px}
+#shPreview{
+  background:var(--panel-2);border-radius:11px;padding:10px;margin-bottom:12px;
+  display:flex;align-items:center;justify-content:center;min-height:96px;max-height:150px;overflow:hidden
+}
+#shPreview img{max-width:100%;max-height:130px;image-rendering:pixelated;display:block}
+#shStatus{font-size:12px;color:var(--accent-2);text-align:center;margin-top:10px;min-height:16px;line-height:1.5}
+#shStatus.err{color:var(--danger)}
+
+
   transform:translateX(-50%) translateY(12px);
   opacity:0;visibility:hidden;
   background:var(--panel-2);border:1px solid var(--line);padding:10px 18px;border-radius:10px;
@@ -525,7 +574,7 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
   <button class="tb-btn" id="btnLayers" title="เลเยอร์">
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
   </button>
-  <span id="logo">Pixel Loom</span>
+  <span id="logo">wadpixel</span>
   <div class="spacer"></div>
   <button class="tb-btn" id="btnOnion" title="Onion skin">
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="9" cy="12" r="6" opacity=".45"/><circle cx="15" cy="12" r="6"/></svg>
@@ -2489,7 +2538,7 @@ function buildPhaserAtlas(imageName){
   return {
     frames,
     meta: {
-      app: 'Pixel Loom',
+      app: 'wadpixel',
       version: '1.0',
       image: imageName,
       format: 'RGBA8888',
@@ -2521,7 +2570,7 @@ function buildAsepriteAtlas(imageName){
   return {
     frames,
     meta: {
-      app: 'Pixel Loom',
+      app: 'wadpixel',
       version: '1.0',
       image: imageName,
       format: 'RGBA8888',
@@ -2910,7 +2959,7 @@ function showHome(){
   const dirty = dirtySinceSave && hasWork;
 
   openModal(`
-    <h2 style="background:linear-gradient(92deg,var(--accent-2),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">Pixel Loom</h2>
+    <h2 style="background:linear-gradient(92deg,var(--accent-2),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">wadpixel</h2>
     <p class="sub">
       ${hasWork
         ? `กำลังแก้: <b>${esc(curProjectName || 'งานที่ยังไม่ได้ตั้งชื่อ')}</b> · ${S.W}×${S.H} · ${S.frameCount} เฟรม${dirty ? ' · <span style="color:var(--danger)">ยังไม่ได้บันทึก</span>' : ''}`
@@ -2941,6 +2990,7 @@ function showHome(){
     <div id="hmList"></div>
 
     ${hasAutosave() ? '<button class="sup-btn" id="hmRestore" style="margin-top:4px">กู้งานล่าสุดที่ค้างไว้</button>' : ''}
+    <button class="sup-btn" id="hmGallery"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> แกลเลอรีชุมชน</button>
     <button class="sup-btn" id="hmSupport"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.7 1.1-1a5.5 5.5 0 0 0 0-7.9Z"/></svg> สนับสนุนผู้พัฒนา</button>
     ${hasWork ? '<button class="big-btn ghost" id="hmClose">ปิด</button>' : ''}
   `);
@@ -2974,6 +3024,7 @@ function showHome(){
     if(restoreAutosave()){ closeModal(); toast('กู้งานล่าสุดแล้ว'); }
     else toast('กู้ไม่สำเร็จ');
   };
+  if($('hmGallery')) $('hmGallery').onclick = ()=>{ closeModal(); setTimeout(()=>showGallery('new'), 30); };
   $('hmSupport').onclick = showSupport;
 
   const list = $('hmList');
@@ -3938,7 +3989,7 @@ function showPaletteManager(){
 function showSupport(){
   openModal(`
     <h2>สนับสนุนผู้พัฒนา</h2>
-    <p class="sub">Pixel Loom ฟรีและไม่มีโฆษณา ถ้าเครื่องมือนี้มีประโยชน์ การสนับสนุนช่วยให้พัฒนาต่อได้</p>
+    <p class="sub">wadpixel ฟรีและไม่มีโฆษณา ถ้าเครื่องมือนี้มีประโยชน์ การสนับสนุนช่วยให้พัฒนาต่อได้</p>
 
     <button class="sup-opt" id="supKofi">
       <span class="ic" style="background:#ff5e5b">☕</span>
@@ -4000,6 +4051,16 @@ function showExport(){
       <span class="ic" style="background:#c77dff">JSON</span>
       <span class="tx"><b>Aseprite JSON</b><span>รูปแบบกลาง เอนจินอื่นอ่านได้</span></span>
     </button>
+    <div class="hr"></div>
+    <div class="sec-lbl">แชร์ให้คนอื่นดู</div>
+    <button class="exp-opt" id="eShare">
+      <span class="ic" style="background:#ff9f1c;color:#0d0e14">↑</span>
+      <span class="tx"><b>แชร์ขึ้นแกลเลอรี</b><span>ให้คนอื่นเห็นผลงาน · ลบเองได้ทีหลัง</span></span>
+    </button>
+    <button class="exp-opt" id="eGallery">
+      <span class="ic" style="background:#c77dff">◍</span>
+      <span class="tx"><b>ดูแกลเลอรีชุมชน</b><span>ผลงานที่คนอื่นแชร์ไว้</span></span>
+    </button>
     <p id="expStatus"></p>
     <button class="big-btn ghost" id="eClose">ปิด</button>
     <button class="sup-btn" id="eSupport"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.7 1.1-1a5.5 5.5 0 0 0 0-7.9Z"/></svg> สนับสนุนผู้พัฒนา</button>
@@ -4010,8 +4071,305 @@ function showExport(){
   $('ePhaser').onclick = ()=>exportAtlas('phaser');
   $('eGodot').onclick = ()=>exportAtlas('godot');
   $('eAse').onclick = ()=>exportAtlas('aseprite');
+  $('eShare').onclick = ()=>{ closeModal(); setTimeout(showShare, 30); };
+  $('eGallery').onclick = ()=>{ closeModal(); setTimeout(()=>showGallery('new'), 30); };
   $('eClose').onclick = closeModal;
   $('eSupport').onclick = showSupport;
+}
+
+/* ══════════════ GALLERY · แชร์ผลงาน ══════════════ */
+/* คุยกับ API ที่ /api/share, /api/gallery, /api/like
+   เก็บ editToken ของผลงานตัวเองไว้ใน localStorage เพื่อให้ลบเองได้ทีหลัง */
+const API_SHARE   = '/api/share';
+const API_GALLERY = '/api/gallery';
+const API_LIKE    = '/api/like';
+
+const SH_NAME  = 'pxloom:sharename';
+const SH_MINE  = 'pxloom:mine';    // { slug: editToken }
+const SH_LIKED = 'pxloom:liked';   // [slug, …]
+
+function lsGet(key, dflt){
+  try{ const v = JSON.parse(localStorage.getItem(key) || 'null'); return v == null ? dflt : v; }
+  catch{ return dflt; }
+}
+function lsSet(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch{} }
+
+const mineAll  = ()          => lsGet(SH_MINE, {});
+const mineAdd  = (slug, tok) => { const m = mineAll(); m[slug] = tok; lsSet(SH_MINE, m); };
+const mineDrop = slug        => { const m = mineAll(); delete m[slug]; lsSet(SH_MINE, m); };
+const likedAll = ()          => lsGet(SH_LIKED, []);
+const likedAdd = slug        => { const l = likedAll(); if(!l.includes(slug)){ l.push(slug); lsSet(SH_LIKED, l.slice(-400)); } };
+
+/* ---- สร้างภาพสำหรับอัปโหลด ---- */
+function sheetDataURL(){
+  const {cols, rows, w, h} = sheetLayout();
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  for(let i=0;i<S.frameCount;i++){
+    ctx.drawImage(flattenFrame(i), (i%cols)*S.W, Math.floor(i/cols)*S.H);
+  }
+  return c.toDataURL('image/png');
+}
+function gifDataURL(onProgress){
+  return new Promise((resolve, reject)=>{
+    if(typeof GIF === 'undefined') return reject(new Error('โหลด gif.js ไม่สำเร็จ — ตรวจอินเทอร์เน็ต'));
+    const scale = Math.max(1, Math.min(6, Math.floor(256/Math.max(S.W, S.H))));
+    const gif = new GIF({
+      workers: 2, quality: 1, width: S.W*scale, height: S.H*scale,
+      workerScript: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'
+    });
+    for(let i=0;i<S.frameCount;i++){
+      const c = document.createElement('canvas');
+      c.width = S.W*scale; c.height = S.H*scale;
+      const ctx = c.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(flattenFrame(i), 0, 0, c.width, c.height);
+      gif.addFrame(c, {delay: 1000/S.fps});
+    }
+    if(onProgress) gif.on('progress', p => onProgress(Math.round(p*100)));
+    gif.on('finished', blob => {
+      const fr = new FileReader();
+      fr.onload  = ()=>resolve(fr.result);
+      fr.onerror = ()=>reject(new Error('อ่านไฟล์ GIF ไม่สำเร็จ'));
+      fr.readAsDataURL(blob);
+    });
+    gif.render();
+  });
+}
+
+/* ---- เรียก API ---- */
+async function apiCall(url, opts){
+  const r = await fetch(url, opts);
+  let data = null;
+  try{ data = await r.json(); }catch{}
+  if(!r.ok || !data || data.ok === false){
+    throw new Error((data && data.error) || 'เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ (' + r.status + ')');
+  }
+  return data;
+}
+
+/* ══════ หน้าแชร์ ══════ */
+function showShare(){
+  const hasWork = S.layers.some(L => L.frames.some(f => f.some(v => v !== 0)));
+  if(!hasWork){ toast('ยังไม่มีอะไรให้แชร์'); return; }
+
+  let kind = S.frameCount > 1 ? 'gif' : 'sheet';
+  let busy = false;
+
+  openModal(`
+    <h2>แชร์ผลงาน</h2>
+    <p class="sub">ผลงานจะขึ้นแกลเลอรีให้คนอื่นดู · ${S.W}×${S.H} · ${S.frameCount} เฟรม</p>
+
+    <div class="fieldrow">
+      <div class="field"><label>ชื่อผลงาน</label>
+        <input id="shTitle" class="txt" maxlength="48" placeholder="เช่น Slime walk" value="${esc(curProjectName || '')}"></div>
+    </div>
+    <div class="fieldrow">
+      <div class="field"><label>ชื่อผู้สร้าง</label>
+        <input id="shAuthor" class="txt" maxlength="24" placeholder="ชื่อที่จะแสดง" value="${esc(lsGet(SH_NAME, ''))}"></div>
+    </div>
+
+    <div class="sec-lbl">รูปแบบที่จะแชร์</div>
+    <div class="sh-pick">
+      <button data-k="sheet">Sprite sheet<small>ทุกเฟรมในภาพเดียว</small></button>
+      <button data-k="gif" ${S.frameCount < 2 ? 'disabled style="opacity:.35;pointer-events:none"' : ''}>GIF<small>${S.frameCount < 2 ? 'ต้องมี 2 เฟรมขึ้นไป' : 'เล่นวนที่ ' + S.fps + ' fps'}</small></button>
+    </div>
+
+    <div id="shPreview"></div>
+    <p class="sub" style="font-size:10.5px;margin-bottom:10px;line-height:1.5">
+      แชร์แล้วลบเองได้จากหน้าแกลเลอรี · ไฟล์ต้องไม่เกิน 3 MB
+    </p>
+
+    <button class="big-btn" id="shGo">แชร์ขึ้นแกลเลอรี</button>
+    <button class="big-btn ghost" id="shClose">ยกเลิก</button>
+    <p id="shStatus"></p>
+  `);
+
+  const stat = (msg, err)=>{ const e = $('shStatus'); if(e){ e.textContent = msg; e.classList.toggle('err', !!err); } };
+
+  function syncPick(){
+    document.querySelectorAll('.sh-pick button').forEach(b => b.classList.toggle('on', b.dataset.k === kind));
+    const box = $('shPreview');
+    if(!box) return;
+    if(kind === 'sheet'){
+      box.innerHTML = '<img src="' + sheetDataURL() + '" alt="preview">';
+    } else {
+      box.innerHTML = '<span style="font-size:11.5px;color:var(--dim)">GIF จะถูกสร้างตอนกดแชร์</span>';
+    }
+  }
+  document.querySelectorAll('.sh-pick button').forEach(b => b.onclick = ()=>{ kind = b.dataset.k; syncPick(); });
+  syncPick();
+
+  $('shClose').onclick = closeModal;
+  $('shGo').onclick = async ()=>{
+    if(busy) return;
+    const title  = $('shTitle').value.trim();
+    const author = $('shAuthor').value.trim();
+    if(!title)  return stat('ใส่ชื่อผลงานก่อน', true);
+    if(!author) return stat('ใส่ชื่อผู้สร้างก่อน', true);
+
+    busy = true;
+    $('shGo').disabled = true;
+    lsSet(SH_NAME, author);
+
+    try{
+      stat(kind === 'gif' ? 'กำลังเข้ารหัส GIF…' : 'กำลังสร้างภาพ…');
+      const image = kind === 'gif'
+        ? await gifDataURL(p => stat('เข้ารหัส ' + p + '%'))
+        : sheetDataURL();
+
+      const kb = Math.round(image.length * 0.75 / 1024);
+      if(kb > 3000) throw new Error('ไฟล์ใหญ่เกินไป (' + kb + ' KB) ลองลดเฟรมหรือขนาดภาพ');
+
+      stat('กำลังอัปโหลด… (' + kb + ' KB)');
+      const res = await apiCall(API_SHARE, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          title, author, image,
+          width: S.W, height: S.H,
+          frames: S.frameCount, fps: S.fps
+        })
+      });
+
+      mineAdd(res.post.slug, res.editToken);
+      closeModal();
+      toast('แชร์แล้ว');
+      setTimeout(()=>showGallery('new'), 250);
+    }catch(e){
+      stat(e.message || 'แชร์ไม่สำเร็จ', true);
+      busy = false;
+      const g = $('shGo'); if(g) g.disabled = false;
+    }
+  };
+}
+
+/* ══════ หน้าแกลเลอรี ══════ */
+function showGallery(sort){
+  let mode   = sort === 'top' ? 'top' : 'new';
+  let cursor = null;
+  let loading = false;
+  let done   = false;
+
+  openModal(`
+    <h2>แกลเลอรีชุมชน</h2>
+    <p class="sub">ผลงานที่คนอื่นแชร์ไว้ · แตะหัวใจให้กำลังใจได้</p>
+    <div class="gal-tabs">
+      <button data-s="new">ใหม่ล่าสุด</button>
+      <button data-s="top">ยอดนิยม</button>
+    </div>
+    <div id="galGrid"></div>
+    <p id="galStatus"></p>
+    <button class="big-btn ghost" id="galMore" style="display:none">โหลดเพิ่ม</button>
+    <button class="big-btn" id="galShare">แชร์ผลงานของฉัน</button>
+    <button class="big-btn ghost" id="galClose">ปิด</button>
+  `);
+
+  const grid = $('galGrid');
+  const stat = msg => { const e = $('galStatus'); if(e) e.textContent = msg; };
+
+  $('galClose').onclick = closeModal;
+  $('galShare').onclick = ()=>{ closeModal(); setTimeout(showShare, 30); };
+  $('galMore').onclick  = ()=>load();
+  document.querySelectorAll('.gal-tabs button').forEach(b => b.onclick = ()=>{
+    if(mode === b.dataset.s) return;
+    mode = b.dataset.s; cursor = null; done = false;
+    grid.innerHTML = '';
+    syncTabs();
+    load();
+  });
+
+  function syncTabs(){
+    document.querySelectorAll('.gal-tabs button').forEach(b => b.classList.toggle('on', b.dataset.s === mode));
+  }
+  syncTabs();
+
+  async function load(){
+    if(loading || done) return;
+    loading = true;
+    const more = $('galMore'); if(more) more.style.display = 'none';
+    stat(grid.children.length ? 'กำลังโหลดเพิ่ม…' : 'กำลังโหลด…');
+    try{
+      const q = new URLSearchParams({sort: mode, limit: '24'});
+      if(cursor) q.set('cursor', cursor);
+      const data = await apiCall(API_GALLERY + '?' + q);
+
+      data.items.forEach(p => grid.appendChild(card(p)));
+      cursor = data.nextCursor;
+      done   = !cursor;
+
+      if(!grid.children.length) stat('ยังไม่มีใครแชร์ผลงาน — เป็นคนแรกเลยไหม');
+      else stat('');
+      if(more) more.style.display = done ? 'none' : 'block';
+    }catch(e){
+      stat(e.message || 'โหลดไม่สำเร็จ');
+    }
+    loading = false;
+  }
+
+  function card(p){
+    const mine  = mineAll()[p.slug];
+    const liked = likedAll().includes(p.slug);
+    const el = document.createElement('div');
+    el.className = 'gal-card';
+    el.innerHTML = `
+      ${p.kind === 'gif' ? '<span class="badge">GIF</span>' : ''}
+      <div class="im"><img src="${esc(p.url)}" alt="${esc(p.title)}" loading="lazy"></div>
+      <div class="meta">
+        <b>${esc(p.title)}</b>
+        <span>${esc(p.author)} · ${p.w}×${p.h} · ${p.frames} เฟรม</span>
+        <div class="row">
+          <button class="lk ${liked ? 'liked' : ''}">
+            <svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.7 1.1-1a5.5 5.5 0 0 0 0-7.9Z"/></svg>
+            <span class="n">${p.likes}</span>
+          </button>
+          ${mine
+            ? '<button class="del">ลบ</button>'
+            : '<button class="op">เปิด</button>'}
+        </div>
+      </div>`;
+
+    el.querySelector('.lk').onclick = async ev => {
+      const btn = ev.currentTarget;
+      if(btn.classList.contains('liked')) return;
+      btn.classList.add('liked');
+      try{
+        const r = await apiCall(API_LIKE, {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({slug: p.slug})
+        });
+        btn.querySelector('.n').textContent = r.likes;
+        likedAdd(p.slug);
+      }catch(e){
+        btn.classList.remove('liked');
+        toast(e.message || 'กดไลก์ไม่สำเร็จ');
+      }
+    };
+
+    const op = el.querySelector('.op');
+    if(op) op.onclick = ()=>window.open(p.url, '_blank', 'noopener,noreferrer');
+
+    const del = el.querySelector('.del');
+    if(del) del.onclick = async ()=>{
+      if(!confirm('ลบ "' + p.title + '" ออกจากแกลเลอรี?')) return;
+      try{
+        await apiCall(API_SHARE + '?slug=' + encodeURIComponent(p.slug) +
+                      '&token=' + encodeURIComponent(mine), {method:'DELETE'});
+        mineDrop(p.slug);
+        el.remove();
+        toast('ลบแล้ว');
+        if(!grid.children.length) stat('ยังไม่มีใครแชร์ผลงาน — เป็นคนแรกเลยไหม');
+      }catch(e){ toast(e.message || 'ลบไม่สำเร็จ'); }
+    };
+
+    return el;
+  }
+
+  load();
 }
 
 /* ══════════════ WIRING ══════════════ */
