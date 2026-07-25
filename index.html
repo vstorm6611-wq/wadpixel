@@ -114,6 +114,7 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 .frame{
   flex:0 0 auto;width:52px;height:52px;border-radius:8px;border:2px solid var(--line);
   background:#fff;position:relative;overflow:hidden;transition:border-color .12s,transform .08s;
+  touch-action:none;-webkit-touch-callout:none;
 }
 .frame:active{transform:scale(.93)}
 .frame.sel{border-color:var(--accent-2);box-shadow:0 0 0 2px rgba(0,217,163,.22)}
@@ -122,6 +123,13 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
   position:absolute;bottom:0;left:0;right:0;font-size:9px;text-align:center;
   background:rgba(13,14,20,.78);color:#fff;font-weight:600;padding:1px 0;line-height:1.3
 }
+/* while a frame is held, the strip must stop scrolling or the drag just pans */
+#frames.reordering{overflow-x:hidden;touch-action:none}
+.frame.dragging{
+  border-color:var(--accent-2);box-shadow:0 6px 18px rgba(13,14,20,.32);
+  opacity:.94;z-index:3;transition:none
+}
+.frame.dragging,.frame.dragging:active{transform:scale(1.1)}
 #addFrame{
   flex:0 0 auto;width:52px;height:52px;border-radius:8px;border:2px dashed var(--line);
   color:var(--dim);font-size:22px;display:flex;align-items:center;justify-content:center;font-weight:300;
@@ -705,6 +713,13 @@ let sctx = scratch.getContext('2d', {willReadFrequently:true});
 
 /* ══════════════ HELPERS ══════════════ */
 const $ = id => document.getElementById(id);
+/* Project and file names end up inside innerHTML in several modals, so a name
+   like <img src=x onerror=...> would run. Escape before interpolating. */
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+/* Thumbnails come back out of localStorage, which anything on the origin can write. */
+const safeThumb = t => (typeof t === 'string'
+  && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(t)) ? t : '';
 /* HSV — used by the built-in colour picker. Kept separate from the HSL
    helpers below, which exist for hue-preserving shade stepping. */
 function hsvToHex(h,s,v){
@@ -787,7 +802,8 @@ function stepShade(dir){
     return;
   }
   setColor(next, {skipRecent:true});
-  $('shadeVal').textContent = next.toUpperCase();
+  const sv = $('shadeVal');
+  if(sv) sv.textContent = next.toUpperCase();
 }
 
 function hexToRgba(hex){
@@ -807,6 +823,10 @@ function newFrameData(){ return new Uint8ClampedArray(S.W * S.H * 4); }
 
 /* ══════════════ PROJECT INIT ══════════════ */
 function initProject(w, h){
+  // a fresh canvas is NOT the project that was open a moment ago
+  stopPlayback();
+  curProjectId = null; curProjectName = null;
+  S.sel = null; S.float = null; S.floatRect = null; S.selDrag = null;
   S.W = w; S.H = h;
   S.layers = [{ name:'Layer 1', visible:true, opacity:1, frames:[newFrameData()] }];
   S.frameCount = 1; S.curLayer = 0; S.curFrame = 0;
@@ -822,6 +842,7 @@ function initProject(w, h){
   fitToScreen();
   renderAll();
   updateUndoBtns();
+  dirtySinceSave = false;
 }
 
 /* ══════════════ PIXEL OPS ══════════════ */
@@ -889,8 +910,10 @@ function floodFill(data, sx, sy, rgba){
 }
 
 /* ══════════════ UNDO ══════════════ */
+let undoSeq = 0;
 function pushUndo(){
   S.undoStack.push({
+    seq: ++undoSeq,
     l:S.curLayer, f:S.curFrame,
     data:new Uint8ClampedArray(curData())
   });
@@ -900,6 +923,8 @@ function pushUndo(){
 }
 function undo(){
   if(!S.undoStack.length) return;
+  // a lifted selection would get stamped back on top of the restored pixels
+  if(S.float){ S.float = null; S.floatRect = null; S.sel = null; }
   const st = S.undoStack.pop();
   const layer = S.layers[st.l];
   if(!layer || !layer.frames[st.f]) return;
@@ -910,6 +935,7 @@ function undo(){
 }
 function redo(){
   if(!S.redoStack.length) return;
+  if(S.float){ S.float = null; S.floatRect = null; S.sel = null; }
   const st = S.redoStack.pop();
   const layer = S.layers[st.l];
   if(!layer || !layer.frames[st.f]) return;
@@ -936,13 +962,24 @@ function compositeFrame(ctx, frameIdx, alphaMul=1){
   }
   ctx.globalAlpha = 1;
 }
+/* The clip the playhead is sitting in. Onion skin must not leak past its
+   edges: with tags, frame 1 and frame 2 can belong to entirely different
+   animations, and ghosting one behind the other is just noise. */
+function onionBounds(){
+  const t = effectiveTags().find(t => S.curFrame >= t.from && S.curFrame <= t.to);
+  if(!t) return [0, S.frameCount-1];
+  return [Math.max(0, t.from), Math.min(S.frameCount-1, t.to)];
+}
 function rebuildBuffer(){
   bctx.clearRect(0,0,S.W,S.H);
   if(S.onion && !S.playing && S.frameCount > 1){
-    const prev = (S.curFrame - 1 + S.frameCount) % S.frameCount;
-    const next = (S.curFrame + 1) % S.frameCount;
-    if(prev !== S.curFrame) compositeFrame(bctx, prev, 0.26);
-    if(next !== S.curFrame && next !== prev) compositeFrame(bctx, next, 0.26);
+    // No modulo. Wrapping meant frame 0 ghosted the LAST frame, so a 3-frame
+    // loop put the whole timeline on screen at once.
+    const [lo, hi] = onionBounds();
+    // past reads heavier than future, so the two stay tellable apart where
+    // they overlap
+    if(S.curFrame - 1 >= lo) compositeFrame(bctx, S.curFrame - 1, 0.30);
+    if(S.curFrame + 1 <= hi) compositeFrame(bctx, S.curFrame + 1, 0.16);
   }
   compositeFrame(bctx, S.curFrame, 1);
   bufDirty = false;
@@ -1072,6 +1109,41 @@ function fitToScreen(){
 /* ══════════════ POINTER INPUT ══════════════ */
 const pointers = new Map();
 let drawing = false, lastPx = null, shapeStart = null, shapeBackup = null;
+let strokePushedUndo = false;
+let gestureUndoSeq = 0;      // undo entries newer than this belong to the live gesture
+let gestureLifted = false;   // did THIS gesture lift the floating selection?
+
+/* Unwind everything the current gesture did to the pixels and drop the undo
+   entries it created. pushUndo() already keeps a full copy of the layer, so
+   this costs nothing extra. */
+function cancelStroke(){
+  clearTimeout(pressTimer);
+  let restored = false;
+  while(S.undoStack.length && S.undoStack[S.undoStack.length-1].seq > gestureUndoSeq){
+    const st = S.undoStack.pop();
+    const layer = S.layers[st.l];
+    if(layer && layer.frames[st.f]) layer.frames[st.f] = st.data;
+    restored = true;
+  }
+  if(restored) updateUndoBtns();
+  else if(shapeBackup) curData().set(shapeBackup);
+  // a selection this gesture lifted goes back down with the rest of it
+  if(gestureLifted){ S.float = null; S.floatRect = null; }
+  if(S.selDrag){
+    if(S.selDrag.mode === 'draw') S.sel = null;
+    else if(S.float && S.floatRect){
+      // a float dragged during this gesture goes back where it started
+      S.floatRect.x = S.selDrag.rx;
+      S.floatRect.y = S.selDrag.ry;
+    }
+    S.selDrag = null;
+    updateSelBar();
+  }
+  gestureLifted = false;
+  strokePushedUndo = false;
+  drawing = false; shapeStart = null; shapeBackup = null; lastPx = null;
+  bufDirty = true;
+}
 let pinchStart = null, pressTimer = null, movedFar = false, gestureLocked = false;
 
 function toPixel(clientX, clientY){
@@ -1086,13 +1158,16 @@ view.addEventListener('pointerdown', e => {
   view.setPointerCapture(e.pointerId);
   pointers.set(e.pointerId, {x:e.clientX, y:e.clientY, sx:e.clientX, sy:e.clientY});
   movedFar = false;
+  if(pointers.size === 1){
+    strokePushedUndo = false;
+    gestureUndoSeq = undoSeq;
+    gestureLifted = false;
+  }
 
   if(pointers.size === 2){
-    // cancel any in-progress stroke — this is a pinch
-    if(drawing && shapeBackup){ curData().set(shapeBackup); }
-    drawing = false; shapeStart = null; shapeBackup = null;
-    clearTimeout(pressTimer);
-    if(S.undoStack.length) { S.undoStack.pop(); updateUndoBtns(); }
+    // The first finger has already painted by the time the second one lands —
+    // two fingers never touch down in the same event. Unwind the whole stroke.
+    cancelStroke();
     const pts = [...pointers.values()];
     const dx = pts[0].x-pts[1].x, dy = pts[0].y-pts[1].y;
     pinchStart = {
@@ -1118,9 +1193,9 @@ view.addEventListener('pointerdown', e => {
       setColor(hex); toast('ดูดสี ' + hex.toUpperCase());
       if(navigator.vibrate) navigator.vibrate(12);
     }
-    drawing = false;
-    if(shapeBackup){ curData().set(shapeBackup); shapeBackup=null; bufDirty=true; renderView(); }
-    if(S.undoStack.length){ S.undoStack.pop(); updateUndoBtns(); }
+    // the user meant to eyedrop, not to draw
+    cancelStroke();
+    renderView();
   }, 480);
 
   if(S.tool === 'select'){
@@ -1152,6 +1227,7 @@ view.addEventListener('pointerdown', e => {
   }
 
   pushUndo();
+  strokePushedUndo = true;
   drawing = true;
   const data = curData();
 
@@ -1205,7 +1281,11 @@ view.addEventListener('pointermove', e => {
     } else {
       const dx = p.x - S.selDrag.ox, dy = p.y - S.selDrag.oy;
       if(!S.selDrag.moved && (dx!==0 || dy!==0)){
+        const hadFloat = !!S.float;
         liftSelection();          // first actual movement lifts the pixels
+        // only true when THIS call created the float — a float that was already
+        // hovering belongs to an earlier gesture and must survive a pinch
+        gestureLifted = !hadFloat && !!S.float;
         S.selDrag.moved = true;
       }
       if(S.float){
@@ -1243,6 +1323,8 @@ function endPointer(e){
   if(pointers.size < 2){ pinchStart = null; }
   if(pointers.size === 0){
     gestureLocked = false;
+    strokePushedUndo = false;
+    gestureLifted = false;
     if(S.tool === 'select' && S.selDrag){
       if(S.selDrag.mode === 'draw'){
         const r = clampRectToCanvas(S.sel);
@@ -1320,6 +1402,7 @@ function renderFrames(){
     n.className = 'n'; n.textContent = i+1;
     d.appendChild(c); d.appendChild(n);
     d.onclick = ()=>{ commitFloat(); S.curFrame = i; bufDirty = true; renderView(); renderFrames(); renderLayers(); };
+    d.addEventListener('pointerdown', ev => startFrameHold(ev, d, i));
     wrap.appendChild(d);
   }
   const add = document.createElement('button');
@@ -1381,6 +1464,126 @@ function delFrame(){
   bufDirty = true; renderAll(); markProjectDirty();
   showRestoreBar(saved);
 }
+
+/* ══════════════ REORDER FRAMES (long-press drag) ══════════════ */
+/* touch-action is latched when the pointer goes DOWN — setting it on the strip
+   after a hold fires does nothing to the gesture already in flight, so the
+   browser kept the pan and cancelled our pointer. .frame now declares
+   touch-action:none up front, which means the strip's own scrolling has to be
+   done here as well: move first and the finger pans, hold first and it picks
+   the frame up. */
+const HOLD_MS = 400, HOLD_SLOP = 8;
+let fptr = null;           // the single pointer the frame strip is tracking
+let frameClickBlock = 0;   // swallow the click that trails a pan or a drop
+
+function moveFrame(from, to){
+  if(from === to || from < 0 || to < 0 || from >= S.frameCount || to >= S.frameCount){
+    renderFrames();
+    return;
+  }
+  for(const l of S.layers){
+    const [f] = l.frames.splice(from, 1);
+    l.frames.splice(to, 0, f);
+  }
+  /* Undo entries address a frame by INDEX, not identity. Left alone they would
+     replay old pixels onto whichever frame later occupies that slot, so the
+     whole stack has to follow the same shuffle. Tags stay pinned to their
+     index ranges — a tag names a span of the timeline, not a set of frames. */
+  const remap = i => i === from ? to
+    : (from < to ? (i > from && i <= to ? i-1 : i)
+                 : (i >= to && i < from ? i+1 : i));
+  for(const st of S.undoStack) st.f = remap(st.f);
+  for(const st of S.redoStack) st.f = remap(st.f);
+  S.curFrame = to;
+  bufDirty = true; renderAll(); markProjectDirty();
+}
+
+function frameEls(){
+  return [...$('frames').children].filter(c => c.classList.contains('frame'));
+}
+function renumberFrames(){
+  frameEls().forEach((el, i) => { const n = el.querySelector('.n'); if(n) n.textContent = i+1; });
+}
+function releaseFramePointer(){
+  if(!fptr) return;
+  clearTimeout(fptr.timer);
+  try { fptr.el.releasePointerCapture(fptr.id); } catch(err){}
+  fptr = null;
+}
+
+function startFrameHold(e, el, idx){
+  if(e.button != null && e.button > 0) return;
+  releaseFramePointer();
+  const wrap = $('frames');
+  fptr = {
+    id:e.pointerId, el, idx, mode:'wait',
+    x0:e.clientX, y0:e.clientY, scroll0:wrap.scrollLeft, timer:null
+  };
+  // capture immediately so the finger can leave the thumbnail mid-drag
+  try { el.setPointerCapture(e.pointerId); } catch(err){}
+  fptr.timer = setTimeout(()=>{
+    if(!fptr || fptr.mode !== 'wait' || S.frameCount < 2) return;
+    fptr.mode = 'drag';
+    el.classList.add('dragging');
+    wrap.classList.add('reordering');
+    wrap.scrollLeft = fptr.scroll0;
+    if(navigator.vibrate) navigator.vibrate(12);
+  }, HOLD_MS);
+}
+
+document.addEventListener('pointermove', e => {
+  if(!fptr || e.pointerId !== fptr.id) return;
+  const wrap = $('frames');
+  const dx = e.clientX - fptr.x0;
+
+  if(fptr.mode === 'wait'){
+    if(Math.hypot(dx, e.clientY - fptr.y0) <= HOLD_SLOP) return;
+    clearTimeout(fptr.timer);   // moved before the hold landed: this is a pan
+    fptr.mode = 'pan';
+  }
+  if(fptr.mode === 'pan'){
+    wrap.scrollLeft = fptr.scroll0 - dx;
+    frameClickBlock = Date.now() + 400;
+    return;
+  }
+
+  e.preventDefault();
+  const me = fptr.el;
+  const others = frameEls().filter(el => el !== me);
+  let target = others.length;
+  for(let i=0;i<others.length;i++){
+    const r = others[i].getBoundingClientRect();
+    if(e.clientX < r.left + r.width/2){ target = i; break; }
+  }
+  const ref = others[target] || $('addFrame');
+  if(ref && me.nextSibling !== ref){
+    wrap.insertBefore(me, ref);
+    renumberFrames();
+  }
+  const wr = wrap.getBoundingClientRect();
+  if(e.clientX > wr.right - 44) wrap.scrollLeft += 10;
+  else if(e.clientX < wr.left + 44) wrap.scrollLeft -= 10;
+}, {passive:false});
+
+function finishFramePointer(e){
+  if(!fptr || e.pointerId !== fptr.id) return;
+  const wrap = $('frames');
+  const mode = fptr.mode, el = fptr.el, from = fptr.idx;
+  releaseFramePointer();
+  if(mode !== 'drag') return;
+  const to = frameEls().indexOf(el);
+  el.classList.remove('dragging');
+  wrap.classList.remove('reordering');
+  frameClickBlock = Date.now() + 400;
+  if(to >= 0 && to !== from) moveFrame(from, to);
+  else renderFrames();
+}
+document.addEventListener('pointerup', finishFramePointer);
+document.addEventListener('pointercancel', finishFramePointer);
+$('frames').addEventListener('click', e => {
+  if(Date.now() < frameClickBlock){ e.stopPropagation(); e.preventDefault(); }
+}, true);
+$('frames').addEventListener('contextmenu', e => { if(fptr) e.preventDefault(); });
 
 /* ══════════════ LAYERS UI ══════════════ */
 function drawLayerThumb(canvas, li){
@@ -1468,24 +1671,36 @@ function delLayer(){
 
 /* ══════════════ PLAYBACK ══════════════ */
 let playTimer = null;
-function togglePlay(){
-  S.playing = !S.playing;
+function setPlayIcon(){
   $('btnPlay').classList.toggle('on', S.playing);
   $('playIc').innerHTML = S.playing
     ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
     : '<polygon points="6 3 20 12 6 21 6 3"/>';
+}
+/* Every path that swaps the project out must call this, or the tick keeps
+   firing against a timeline that no longer exists. */
+function stopPlayback(){
+  clearTimeout(playTimer);
+  playTimer = null;
+  if(!S.playing) return;
+  S.playing = false;
+  setPlayIcon();
+}
+function togglePlay(){
   if(S.playing){
-    if(S.frameCount < 2){ toast('ต้องมีอย่างน้อย 2 เฟรม'); S.playing=false; $('btnPlay').classList.remove('on'); $('playIc').innerHTML='<polygon points="6 3 20 12 6 21 6 3"/>'; return; }
-    const tick = ()=>{
-      S.curFrame = (S.curFrame + 1) % S.frameCount;
-      bufDirty = true; renderView(); renderFrames();
-      playTimer = setTimeout(tick, 1000/S.fps);
-    };
-    playTimer = setTimeout(tick, 1000/S.fps);
-  } else {
-    clearTimeout(playTimer);
+    stopPlayback();
     bufDirty = true; renderView(); renderLayers();
+    return;
   }
+  if(S.frameCount < 2){ toast('ต้องมีอย่างน้อย 2 เฟรม'); return; }
+  S.playing = true;
+  setPlayIcon();
+  const tick = ()=>{
+    S.curFrame = (S.curFrame + 1) % S.frameCount;
+    bufDirty = true; renderView(); renderFrames();
+    playTimer = setTimeout(tick, 1000/S.fps);
+  };
+  playTimer = setTimeout(tick, 1000/S.fps);
 }
 
 /* ══════════════ COLOR ══════════════ */
@@ -1754,32 +1969,32 @@ function exportGif(){
 const CHAR_TEMPLATES = {
   'ตัวจิ๋ว 16×16': {
     w:16, h:16, note:'ไอคอน · RPG มุมบน ขนาดเล็ก',
-    layers:['ตัวละคร','เงา'],
+    layers:['เงา','ตัวละคร'],        // index 0 = ล่างสุด
     clips:[['idle',2],['walk',4]]
   },
   'ตัวเล็ก 16×24': {
     w:16, h:24, note:'RPG มุมบน มาตรฐาน',
-    layers:['ตัวละคร','เงา'],
+    layers:['เงา','ตัวละคร'],        // index 0 = ล่างสุด
     clips:[['idle',2],['walk',4],['attack',3]]
   },
   'มาตรฐาน 32×32': {
     w:32, h:32, note:'platformer · RPG ทั่วไป',
-    layers:['ตัวละคร','เงา'],
+    layers:['เงา','ตัวละคร'],        // index 0 = ล่างสุด
     clips:[['idle',4],['walk',6],['jump',3],['attack',4]]
   },
   'สูง 32×48': {
     w:32, h:48, note:'สัดส่วนใกล้คนจริง',
-    layers:['ตัวละคร','เงา'],
+    layers:['เงา','ตัวละคร'],        // index 0 = ล่างสุด
     clips:[['idle',4],['walk',6],['run',6],['attack',4]]
   },
   'ใหญ่ 48×48': {
     w:48, h:48, note:'บอส · ตัวละครหลักรายละเอียดสูง',
-    layers:['ตัวละคร','เงา'],
+    layers:['เงา','ตัวละคร'],        // index 0 = ล่างสุด
     clips:[['idle',4],['walk',8],['attack',6],['hurt',2]]
   },
   'ครึ่งตัว 64×64': {
     w:64, h:64, note:'portrait · หน้าตัวละคร',
-    layers:['ตัวละคร','พื้นหลัง'],
+    layers:['พื้นหลัง','ตัวละคร'],   // index 0 = ล่างสุด
     clips:[['idle',4],['talk',4]]
   }
 };
@@ -1802,6 +2017,9 @@ function applyCharTemplate(key, opts){
   opts = opts || {};
   const frames = templateFrameCount(t);
 
+  stopPlayback();
+  curProjectId = null; curProjectName = null;
+
   S.W = t.w; S.H = t.h;
   S.frameCount = frames;
   S.layers = t.layers.map((name, i) => ({
@@ -1810,8 +2028,9 @@ function applyCharTemplate(key, opts){
     opacity: 1,
     frames: Array.from({length: frames}, () => new Uint8ClampedArray(t.w*t.h*4))
   }));
-  // bottom layer of the pair is the shadow/background, so draw on the top one
-  S.curLayer = 0;
+  // index 0 is the bottom of the stack, so the character sits last — and that
+  // is the layer the user should land on
+  S.curLayer = S.layers.length - 1;
   S.curFrame = 0;
   S.tags = templateTags(t);
   S.tileMode = false;
@@ -1919,6 +2138,10 @@ function serialize(name){
 }
 function deserialize(obj){
   if(!obj || !obj.layers || !obj.w || !obj.h) throw new Error('รูปแบบไฟล์ไม่ถูกต้อง');
+  // a float or marquee left over from the previous project would be stamped
+  // into this one on the next commit, at the wrong size
+  stopPlayback();
+  S.sel = null; S.float = null; S.floatRect = null; S.selDrag = null;
   const px = obj.w * obj.h;
   S.W = obj.w; S.H = obj.h;
   S.fps = obj.fps || 8;
@@ -2171,11 +2394,12 @@ function cropData(src, sw, sh, rx, ry, rw, rh){
   }
   return dst;
 }
-/* Bounding box of all non-transparent pixels across every layer and frame */
+/* Bounding box of all non-transparent pixels across every layer and frame.
+   Hidden layers count too: cropping to bounds that ignored them would
+   silently destroy work the user had just toggled off. */
 function contentBounds(){
   let minX=S.W, minY=S.H, maxX=-1, maxY=-1;
   for(const L of S.layers){
-    if(!L.visible) continue;
     for(const f of L.frames){
       for(let y=0;y<S.H;y++){
         const row = y*S.W;
@@ -2318,16 +2542,20 @@ function buildGodotTres(imageName){
   const texId = 'Texture2D_pxl00';
   let subs = '';
   let loadSteps = 1;
+  const emitted = new Set();   // tags may overlap; a repeated id breaks the .tres
 
   const animBlocks = tags.map(t => {
     const frameLines = [];
     for(let i=t.from; i<=t.to && i<S.frameCount; i++){
       const r = frameRect(i, cols);
       const id = 'AtlasTexture_f'+i;
-      subs += `[sub_resource type="AtlasTexture" id="${id}"]\n`
-           +  `atlas = ExtResource("${texId}")\n`
-           +  `region = Rect2(${r.x}, ${r.y}, ${r.w}, ${r.h})\n\n`;
-      loadSteps++;
+      if(!emitted.has(id)){
+        emitted.add(id);
+        subs += `[sub_resource type="AtlasTexture" id="${id}"]\n`
+             +  `atlas = ExtResource("${texId}")\n`
+             +  `region = Rect2(${r.x}, ${r.y}, ${r.w}, ${r.h})\n\n`;
+        loadSteps++;
+      }
       frameLines.push(`{\n"duration": 1.0,\n"texture": SubResource("${id}")\n}`);
     }
     return `{\n"frames": [${frameLines.join(', ')}],\n"loop": true,\n"name": &"${t.name}",\n"speed": ${S.fps}.0\n}`;
@@ -2509,6 +2737,8 @@ function transformSelection(kind){
 /* marching-ants style marquee overlay */
 function drawSelectionOverlay(z, ox, oy){
   const r = S.float ? S.floatRect : S.sel;
+  // drives antsLoop — true while something is selected, false the instant it clears
+  selNeedsAnim = !!r;
   if(!r) return;
   const x = ox + r.x*z, y = oy + r.y*z, w = r.w*z, h = r.h*z;
   vctx.save();
@@ -2521,7 +2751,6 @@ function drawSelectionOverlay(z, ox, oy){
   vctx.strokeStyle = '#000000'; vctx.lineWidth = 2;
   vctx.strokeRect(x, y, w, h);
   vctx.restore();
-  if(S.float) selNeedsAnim = true;
 }
 
 
@@ -2571,6 +2800,8 @@ function placeImage(img, mode, fit, opts){
 
   if(mode === 'newproject'){
     commitFloat();
+    stopPlayback();
+    curProjectId = null; curProjectName = null;
     S.W = sw; S.H = sh;
     S.layers = [{name:'Layer 1', visible:true, opacity:1, frames:[new Uint8ClampedArray(src)]}];
     S.frameCount = 1; S.curLayer = 0; S.curFrame = 0;
@@ -2595,6 +2826,7 @@ function placeImage(img, mode, fit, opts){
   }
 
   if(mode === 'layer'){
+    if(S.layers.length >= 12) throw new Error('จำกัด 12 เลเยอร์ — ลบเลเยอร์เดิมก่อน');
     const frames = [];
     for(let i=0;i<S.frameCount;i++) frames.push(new Uint8ClampedArray(S.W*S.H*4));
     const target = frames[S.curFrame];
@@ -2681,7 +2913,7 @@ function showHome(){
     <h2 style="background:linear-gradient(92deg,var(--accent-2),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">Pixel Loom</h2>
     <p class="sub">
       ${hasWork
-        ? `กำลังแก้: <b>${curProjectName || 'งานที่ยังไม่ได้ตั้งชื่อ'}</b> · ${S.W}×${S.H} · ${S.frameCount} เฟรม${dirty ? ' · <span style="color:var(--danger)">ยังไม่ได้บันทึก</span>' : ''}`
+        ? `กำลังแก้: <b>${esc(curProjectName || 'งานที่ยังไม่ได้ตั้งชื่อ')}</b> · ${S.W}×${S.H} · ${S.frameCount} เฟรม${dirty ? ' · <span style="color:var(--danger)">ยังไม่ได้บันทึก</span>' : ''}`
         : 'ยังไม่มีงานที่กำลังทำ'}
     </p>
 
@@ -2752,9 +2984,9 @@ function showHome(){
       const el = document.createElement('div');
       el.className = 'proj';
       el.innerHTML = `
-        <div class="pth">${pj.thumb ? '<img src="'+pj.thumb+'" style="width:100%;height:100%;image-rendering:pixelated;display:block">' : ''}</div>
+        <div class="pth">${safeThumb(pj.thumb) ? '<img src="'+safeThumb(pj.thumb)+'" style="width:100%;height:100%;image-rendering:pixelated;display:block">' : ''}</div>
         <div class="pi">
-          <b>${pj.name}</b>
+          <b>${esc(pj.name)}</b>
           <span>${pj.w}×${pj.h} · ${pj.frames} เฟรม · ${fmtTime(pj.saved)}</span>
         </div>`;
       el.onclick = ()=>{
@@ -2798,7 +3030,7 @@ function showCharTemplates(){
     const mem = (t.w*t.h*4*frames*t.layers.length)/1048576;
     $('ctPrev').innerHTML =
       `<b>${chosen}</b><br>` +
-      `ผืนผ้าใบ <b>${t.w}×${t.h}</b> · <b>${frames}</b> เฟรม · <b>${t.layers.length}</b> เลเยอร์ (${t.layers.join(', ')})<br>` +
+      `ผืนผ้าใบ <b>${t.w}×${t.h}</b> · <b>${frames}</b> เฟรม · <b>${t.layers.length}</b> เลเยอร์ (${t.layers.slice().reverse().join(' บน ')})<br>` +
       `ช่วงอนิเมชั่น: ${tags.map(x=>`${x.name} ${x.from}-${x.to}`).join(' · ')}<br>` +
       `RAM ≈ <b>${mem.toFixed(2)} MB</b>`;
   }
@@ -2908,10 +3140,10 @@ function showSaveLoad(){
   const used = storageUsed();
   openModal(`
     <h2>เซฟ / โหลด</h2>
-    <p class="sub">${curProjectName ? 'กำลังแก้: <b>'+curProjectName+'</b>' : 'ยังไม่ได้ตั้งชื่อโปรเจกต์'}</p>
+    <p class="sub">${curProjectName ? 'กำลังแก้: <b>'+esc(curProjectName)+'</b>' : 'ยังไม่ได้ตั้งชื่อโปรเจกต์'}</p>
     <div class="field" style="margin-bottom:10px">
       <label>ชื่อโปรเจกต์</label>
-      <input type="text" id="slName" value="${(curProjectName||'').replace(/"/g,'&quot;')}" placeholder="เช่น ตัวละครหลัก">
+      <input type="text" id="slName" value="${esc(curProjectName||'')}" placeholder="เช่น ตัวละครหลัก">
     </div>
     <button class="big-btn" id="slSave">${curProjectId ? 'บันทึกทับ' : 'บันทึกลงเครื่อง'}</button>
     ${curProjectId ? '<button class="big-btn ghost" id="slSaveNew">บันทึกเป็นชิ้นใหม่</button>' : ''}
@@ -2960,9 +3192,9 @@ function showSaveLoad(){
       const el = document.createElement('div');
       el.className = 'proj';
       el.innerHTML = `
-        <div class="pth">${p.thumb ? '<img src="'+p.thumb+'" style="width:100%;height:100%;image-rendering:pixelated;display:block">' : ''}</div>
+        <div class="pth">${safeThumb(p.thumb) ? '<img src="'+safeThumb(p.thumb)+'" style="width:100%;height:100%;image-rendering:pixelated;display:block">' : ''}</div>
         <div class="pi">
-          <b>${p.name}</b>
+          <b>${esc(p.name)}</b>
           <span>${p.w}×${p.h} · ${p.frames} เฟรม · ${p.layers} เลเยอร์ · ${fmtTime(p.saved)}</span>
         </div>
         <button class="pdel" title="ลบ"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
@@ -3200,7 +3432,7 @@ function showTags(){
       const row = document.createElement('div');
       row.className = 'tag-row';
       row.innerHTML = `
-        <input class="tn" value="${String(t.name).replace(/"/g,'&quot;')}" placeholder="ชื่อ">
+        <input class="tn" value="${esc(t.name)}" placeholder="ชื่อ">
         <input class="tr" type="number" value="${t.from}" min="0" max="${S.frameCount-1}" inputmode="numeric">
         <span class="dash">→</span>
         <input class="tr" type="number" value="${t.to}" min="0" max="${S.frameCount-1}" inputmode="numeric">
@@ -3326,7 +3558,7 @@ function showImportImage(img){
 
   openModal(`
     <h2>นำเข้าภาพ</h2>
-    <p class="sub"><b>${img.name}</b><br>ขนาด <b>${img.w}×${img.h}</b> · ผืนผ้าใบตอนนี้ <b>${S.W}×${S.H}</b>${sameSize ? ' · ตรงกันพอดี' : ''}</p>
+    <p class="sub"><b>${esc(img.name)}</b><br>ขนาด <b>${img.w}×${img.h}</b> · ผืนผ้าใบตอนนี้ <b>${S.W}×${S.H}</b>${sameSize ? ' · ตรงกันพอดี' : ''}</p>
 
     <div class="sec-lbl">วางยังไง</div>
     <div class="seg" id="imMode">
@@ -3840,25 +4072,35 @@ $('btnGrid').onclick = ()=>{ S.showGrid = !S.showGrid; $('btnGrid').classList.to
 $('btnOnion').onclick = ()=>{ S.onion = !S.onion; $('btnOnion').classList.toggle('on', S.onion); bufDirty=true; renderView(); };
 $('fps').oninput = e => { S.fps = +e.target.value; $('fpsVal').textContent = S.fps + ' fps'; };
 
+const TOOL_KEYS = {b:'pencil', e:'eraser', g:'fill', i:'picker', l:'line', r:'rect', m:'select', v:'select'};
 document.addEventListener('keydown', e=>{
-  if(e.target.tagName === 'INPUT') return;
-  if((e.ctrlKey||e.metaKey) && e.key==='z'){ e.preventDefault(); e.shiftKey ? redo() : undo(); }
-  if((e.ctrlKey||e.metaKey) && e.key==='s'){ e.preventDefault(); showSaveLoad(); return; }
-  if((e.ctrlKey||e.metaKey) && e.key==='a'){ e.preventDefault(); selectAll(); updateSelBar(); return; }
-  if((e.ctrlKey||e.metaKey) && e.key==='c'){ e.preventDefault(); copySelection(); updateSelBar(); return; }
-  if((e.ctrlKey||e.metaKey) && e.key==='x'){ e.preventDefault(); cutSelection(); updateSelBar(); return; }
-  if((e.ctrlKey||e.metaKey) && e.key==='v'){ e.preventDefault(); pasteClip(); updateSelBar(); return; }
-  if(e.key==='Escape'){ commitFloat(); S.sel=null; markDirty(); updateSelBar(); return; }
-  if((e.key==='Delete'||e.key==='Backspace') && (S.sel||S.float)){ e.preventDefault(); deleteSelection(); updateSelBar(); return; }
+  const t = e.target;
+  if(t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+  const mod = e.ctrlKey || e.metaKey;
+  // e.key arrives uppercase while Shift is held, which broke Ctrl+Shift+Z
+  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+
+  if(mod){
+    if(k==='z'){ e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+    if(k==='y'){ e.preventDefault(); redo(); return; }
+    if(k==='s'){ e.preventDefault(); showSaveLoad(); return; }
+    if(k==='a'){ e.preventDefault(); selectAll(); updateSelBar(); return; }
+    if(k==='c'){ e.preventDefault(); copySelection(); updateSelBar(); return; }
+    if(k==='x'){ e.preventDefault(); cutSelection(); updateSelBar(); return; }
+    if(k==='v'){ e.preventDefault(); pasteClip(); updateSelBar(); return; }
+    return;   // every other modifier combo belongs to the browser
+  }
+
+  if(k==='Escape'){ commitFloat(); S.sel=null; markDirty(); updateSelBar(); return; }
+  if((k==='Delete'||k==='Backspace') && (S.sel||S.float)){ e.preventDefault(); deleteSelection(); updateSelBar(); return; }
   if(S.sel || S.float){
     const arrows = {ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,-1], ArrowDown:[0,1]};
-    if(arrows[e.key]){ e.preventDefault(); nudgeFloat(...arrows[e.key]); return; }
+    if(arrows[k]){ e.preventDefault(); nudgeFloat(...arrows[k]); return; }
   }
-  if(e.key===','){ e.preventDefault(); stepShade(-1); return; }
-  if(e.key==='.'){ e.preventDefault(); stepShade(1); return; }
-  const map = {b:'pencil', e:'eraser', g:'fill', i:'picker', l:'line', r:'rect', m:'select', v:'select'};
-  if(map[e.key]) selectTool(map[e.key]);
-  if(e.key===' '){ e.preventDefault(); togglePlay(); }
+  if(k===','){ e.preventDefault(); stepShade(-1); return; }
+  if(k==='.'){ e.preventDefault(); stepShade(1); return; }
+  if(TOOL_KEYS[k]){ selectTool(TOOL_KEYS[k]); return; }
+  if(k===' '){ e.preventDefault(); togglePlay(); }
 });
 
 /* drag & drop an image or project file straight onto the canvas */
@@ -3892,10 +4134,14 @@ window.addEventListener('beforeunload', e=>{
 document.addEventListener('gesturestart', e=>e.preventDefault());
 
 /* ══════════════ BOOT ══════════════ */
-(function antsLoop(){
-  if(selNeedsAnim && (S.sel || S.float)){ renderView(); }
+let lastAnts = 0;
+(function antsLoop(now){
   requestAnimationFrame(antsLoop);
-})();
+  if(!selNeedsAnim || !(S.sel || S.float)) return;
+  if(now - lastAnts < 66) return;   // ~15fps — plenty for marching ants, 4x less redraw
+  lastAnts = now;
+  renderView();
+})(0);
 
 $('btnGrid').classList.add('on');
 buildPalette();
