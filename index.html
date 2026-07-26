@@ -2994,13 +2994,21 @@ function textChunk(keyword, text){
   return out;
 }
 
-async function pngWithProject(blob, meta){
-  const bytes = new Uint8Array(await blob.arrayBuffer());
-  if(!isPNG(bytes)) return blob;
+function shareProjectPayload(meta){
   const payload = serialize(meta.title || curProjectName || 'wadpixel');
   payload.by = meta.author || '';
   payload.sharedAt = Date.now();
-  const chunk = textChunk(PNG_KEY, await packProjectText(payload));
+  return payload;
+}
+/* Same project, packed as plain text — for hosts that re-encode uploaded
+   images and drop the PNG chunk on the way through. */
+async function projectShareText(meta){
+  return await packProjectText(shareProjectPayload(meta));
+}
+async function pngWithProject(blob, meta){
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  if(!isPNG(bytes)) return blob;
+  const chunk = textChunk(PNG_KEY, await packProjectText(shareProjectPayload(meta)));
   const iend = pngChunks(bytes).find(c => c.type === 'IEND');
   const at = iend ? iend.start : bytes.length;
   const out = new Uint8Array(bytes.length + chunk.length);
@@ -5437,6 +5445,7 @@ function showExport(){
 /* คุยกับ API ที่ /api/share, /api/gallery, /api/like
    เก็บ editToken ของผลงานตัวเองไว้ใน localStorage เพื่อให้ลบเองได้ทีหลัง */
 const API_SHARE   = '/api/share';
+const API_PROJECT = '/api/project';
 const API_GALLERY = '/api/gallery';
 const API_LIKE    = '/api/like';
 
@@ -5597,19 +5606,34 @@ function showShare(){
         ? await gifDataURL(p => stat('เข้ารหัส ' + p + '%'))
         : await sheetDataURLShare(author);
 
-      const kb = Math.round(image.length * 0.75 / 1024);
+      // GIF has nowhere to hide a project, and an image host that re-encodes
+      // uploads strips the PNG chunk — so the project also travels as a field
+      const project = kind === 'gif' ? null : await projectShareText({title, author});
+
+      const kb = Math.round((image.length + (project ? project.length : 0)) * 0.75 / 1024);
       if(kb > 3000) throw new Error('ไฟล์ใหญ่เกินไป (' + kb + ' KB) ลองลดเฟรมหรือขนาดภาพ');
 
       stat('กำลังอัปโหลด… (' + kb + ' KB)');
-      const res = await apiCall(API_SHARE, {
+      const base = {
+        title, author, image,
+        width: S.W, height: S.H,
+        frames: S.frameCount, fps: S.fps
+      };
+      const post = body => apiCall(API_SHARE, {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-          title, author, image,
-          width: S.W, height: S.H,
-          frames: S.frameCount, fps: S.fps
-        })
+        body: JSON.stringify(body)
       });
+      let res;
+      try{
+        res = await post(project ? {...base, project} : base);
+      }catch(err){
+        // an API that validates its body will reject the extra field — the
+        // post itself matters more than the remix shortcut
+        if(!project) throw err;
+        stat('เซิร์ฟเวอร์ไม่รับข้อมูลโปรเจกต์ — อัปโหลดเฉพาะภาพ');
+        res = await post(base);
+      }
 
       mineAdd(res.post.slug, res.editToken);
       closeModal();
@@ -5621,6 +5645,59 @@ function showShare(){
       const g = $('shGo'); if(g) g.disabled = false;
     }
   };
+}
+
+/* A post can carry its project two ways: as a field on the post, or inside the
+   PNG. Try both, and when neither works say which step failed — "remix ไม่ได้"
+   with no reason is impossible to act on. */
+async function loadPostProject(p){
+  if(p.project){
+    try{ return await unpackProjectText(p.project); }
+    catch{ /* fall through */ }
+  }
+  /* Ask our own API first: it's same-origin (no CORS to negotiate with the
+     blob host) and it can dig the project out of the stored PNG server-side
+     for posts made before the project column existed. */
+  if(p.slug){
+    try{
+      const r = await apiCall(API_PROJECT + '?slug=' + encodeURIComponent(p.slug));
+      if(r.project) return await unpackProjectText(r.project);
+    }catch(err){
+      const msg = err.message || '';
+      // a definite "no project on this post" is the final answer; a network or
+      // server error still deserves the image attempt below
+      if(/ไม่มีข้อมูลโปรเจกต์|ฝังโปรเจกต์ไว้ไม่ได้/.test(msg)) throw new Error(msg);
+    }
+  }
+  // an image CDN usually answers a ?w=... query with a re-encoded copy, so the
+  // bare URL is worth a second try before giving up
+  const urls = [p.url];
+  if(p.url.includes('?')) urls.push(p.url.split('?')[0]);
+
+  let lastErr = null;
+  for(const url of urls){
+    let bytes;
+    try{
+      const res = await fetch(url, {cache:'no-store'});
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      bytes = new Uint8Array(await res.arrayBuffer());
+    }catch(err){
+      lastErr = new Error('ดึงไฟล์ภาพไม่ได้ (' + (err.message || 'network') + ') — เปิดดูได้อย่างเดียว');
+      continue;
+    }
+    if(!isPNG(bytes)){
+      lastErr = new Error('ไฟล์ที่เซิร์ฟเวอร์ส่งกลับไม่ใช่ PNG — โปรเจกต์ที่ฝังไว้หลุดตอนอัปโหลด');
+      continue;
+    }
+    try{
+      const obj = await projectFromPNGBytes(bytes);
+      if(obj) return obj;
+      lastErr = new Error('ผลงานนี้ไม่มีโปรเจกต์ติดมา — แชร์ไว้ก่อนที่ฟีเจอร์นี้จะมี');
+    }catch(err){
+      lastErr = new Error('ข้อมูลโปรเจกต์ในไฟล์เสียหาย (' + (err.message || '') + ')');
+    }
+  }
+  throw lastErr;
 }
 
 /* ══════ หน้าแกลเลอรี ══════ */
@@ -5702,11 +5779,8 @@ function showGallery(sort){
             <svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.7 1.1-1a5.5 5.5 0 0 0 0-7.9Z"/></svg>
             <span class="n">${p.likes}</span>
           </button>
-          ${mine
-            ? '<button class="del">ลบ</button>'
-            : (p.kind === 'gif'
-                ? '<button class="op">เปิด</button>'
-                : '<button class="op rmx">รีมิกซ์</button>')}
+          ${p.kind === 'gif' ? '<button class="op">เปิด</button>' : '<button class="op rmx">รีมิกซ์</button>'}
+          ${mine ? '<button class="del">ลบ</button>' : ''}
         </div>
       </div>`;
 
@@ -5739,16 +5813,13 @@ function showGallery(sort){
       rmx.textContent = 'กำลังโหลด…';
       rmx.disabled = true;
       try{
-        const res = await fetch(p.url);
-        if(!res.ok) throw new Error('โหลดไฟล์ไม่ได้');
-        const obj = await projectFromPNGBytes(new Uint8Array(await res.arrayBuffer()));
-        if(!obj) throw new Error('ผลงานนี้ไม่ได้ฝังโปรเจกต์ไว้ — เปิดดูได้อย่างเดียว');
+        const obj = await loadPostProject(p);
         if(dirtySinceSave && !confirm('งานที่ทำอยู่ยังไม่ได้เซฟ จะเปิดผลงานนี้แทนไหม?')) throw new Error('');
         obj.name = (obj.name || p.title) + ' (รีมิกซ์)';
         obj.by = obj.by || p.author;
         openSharedProject(obj);
       }catch(err){
-        if(err.message) toast(err.message, 3000);
+        if(err.message) toast(err.message, 3600);
         rmx.textContent = label;
         rmx.disabled = false;
       }
