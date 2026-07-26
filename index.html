@@ -391,6 +391,9 @@ body.solo-frame #btnAddFrameHead{display:flex}
     var(--panel-2);
 }
 #pxCv{width:100%;max-height:240px;object-fit:contain;image-rendering:pixelated}
+#brPrev{width:120px;image-rendering:pixelated}
+#flKind button{font-size:11.5px;padding:0 2px}
+#flScope button:disabled{opacity:.35}
 #pxSize button,#pxSize2 button,#pxCol button{font-size:11.5px;padding:0 2px;white-space:nowrap}
 .px-sizes{margin-bottom:5px}
 .px-fit{
@@ -546,9 +549,6 @@ body.solo-frame #btnAddFrameHead{display:flex}
 .preset-row .strip{display:flex;gap:2px;height:16px;border-radius:4px;overflow:hidden}
 .preset-row .strip i{flex:1;display:block}
 .preset-row .pr-hint{display:block;font-size:9.5px;color:var(--dim);margin-top:5px}
-.preset-row.ct-row{border:1px solid transparent}
-.preset-row.ct-row.on{border-color:var(--accent-2);background:var(--line)}
-.preset-row.ct-row.on b{color:var(--accent-2)}
 
 /* ---------- SUPPORT ---------- */
 .sup-btn{
@@ -767,19 +767,20 @@ body.solo-frame #btnAddFrameHead{display:flex}
 
 <div id="tools">
   <button class="tool" data-tool="select" title="เลือก / ย้าย"><svg viewBox="0 0 24 24"><path d="M3 3h4M3 3v4M21 3h-4M21 3v4M3 21h4M3 21v-4M21 21h-4M21 21v-4" stroke-dasharray="0"/><rect x="3" y="3" width="18" height="18" rx="1" stroke-dasharray="3 3" opacity=".55"/></svg></button>
-  <button class="tool on" data-tool="pencil" title="ดินสอ"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
-  <button class="tool" data-tool="eraser" title="ยางลบ"><svg viewBox="0 0 24 24"><path d="M20 20H8.5L3 14.5a1.5 1.5 0 0 1 0-2.1l8.4-8.4a1.5 1.5 0 0 1 2.1 0l6.5 6.5a1.5 1.5 0 0 1 0 2.1L13 20"/><path d="M8 20 17 11"/></svg></button>
-  <button class="tool fill" data-tool="fill" title="ถังสี"><svg viewBox="0 0 24 24"><path d="M11.3 2 9.9 3.4l2 2L3.5 13.8a2 2 0 0 0 0 2.8l4.9 4.9a2 2 0 0 0 2.8 0l8.4-8.4a2 2 0 0 0 0-2.8L11.3 2Zm.3 5.5 5.4 5.4H6.2l5.4-5.4Z"/><path d="M20.5 15.5s1.9 2.2 1.9 3.4a1.9 1.9 0 1 1-3.8 0c0-1.2 1.9-3.4 1.9-3.4Z"/></svg></button>
+  <button class="tool on" data-tool="pencil" title="ดินสอ · แตะซ้ำเพื่อตั้งขนาด"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span class="sym-tag" id="pencilTag"></span></button>
+  <button class="tool" data-tool="eraser" title="ยางลบ · แตะซ้ำเพื่อตั้งขนาด/โหมด"><svg viewBox="0 0 24 24"><path d="M20 20H8.5L3 14.5a1.5 1.5 0 0 1 0-2.1l8.4-8.4a1.5 1.5 0 0 1 2.1 0l6.5 6.5a1.5 1.5 0 0 1 0 2.1L13 20"/><path d="M8 20 17 11"/></svg><span class="sym-tag" id="eraserTag"></span></button>
+  <button class="tool fill" data-tool="fill" title="ถังสี · แตะซ้ำเพื่อเลือกโหมด"><svg viewBox="0 0 24 24"><path d="M11.3 2 9.9 3.4l2 2L3.5 13.8a2 2 0 0 0 0 2.8l4.9 4.9a2 2 0 0 0 2.8 0l8.4-8.4a2 2 0 0 0 0-2.8L11.3 2Zm.3 5.5 5.4 5.4H6.2l5.4-5.4Z"/><path d="M20.5 15.5s1.9 2.2 1.9 3.4a1.9 1.9 0 1 1-3.8 0c0-1.2 1.9-3.4 1.9-3.4Z"/></svg><span class="sym-tag" id="fillTag"></span></button>
   <button class="tool" data-tool="picker" title="ดูดสี"><svg viewBox="0 0 24 24"><path d="m2 22 1-4 10-10"/><path d="m13.5 8.5 2 2"/><path d="M18.4 2.6a2.1 2.1 0 0 1 3 3l-2.4 2.4 1 1a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4l1-1a1 1 0 0 1 1.4 0l1 1 2.4-2.4Z"/></svg></button>
   <div class="divider"></div>
-  <button class="tool" data-tool="line" title="เส้นตรง"><svg viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4"/><circle cx="4" cy="20" r="2"/><circle cx="20" cy="4" r="2"/></svg></button>
-  <button class="tool" data-tool="rect" title="สี่เหลี่ยม"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/></svg></button>
+  <button class="tool" data-tool="line" title="เส้นตรง · แตะซ้ำเพื่อตั้งขนาด"><svg viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4"/><circle cx="4" cy="20" r="2"/><circle cx="20" cy="4" r="2"/></svg><span class="sym-tag" id="lineTag"></span></button>
+  <button class="tool" data-tool="rect" title="สี่เหลี่ยม · แตะซ้ำเพื่อตั้งขนาด/ทึบ"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/></svg><span class="sym-tag" id="rectTag"></span></button>
   <div class="divider"></div>
   <button class="tool" id="btnFit" title="พอดีจอ"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
   <button class="tool" id="btnTile" title="โหมดต่อลาย (seamless)"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg></button>
   <button class="tool" id="btnResize" title="ปรับขนาดผืนผ้าใบ"><svg viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/><rect x="3" y="3" width="7" height="7" rx="1"/></svg></button>
+  <button class="tool" id="btnLock" title="ล็อกพื้นที่โปร่งใส — วาดทับเฉพาะจุดที่มีสีอยู่แล้ว"><svg viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg></button>
   <button class="tool" id="btnSym" title="วาดสมมาตร"><svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22" stroke-dasharray="3 3"/><path d="M9 6 4 12l5 6"/><path d="M15 6l5 6-5 6"/></svg><span class="sym-tag" id="symTag"></span></button>
-  <button class="tool" id="btnFlip" title="พลิกภาพ"><svg viewBox="0 0 24 24"><path d="M12 3v18" stroke-dasharray="3 3"/><path d="M8 7H3l5 10V7Z"/><path d="M16 7h5l-5 10V7Z"/></svg></button>
+  <button class="tool" id="btnFlip" title="พลิก / หมุนภาพ"><svg viewBox="0 0 24 24"><path d="M12 3v18" stroke-dasharray="3 3"/><path d="M8 7H3l5 10V7Z"/><path d="M16 7h5l-5 10V7Z"/></svg></button>
   <button class="tool" id="btnGrid" title="เส้นกริด"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1.5"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg></button>
 </div>
 
@@ -828,6 +829,13 @@ const S = {
   fps:8,
   playing:false,
   tool:'pencil',
+  brush:1,             // pencil/eraser nib size in pixels (square)
+  lockAlpha:false,     // paint only where pixels already exist
+  eraseMode:'brush',   // 'brush' | 'color' — erase what you touch, or every pixel of that colour
+  eraseScope:'frame',  // 'frame' | 'all' — how far a colour erase reaches
+  shapeFill:false,     // rectangles: outline or solid
+  fillMode:'flood',    // 'flood' = spread from the tap, 'replace' = every matching pixel
+  fillScope:'frame',   // 'frame' | 'all' — how far a colour replace reaches
   color:'#2b2d42',
   showGrid:true,
   onion:false,
@@ -1123,6 +1131,8 @@ function setPixel(data, x, y, rgba){
     y = ((y % S.H) + S.H) % S.H;
   } else if(x<0||y<0||x>=S.W||y>=S.H) return false;
   const i = (y*S.W + x)*4;
+  // alpha lock: shading stays inside the shape instead of spilling past it
+  if(S.lockAlpha && data[i+3] === 0) return false;
   if(data[i]===rgba[0]&&data[i+1]===rgba[1]&&data[i+2]===rgba[2]&&data[i+3]===rgba[3]) return false;
   data[i]=rgba[0]; data[i+1]=rgba[1]; data[i+2]=rgba[2]; data[i+3]=rgba[3];
   return true;
@@ -1136,12 +1146,25 @@ function getPixel(data, x, y){
   const i = (y*S.W + x)*4;
   return [data[i],data[i+1],data[i+2],data[i+3]];
 }
-function drawLine(data, x0,y0,x1,y1, rgba){
+/* Square nib, not round: a circular mask at 2-3px reads as a lopsided blob,
+   and squares are what every pixel editor uses at these sizes. Even sizes are
+   biased up-left of the cursor, which is the usual convention. */
+function stampPixel(data, x, y, rgba){
+  const n = S.brush|0;
+  if(n <= 1) return setPixel(data, x, y, rgba);
+  const h = (n-1) >> 1;
+  let changed = false;
+  for(let dy=-h; dy<n-h; dy++)
+    for(let dx=-h; dx<n-h; dx++)
+      if(setPixel(data, x+dx, y+dy, rgba)) changed = true;
+  return changed;
+}
+function drawLine(data, x0,y0,x1,y1, rgba, plot = setPixel){
   const dx = Math.abs(x1-x0), sx = x0<x1?1:-1;
   const dy = -Math.abs(y1-y0), sy = y0<y1?1:-1;
   let err = dx+dy, changed=false;
   while(true){
-    if(setPixel(data,x0,y0,rgba)) changed=true;
+    if(plot(data,x0,y0,rgba)) changed=true;
     if(x0===x1 && y0===y1) break;
     const e2 = 2*err;
     if(e2 >= dy){ err += dy; x0 += sx; }
@@ -1149,12 +1172,19 @@ function drawLine(data, x0,y0,x1,y1, rgba){
   }
   return changed;
 }
-function drawRect(data, x0,y0,x1,y1, rgba){
+function drawRect(data, x0,y0,x1,y1, rgba, plot = setPixel, filled = false){
   const [ax,bx] = x0<x1?[x0,x1]:[x1,x0];
   const [ay,by] = y0<y1?[y0,y1]:[y1,y0];
   let c=false;
-  for(let x=ax;x<=bx;x++){ if(setPixel(data,x,ay,rgba))c=true; if(setPixel(data,x,by,rgba))c=true; }
-  for(let y=ay;y<=by;y++){ if(setPixel(data,ax,y,rgba))c=true; if(setPixel(data,bx,y,rgba))c=true; }
+  // a solid rect is defined by its edges, so the interior is laid down one
+  // pixel at a time — stamping it with a wide nib would only bulge the corners
+  if(filled){
+    for(let y=ay;y<=by;y++)
+      for(let x=ax;x<=bx;x++) if(setPixel(data,x,y,rgba)) c=true;
+    return c;
+  }
+  for(let x=ax;x<=bx;x++){ if(plot(data,x,ay,rgba))c=true; if(plot(data,x,by,rgba))c=true; }
+  for(let y=ay;y<=by;y++){ if(plot(data,ax,y,rgba))c=true; if(plot(data,bx,y,rgba))c=true; }
   return c;
 }
 /* ── MIRROR DRAWING ──────────────────────────────────────────────────
@@ -1172,20 +1202,47 @@ function symPts(x, y){
   if(S.sym === 3) out.push({x:symX(x), y:symY(y)});
   return out;
 }
-function symSetPixel(data, x, y, rgba){
-  for(const q of symPts(x, y)) setPixel(data, q.x, q.y, rgba);
+function symSetPixel(data, x, y, rgba, plot = setPixel){
+  for(const q of symPts(x, y)) plot(data, q.x, q.y, rgba);
 }
-function symDrawLine(data, x0,y0,x1,y1, rgba){
-  drawLine(data, x0,y0,x1,y1, rgba);
-  if(S.sym === 1 || S.sym === 3) drawLine(data, symX(x0),y0,symX(x1),y1, rgba);
-  if(S.sym === 2 || S.sym === 3) drawLine(data, x0,symY(y0),x1,symY(y1), rgba);
-  if(S.sym === 3) drawLine(data, symX(x0),symY(y0),symX(x1),symY(y1), rgba);
+function symDrawLine(data, x0,y0,x1,y1, rgba, plot = setPixel){
+  drawLine(data, x0,y0,x1,y1, rgba, plot);
+  if(S.sym === 1 || S.sym === 3) drawLine(data, symX(x0),y0,symX(x1),y1, rgba, plot);
+  if(S.sym === 2 || S.sym === 3) drawLine(data, x0,symY(y0),x1,symY(y1), rgba, plot);
+  if(S.sym === 3) drawLine(data, symX(x0),symY(y0),symX(x1),symY(y1), rgba, plot);
 }
-function symDrawRect(data, x0,y0,x1,y1, rgba){
-  drawRect(data, x0,y0,x1,y1, rgba);
-  if(S.sym === 1 || S.sym === 3) drawRect(data, symX(x0),y0,symX(x1),y1, rgba);
-  if(S.sym === 2 || S.sym === 3) drawRect(data, x0,symY(y0),x1,symY(y1), rgba);
-  if(S.sym === 3) drawRect(data, symX(x0),symY(y0),symX(x1),symY(y1), rgba);
+
+/* Erase by colour: sample the pixel under the finger, then clear every pixel
+   that matches it exactly. No tolerance — pixel art has flat colours, and a
+   fuzzy match would eat the anti-aliased edges of imported art unpredictably. */
+function swapColorAt(x, y, to, scope){
+  if(x<0 || y<0 || x>=S.W || y>=S.H) return 0;
+  const L = S.layers[S.curLayer];
+  if(!L || L.ref) return 0;
+  const src = L.frames[S.curFrame];
+  const i = (y*S.W + x)*4;
+  const r = src[i], g = src[i+1], b = src[i+2], a = src[i+3];
+  if(a === 0) return 0;                       // nothing there to swap
+  if(r===to[0] && g===to[1] && b===to[2] && a===to[3]) return 0;
+  const targets = scope === 'all' ? L.frames : [src];
+  let hits = 0;
+  for(const f of targets){
+    if(!f) continue;
+    for(let p=0;p<f.length;p+=4){
+      if(f[p]===r && f[p+1]===g && f[p+2]===b && f[p+3]===a){
+        f[p]=to[0]; f[p+1]=to[1]; f[p+2]=to[2]; f[p+3]=to[3];
+        hits++;
+      }
+    }
+  }
+  return hits;
+}
+function eraseColorAt(x, y){ return swapColorAt(x, y, [0,0,0,0], S.eraseScope); }
+function symDrawRect(data, x0,y0,x1,y1, rgba, plot = setPixel, filled = false){
+  drawRect(data, x0,y0,x1,y1, rgba, plot, filled);
+  if(S.sym === 1 || S.sym === 3) drawRect(data, symX(x0),y0,symX(x1),y1, rgba, plot, filled);
+  if(S.sym === 2 || S.sym === 3) drawRect(data, x0,symY(y0),x1,symY(y1), rgba, plot, filled);
+  if(S.sym === 3) drawRect(data, symX(x0),symY(y0),symX(x1),symY(y1), rgba, plot, filled);
 }
 function symFloodFill(data, x, y, rgba){
   // the mirrored seed may already be inside the region the first fill
@@ -1202,6 +1259,9 @@ function setSym(mode){
 
 function floodFill(data, sx, sy, rgba){
   const target = getPixel(data, sx, sy);
+  // with the lock on, setPixel refuses to write here — and the spread test
+  // reads the pixel it just tried to change, so it would never terminate
+  if(S.lockAlpha && target[3] === 0) return false;
   if(target[0]===rgba[0]&&target[1]===rgba[1]&&target[2]===rgba[2]&&target[3]===rgba[3]) return false;
   const stack = [[sx,sy]];
   const match = (x,y)=>{
@@ -1242,11 +1302,34 @@ function pushLayerAdd(index){
   S.redoStack = [];
   updateUndoBtns();
 }
+/* The per-stroke snapshot only covers the current frame. A colour erase that
+   reaches every frame has to record them all, or undo silently restores one. */
+function swapUndoForFrames(li){
+  const L = S.layers[li];
+  if(!L || L.ref) return;
+  S.undoStack.pop();                     // drop the single-frame snapshot
+  S.undoStack.push({
+    seq: ++undoSeq, kind:'frames', l:li,
+    snaps: L.frames.map((f,i)=>({f:i, data:new Uint8ClampedArray(f)}))
+  });
+  if(S.undoStack.length > MAX_UNDO) S.undoStack.shift();
+  S.redoStack = [];
+  updateUndoBtns();
+}
+function applyFrameSnaps(st, intoStack){
+  const L = S.layers[st.l];
+  if(!L) return;
+  const back = st.snaps.map(s => ({f:s.f, data:new Uint8ClampedArray(L.frames[s.f])}));
+  for(const s of st.snaps) if(L.frames[s.f]) L.frames[s.f].set(s.data);
+  intoStack.push({kind:'frames', l:st.l, snaps:back});
+  bufDirty = true; renderAll(); updateUndoBtns(); markProjectDirty();
+}
 function undo(){
   if(!S.undoStack.length) return;
   // a lifted selection would get stamped back on top of the restored pixels
   if(S.float){ S.float = null; S.floatRect = null; S.sel = null; }
   const st = S.undoStack.pop();
+  if(st.kind === 'frames'){ applyFrameSnaps(st, S.redoStack); return; }
   if(st.kind === 'addlayer'){
     const L = S.layers.splice(st.index, 1)[0];
     S.redoStack.push({kind:'addlayer', index:st.index, layer:L});
@@ -1265,6 +1348,7 @@ function redo(){
   if(!S.redoStack.length) return;
   if(S.float){ S.float = null; S.floatRect = null; S.sel = null; }
   const st = S.redoStack.pop();
+  if(st.kind === 'frames'){ applyFrameSnaps(st, S.undoStack); return; }
   if(st.kind === 'addlayer'){
     S.layers.splice(st.index, 0, st.layer);
     S.undoStack.push({seq: ++undoSeq, kind:'addlayer', index:st.index});
@@ -1592,7 +1676,16 @@ view.addEventListener('pointerdown', e => {
   drawing = true;
   const data = curData();
 
-  if(S.tool === 'fill'){
+  if(S.tool === 'fill' && S.fillMode === 'replace'){
+    clearTimeout(pressTimer);
+    if(S.fillScope === 'all') swapUndoForFrames(S.curLayer);
+    const before = getPixel(data, p.x, p.y);
+    const hits = swapColorAt(p.x, p.y, hexToRgba(S.color), S.fillScope);
+    drawing = false;
+    if(hits){ commitRecent(); markDirty(); }
+    else if(before[3] === 0) toast('ตรงนั้นโปร่งใส — โหมดแทนที่สีต้องแตะบนสีที่มีอยู่');
+    else toast('เป็นสีนี้อยู่แล้ว');
+  } else if(S.tool === 'fill'){
     clearTimeout(pressTimer);
     symFloodFill(data, p.x, p.y, hexToRgba(S.color));
     drawing = false;
@@ -1601,9 +1694,16 @@ view.addEventListener('pointerdown', e => {
   } else if(S.tool === 'line' || S.tool === 'rect'){
     shapeStart = p;
     shapeBackup = new Uint8ClampedArray(data);
+  } else if(S.tool === 'eraser' && S.eraseMode === 'color'){
+    clearTimeout(pressTimer);
+    if(S.eraseScope === 'all') swapUndoForFrames(S.curLayer);
+    const hits = eraseColorAt(p.x, p.y);
+    drawing = false;
+    if(hits) markDirty();
+    else toast('ตรงนั้นโปร่งใสอยู่แล้ว');
   } else {
     const rgba = S.tool === 'eraser' ? [0,0,0,0] : hexToRgba(S.color);
-    symSetPixel(data, p.x, p.y, rgba);
+    symSetPixel(data, p.x, p.y, rgba, stampPixel);
     lastPx = p;
     markDirty();
   }
@@ -1676,13 +1776,13 @@ view.addEventListener('pointermove', e => {
   if(S.tool === 'line' || S.tool === 'rect'){
     data.set(shapeBackup);
     const rgba = hexToRgba(S.color);
-    if(S.tool === 'line') symDrawLine(data, shapeStart.x, shapeStart.y, p.x, p.y, rgba);
-    else symDrawRect(data, shapeStart.x, shapeStart.y, p.x, p.y, rgba);
+    if(S.tool === 'line') symDrawLine(data, shapeStart.x, shapeStart.y, p.x, p.y, rgba, stampPixel);
+    else symDrawRect(data, shapeStart.x, shapeStart.y, p.x, p.y, rgba, stampPixel, S.shapeFill);
     markDirty();
   } else {
     if(lastPx && (lastPx.x !== p.x || lastPx.y !== p.y)){
       const rgba = S.tool === 'eraser' ? [0,0,0,0] : hexToRgba(S.color);
-      symDrawLine(data, lastPx.x, lastPx.y, p.x, p.y, rgba);
+      symDrawLine(data, lastPx.x, lastPx.y, p.x, p.y, rgba, stampPixel);
       lastPx = p;
       markDirty();
     }
@@ -2302,8 +2402,134 @@ function selectTool(t){
   document.querySelectorAll('.tool[data-tool]').forEach(b=>b.classList.toggle('on', b.dataset.tool===t));
 }
 document.querySelectorAll('.tool[data-tool]').forEach(b=>{
-  b.onclick = ()=>selectTool(b.dataset.tool);
+  b.onclick = ()=>{
+    const t = b.dataset.tool;
+    // tapping the tool you're already holding opens its options — the usual
+    // shortcut in drawing apps, and the tool bar has no room for more buttons
+    if(t === S.tool && OPT_TOOLS.includes(t)) return showBrushOpts();
+    selectTool(t);
+  };
 });
+
+const BRUSH_SIZES = [1,2,3,4,6,8];
+const OPT_TOOLS = ['pencil','eraser','line','rect','fill'];
+const TOOL_TITLE = {pencil:'ดินสอ', eraser:'ยางลบ', line:'เส้นตรง', rect:'สี่เหลี่ยม', fill:'ถังสี'};
+function updateToolTags(){
+  const n = S.brush|0, tag = n > 1 ? String(n) : '';
+  const set = (id, v) => { const el = $(id); if(el) el.textContent = v; };
+  set('pencilTag', tag);
+  set('eraserTag', S.eraseMode === 'color' ? '◈' : tag);
+  set('lineTag',   tag);
+  set('rectTag',   S.shapeFill ? '■' : tag);
+  set('fillTag',   S.fillMode === 'replace' ? '◈' : '');
+}
+function stepBrush(dir){
+  const i = BRUSH_SIZES.indexOf(S.brush);
+  const j = Math.max(0, Math.min(BRUSH_SIZES.length-1, (i < 0 ? 0 : i) + dir));
+  S.brush = BRUSH_SIZES[j];
+  updateToolTags();
+  toast('หัวแปรง ' + S.brush + ' px');
+}
+
+function showBrushOpts(){
+  const tool = S.tool;
+  const isEraser = tool === 'eraser';
+  const isFill   = tool === 'fill';
+  const isRect   = tool === 'rect';
+  const hasNib   = !isFill;
+  openModal(`
+    <h2>${TOOL_TITLE[tool] || 'เครื่องมือ'}</h2>
+    <p class="sub">แตะเครื่องมือเดิมซ้ำเพื่อเปิดหน้านี้${hasNib ? ' · คีย์บอร์ดกด [ ] เปลี่ยนขนาดได้เลย' : ''}</p>
+
+    ${hasNib ? `
+    <div class="px-stage" style="min-height:0;padding:12px"><canvas id="brPrev"></canvas></div>
+
+    <div class="sec-lbl">ขนาดหัว (พิกเซล)</div>
+    <div class="seg" id="brSize">
+      ${BRUSH_SIZES.map(n => `<button data-n="${n}"${S.brush===n?' class="on"':''}>${n}</button>`).join('')}
+    </div>` : ''}
+    ${isRect ? `
+    <div class="sec-lbl">รูปทรง</div>
+    <div class="seg" id="brShape">
+      <button data-f="0"${!S.shapeFill?' class="on"':''}>เฉพาะขอบ</button>
+      <button data-f="1"${S.shapeFill?' class="on"':''}>ทึบทั้งก้อน</button>
+    </div>
+    <p class="sub" style="font-size:10.5px;margin-top:-8px">แบบทึบใช้ขอบเป็นตัวกำหนดพื้นที่ ขนาดหัวจึงไม่มีผล</p>` : ''}
+    ${isFill ? `
+    <div class="sec-lbl">วิธีเท</div>
+    <div class="seg" id="brFillMode">
+      <button data-m="flood"${S.fillMode==='flood'?' class="on"':''}>เทต่อเนื่อง</button>
+      <button data-m="replace"${S.fillMode==='replace'?' class="on"':''}>แตะสีไหน แทนสีนั้น</button>
+    </div>
+    <div id="brFillScopeWrap"${S.fillMode==='replace'?'':' style="display:none"'}>
+      <div class="sec-lbl">แทนที่แค่ไหน</div>
+      <div class="seg" id="brFillScope">
+        <button data-s="frame"${S.fillScope==='frame'?' class="on"':''}>เฟรมนี้</button>
+        <button data-s="all"${S.fillScope==='all'?' class="on"':''}>ทุกเฟรมในเลเยอร์</button>
+      </div>
+      <p class="sub" style="font-size:10.5px;margin-top:-8px">เทียบสีแบบตรงเป๊ะ · แตะได้เฉพาะจุดที่มีสีอยู่ กันเผลอถมพื้นโปร่งทั้งผืน</p>
+    </div>` : ''}
+    ${isEraser ? `
+    <div class="sec-lbl">วิธีลบ</div>
+    <div class="seg" id="brMode">
+      <button data-m="brush"${S.eraseMode==='brush'?' class="on"':''}>ลบตามที่ลาก</button>
+      <button data-m="color"${S.eraseMode==='color'?' class="on"':''}>แตะสีไหน ลบสีนั้น</button>
+    </div>
+    <div id="brScopeWrap"${S.eraseMode==='color'?'':' style="display:none"'}>
+      <div class="sec-lbl">ลบสีนั้นแค่ไหน</div>
+      <div class="seg" id="brScope">
+        <button data-s="frame"${S.eraseScope==='frame'?' class="on"':''}>เฟรมนี้</button>
+        <button data-s="all"${S.eraseScope==='all'?' class="on"':''}>ทุกเฟรมในเลเยอร์</button>
+      </div>
+      <p class="sub" style="font-size:10.5px;margin-top:-8px">เทียบสีแบบตรงเป๊ะ ไม่มีค่าความคลาดเคลื่อน · ลบเฉพาะเลเยอร์ที่เลือกอยู่</p>
+    </div>` : ''}
+
+    <button class="big-btn" id="brDone">เสร็จ</button>
+  `);
+
+  const cv = $('brPrev'), ctx = cv ? cv.getContext('2d') : null;
+  function drawNib(){
+    if(!cv) return;
+    const G = 15, c = 7;
+    cv.width = G; cv.height = G;
+    ctx.clearRect(0,0,G,G);
+    ctx.fillStyle = isEraser ? '#ff5d73' : S.color;
+    if(isRect && S.shapeFill){
+      ctx.fillRect(3, 4, 9, 7);              // solid rect ignores the nib
+      return;
+    }
+    const n = S.brush|0, h = (n-1) >> 1;
+    for(let dy=-h; dy<n-h; dy++)
+      for(let dx=-h; dx<n-h; dx++) ctx.fillRect(c+dx, c+dy, 1, 1);
+  }
+  const pick = (wrap, attr, set) => document.querySelectorAll('#'+wrap+' button').forEach(b=>{
+    b.onclick = ()=>{
+      set(b.dataset[attr]);
+      document.querySelectorAll('#'+wrap+' button').forEach(x=>x.classList.toggle('on', x===b));
+      drawNib(); updateToolTags();
+    };
+  });
+  pick('brSize', 'n', v => S.brush = +v);
+  if(isRect) pick('brShape', 'f', v => S.shapeFill = v === '1');
+  if(isFill){
+    pick('brFillMode', 'm', v => {
+      S.fillMode = v;
+      const w = $('brFillScopeWrap');
+      if(w) w.style.display = v === 'replace' ? '' : 'none';
+    });
+    pick('brFillScope', 's', v => S.fillScope = v);
+  }
+  if(isEraser){
+    pick('brMode', 'm', v => {
+      S.eraseMode = v;
+      const w = $('brScopeWrap');
+      if(w) w.style.display = v === 'color' ? '' : 'none';
+    });
+    pick('brScope', 's', v => S.eraseScope = v);
+  }
+  $('brDone').onclick = closeModal;
+  drawNib();
+}
 
 /* ══════════════ EXPORT ══════════════ */
 function flattenFrame(idx){
@@ -2331,43 +2557,86 @@ function download(blob, name){
 }
 function expStatus(msg){ const e = $('expStatus'); if(e) e.textContent = msg; }
 
+/* Export scale. A 32px sprite posted anywhere lands as a thumbnail, so the
+   art gets multiplied on the way out — nearest neighbour, so it stays crisp.
+   The project embedded in the sheet is unaffected: it always carries the real
+   pixel grid, whatever the image was scaled to. */
+let expScale = 1;
+const EXP_SCALES = [1, 2, 4, 8];
+// iOS Safari refuses canvases past 4096x4096 and hands back a blank one
+const CANVAS_AREA_CAP = 4096 * 4096;
+function safeExpScale(w, h){
+  let s = expScale;
+  while(s > 1 && w*s * h*s > CANVAS_AREA_CAP) s = s === 8 ? 4 : (s === 4 ? 2 : 1);
+  return s;
+}
+
+async function exportFramePNG(){
+  expStatus('กำลังสร้าง PNG…');
+  const k = safeExpScale(S.W, S.H);
+  const c = document.createElement('canvas');
+  c.width = S.W*k; c.height = S.H*k;
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(flattenFrame(S.curFrame), 0, 0, c.width, c.height);
+  c.toBlob(async b=>{
+    // carries the whole project too, same as the sheet
+    const out = await pngWithProject(b, {author: lsGet(SH_NAME, '')});
+    download(out, `frame_${String(S.curFrame+1).padStart(2,'0')}_${S.W*k}x${S.H*k}.png`);
+    expStatus(`เสร็จ · เฟรม ${S.curFrame+1} · ${S.W*k}×${S.H*k}`);
+  }, 'image/png');
+}
+
 async function exportSheet(){
   expStatus('กำลังสร้าง sprite sheet…');
   const cols = Math.min(S.frameCount, Math.ceil(Math.sqrt(S.frameCount)));
   const rows = Math.ceil(S.frameCount / cols);
+  const k = safeExpScale(S.W*cols, S.H*rows);
   const c = document.createElement('canvas');
-  c.width = S.W*cols; c.height = S.H*rows;
+  c.width = S.W*cols*k; c.height = S.H*rows*k;
   const ctx = c.getContext('2d');
   ctx.imageSmoothingEnabled = false;
   for(let i=0;i<S.frameCount;i++){
     const f = flattenFrame(i);
-    ctx.drawImage(f, (i%cols)*S.W, Math.floor(i/cols)*S.H);
+    ctx.drawImage(f, (i%cols)*S.W*k, Math.floor(i/cols)*S.H*k, S.W*k, S.H*k);
   }
   c.toBlob(async b=>{
     // the sheet doubles as the project file — whoever gets it can open it
     const out = await pngWithProject(b, {author: lsGet(SH_NAME, '')});
-    download(out, `spritesheet_${S.W}x${S.H}_${cols}x${rows}.png`);
+    download(out, `spritesheet_${S.W*k}x${S.H*k}_${cols}x${rows}.png`);
     const kb = Math.round((out.size - b.size)/1024);
-    expStatus(`เสร็จ · ${cols}×${rows} เฟรม · เปิดกลับมาแก้ต่อได้ (+${kb} KB)`);
+    const cut = k < expScale ? ` (ลดจาก ×${expScale} เพราะภาพใหญ่เกินที่เบราว์เซอร์รับไหว)` : '';
+    expStatus(`เสร็จ · ${cols}×${rows} เฟรม · ×${k}${cut} · เปิดกลับมาแก้ต่อได้ (+${kb} KB)`);
   }, 'image/png');
 }
 async function exportZip(){
   if(typeof JSZip === 'undefined'){ expStatus('โหลด JSZip ไม่สำเร็จ — ตรวจอินเทอร์เน็ต'); return; }
   expStatus('กำลังบีบอัด…');
   const zip = new JSZip();
+  const k = safeExpScale(S.W, S.H);
   for(let i=0;i<S.frameCount;i++){
-    const f = flattenFrame(i);
+    let f = flattenFrame(i);
+    if(k > 1){
+      const c = document.createElement('canvas');
+      c.width = S.W*k; c.height = S.H*k;
+      const ctx = c.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(f, 0, 0, c.width, c.height);
+      f = c;
+    }
     const blob = await new Promise(r=>f.toBlob(r,'image/png'));
     zip.file(`frame_${String(i+1).padStart(3,'0')}.png`, blob);
   }
   const out = await zip.generateAsync({type:'blob'});
-  download(out, `frames_${S.W}x${S.H}.zip`);
-  expStatus(`เสร็จ · ${S.frameCount} ไฟล์`);
+  download(out, `frames_${S.W*k}x${S.H*k}.zip`);
+  expStatus(`เสร็จ · ${S.frameCount} ไฟล์ · ${S.W*k}×${S.H*k}`);
 }
 function exportGif(){
   if(typeof GIF === 'undefined'){ expStatus('โหลด gif.js ไม่สำเร็จ — ตรวจอินเทอร์เน็ต'); return; }
   expStatus('กำลังเข้ารหัส GIF…');
-  const scale = Math.max(1, Math.min(8, Math.floor(512/Math.max(S.W,S.H))));
+  const scale = expScale > 1
+    ? safeExpScale(S.W, S.H)
+    : Math.max(1, Math.min(8, Math.floor(512/Math.max(S.W,S.H))));
   const gif = new GIF({
     workers: 2, quality: 1, width: S.W*scale, height: S.H*scale,
     workerScript: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'
@@ -2393,96 +2662,6 @@ function exportGif(){
 /* ══════════════ CHARACTER TEMPLATES ══════════════ */
 /* Each template sets canvas size, layer split, frames, and animation tags
    so a character project starts ready to draw instead of ready to configure. */
-const CHAR_TEMPLATES = {
-  'ตัวจิ๋ว 16×16': {
-    w:16, h:16, note:'ไอคอน · RPG มุมบน ขนาดเล็ก',
-    layers:['เงา','ตัวละคร'],        // index 0 = ล่างสุด
-    clips:[['idle',2],['walk',4]]
-  },
-  'ตัวเล็ก 16×24': {
-    w:16, h:24, note:'RPG มุมบน มาตรฐาน',
-    layers:['เงา','ตัวละคร'],        // index 0 = ล่างสุด
-    clips:[['idle',2],['walk',4],['attack',3]]
-  },
-  'มาตรฐาน 32×32': {
-    w:32, h:32, note:'platformer · RPG ทั่วไป',
-    layers:['เงา','ตัวละคร'],        // index 0 = ล่างสุด
-    clips:[['idle',4],['walk',6],['jump',3],['attack',4]]
-  },
-  'สูง 32×48': {
-    w:32, h:48, note:'สัดส่วนใกล้คนจริง',
-    layers:['เงา','ตัวละคร'],        // index 0 = ล่างสุด
-    clips:[['idle',4],['walk',6],['run',6],['attack',4]]
-  },
-  'ใหญ่ 48×48': {
-    w:48, h:48, note:'บอส · ตัวละครหลักรายละเอียดสูง',
-    layers:['เงา','ตัวละคร'],        // index 0 = ล่างสุด
-    clips:[['idle',4],['walk',8],['attack',6],['hurt',2]]
-  },
-  'ครึ่งตัว 64×64': {
-    w:64, h:64, note:'portrait · หน้าตัวละคร',
-    layers:['พื้นหลัง','ตัวละคร'],   // index 0 = ล่างสุด
-    clips:[['idle',4],['talk',4]]
-  }
-};
-
-function templateFrameCount(t){
-  return t.clips.reduce((a,[,n]) => a+n, 0);
-}
-function templateTags(t){
-  let from = 0;
-  return t.clips.map(([name,n]) => {
-    const tag = {name, from, to: from+n-1};
-    from += n;
-    return tag;
-  });
-}
-/* Build the project described by a template. */
-function applyCharTemplate(key, opts){
-  const t = CHAR_TEMPLATES[key];
-  if(!t) return false;
-  opts = opts || {};
-  const frames = templateFrameCount(t);
-
-  stopPlayback();
-  curProjectId = null; curProjectName = null;
-
-  S.W = t.w; S.H = t.h;
-  S.frameCount = frames;
-  S.layers = t.layers.map((name, i) => ({
-    name,
-    visible: true,
-    opacity: 1,
-    frames: Array.from({length: frames}, () => new Uint8ClampedArray(t.w*t.h*4))
-  }));
-  // index 0 is the bottom of the stack, so the character sits last — and that
-  // is the layer the user should land on
-  S.curLayer = S.layers.length - 1;
-  S.curFrame = 0;
-  S.tags = templateTags(t);
-  S.tileMode = false;
-  S.sel = null; S.float = null; S.floatRect = null;
-  S.undoStack = []; S.redoStack = [];
-  if(opts.palette && PRESET_PALETTES[opts.palette]){
-    S.palette = PRESET_PALETTES[opts.palette].slice();
-  }
-  S.recent = [];
-
-  buf.width = t.w; buf.height = t.h;
-  scratch.width = t.w; scratch.height = t.h;
-  bufDirty = true;
-
-  $('fps').value = S.fps; $('fpsVal').textContent = S.fps + ' fps';
-  $('btnTile').classList.remove('on');
-  fitToScreen();
-  renderAll();
-  buildPalette();
-  renderRecent();
-  updateUndoBtns();
-  markProjectDirty();
-  return {frames, clips: t.clips.length};
-}
-
 /* ══════════════ SAVE / LOAD ══════════════ */
 const STORE_PREFIX = 'pxloom:';
 const STORE_INDEX  = 'pxloom:index';
@@ -3387,6 +3566,59 @@ const FLIP_SCOPE_LABEL = {
   frame: 'เฟรมนี้ ทุกเลเยอร์',
   all:   'ทั้งโปรเจกต์'
 };
+/* turn: 1 = 90° clockwise, 2 = 180°, 3 = 90° counter-clockwise.
+   A quarter turn swaps the buffer's dimensions unless the canvas is square. */
+function rotateBuffer(data, w, h, turn){
+  const nw = turn === 2 ? w : h, nh = turn === 2 ? h : w;
+  const out = new Uint8ClampedArray(nw*nh*4);
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      let nx, ny;
+      if(turn === 1){ nx = h-1-y; ny = x; }
+      else if(turn === 3){ nx = y; ny = w-1-x; }
+      else { nx = w-1-x; ny = h-1-y; }
+      const s = (y*w+x)*4, d = (ny*nw+nx)*4;
+      out[d]=data[s]; out[d+1]=data[s+1]; out[d+2]=data[s+2]; out[d+3]=data[s+3];
+    }
+  }
+  return out;
+}
+const TURN_LABEL = {1:'หมุนขวา 90°', 2:'หมุน 180°', 3:'หมุนซ้าย 90°'};
+function doRotate(turn, scope){
+  commitFloat();
+  S.sel = null;
+
+  // a quarter turn on a non-square canvas changes the canvas itself, so it
+  // can only be done to everything at once
+  if(turn !== 2 && S.W !== S.H){
+    applyTransform(S.H, S.W, f => rotateBuffer(f, S.W, S.H, turn), 'ก่อน' + TURN_LABEL[turn]);
+    toast(`${TURN_LABEL[turn]} · ผืนผ้าใบเป็น ${S.W}×${S.H}`);
+    return;
+  }
+
+  const wide = scope !== 'cell';
+  let saved = null;
+  if(wide) saved = saveRestorePoint('ก่อน' + TURN_LABEL[turn]);
+  else if(!S.layers[S.curLayer].ref) pushUndo();
+
+  const targets = (scope === 'cell' || scope === 'layer') ? [S.layers[S.curLayer]] : S.layers;
+  let skippedRef = false;
+  for(const L of targets){
+    // the guide is a placed bitmap with its own transform — rotating the
+    // artwork under it is fine, rotating it too is a different feature
+    if(L.ref){ skippedRef = true; continue; }
+    if(scope === 'cell' || scope === 'frame'){
+      L.frames[S.curFrame] = rotateBuffer(L.frames[S.curFrame], S.W, S.H, turn);
+    } else {
+      L.frames = L.frames.map(f => rotateBuffer(f, S.W, S.H, turn));
+    }
+  }
+  bufDirty = true;
+  renderAll();
+  markProjectDirty();
+  if(wide && saved) showRestoreBar(saved);
+  toast(`${TURN_LABEL[turn]} · ${FLIP_SCOPE_LABEL[scope]}` + (skippedRef ? ' (ภาพอ้างอิงไม่หมุนตาม)' : ''));
+}
 function doFlip(kind, scope){
   commitFloat();
   S.sel = null;
@@ -3419,13 +3651,16 @@ function showFlipDialog(){
   let kind = 'flipH', scope = 'cell';
   const refOnly = S.layers[S.curLayer].ref;
   openModal(`
-    <h2>พลิกภาพ</h2>
-    <p class="sub">เลเยอร์ตอนนี้: <b>${esc(S.layers[S.curLayer].name)}</b>${refOnly ? ' (อ้างอิง)' : ''}</p>
+    <h2>พลิก / หมุน</h2>
+    <p class="sub">เลเยอร์ตอนนี้: <b>${esc(S.layers[S.curLayer].name)}</b>${refOnly ? ' (อ้างอิง)' : ''} · ผืนผ้าใบ ${S.W}×${S.H}</p>
 
-    <div class="sec-lbl">ทิศทาง</div>
+    <div class="sec-lbl">ทำอะไร</div>
     <div class="seg" id="flKind">
-      <button data-k="flipH" class="on">↔ แนวนอน</button>
-      <button data-k="flipV">↕ แนวตั้ง</button>
+      <button data-k="flipH" class="on">↔</button>
+      <button data-k="flipV">↕</button>
+      <button data-k="rot3">↺ 90°</button>
+      <button data-k="rot1">↻ 90°</button>
+      <button data-k="rot2">180°</button>
     </div>
 
     <div class="sec-lbl">ขอบเขต</div>
@@ -3440,10 +3675,24 @@ function showFlipDialog(){
     <button class="big-btn" id="flGo">พลิก</button>
     <button class="big-btn ghost" id="flCancel">ยกเลิก</button>
   `);
+  // a quarter turn on a non-square canvas rewrites the canvas dimensions, so
+  // it can't be limited to one frame or one layer
+  const quarterSwaps = ()=> kind !== 'flipH' && kind !== 'flipV' && kind !== 'rot2' && S.W !== S.H;
   const upd = ()=>{
-    let msg = `พลิก${kind === 'flipH' ? 'แนวนอน' : 'แนวตั้ง'} · ${FLIP_SCOPE_LABEL[scope]}`;
-    if(scope !== 'cell') msg += `<br><span class="warn-inline">undo ย้อนไม่ได้ แต่กู้กลับได้จากแถบด้านบน</span>`;
-    if(scope === 'frame' || scope === 'all') msg += `<br>ภาพอ้างอิงพลิกตามไปด้วย`;
+    const forced = quarterSwaps();
+    document.querySelectorAll('#flScope button').forEach(b=>{
+      b.disabled = forced;
+      b.classList.toggle('on', forced ? b.dataset.s === 'all' : b.dataset.s === scope);
+    });
+    const turn = {rot1:1, rot2:2, rot3:3}[kind];
+    let msg = turn
+      ? `${TURN_LABEL[turn]} · ${FLIP_SCOPE_LABEL[forced ? 'all' : scope]}`
+      : `พลิก${kind === 'flipH' ? 'แนวนอน' : 'แนวตั้ง'} · ${FLIP_SCOPE_LABEL[scope]}`;
+    if(forced) msg += `<br><span class="warn-inline">ผ้าใบไม่จัตุรัส — หมุน 90° ได้เฉพาะทั้งโปรเจกต์ และจะกลายเป็น ${S.H}×${S.W}</span>`;
+    if((forced || scope !== 'cell')) msg += `<br><span class="warn-inline">undo ย้อนไม่ได้ แต่กู้กลับได้จากแถบด้านบน</span>`;
+    if(turn) msg += `<br>ภาพอ้างอิงไม่หมุนตาม`;
+    else if(scope === 'frame' || scope === 'all') msg += `<br>ภาพอ้างอิงพลิกตามไปด้วย`;
+    $('flGo').textContent = turn ? 'หมุน' : 'พลิก';
     $('flPrev').innerHTML = msg;
   };
   document.querySelectorAll('#flKind button').forEach(b=>{
@@ -3454,7 +3703,12 @@ function showFlipDialog(){
     b.onclick = ()=>{ scope = b.dataset.s;
       document.querySelectorAll('#flScope button').forEach(x=>x.classList.toggle('on', x===b)); upd(); };
   });
-  $('flGo').onclick = ()=>{ closeModal(); setTimeout(()=>doFlip(kind, scope), 20); };
+  $('flGo').onclick = ()=>{
+    const turn = {rot1:1, rot2:2, rot3:3}[kind];
+    const sc = quarterSwaps() ? 'all' : scope;
+    closeModal();
+    setTimeout(()=> turn ? doRotate(turn, sc) : doFlip(kind, sc), 20);
+  };
   $('flCancel').onclick = closeModal;
   upd();
 }
@@ -3671,10 +3925,6 @@ function showHome(){
 
     <div class="hr"></div>
     <div class="sec-lbl">เริ่มงานใหม่</div>
-    <button class="exp-opt" id="hmChar">
-      <span class="ic" style="background:#7c5cff">\u{1F464}</span>
-      <span class="tx"><b>เทมเพลตตัวละคร</b><span>ตั้งขนาด เฟรม และช่วงอนิเมชั่นให้พร้อม</span></span>
-    </button>
     <button class="exp-opt" id="hmBlank">
       <span class="ic" style="background:var(--panel);border:1px solid var(--line)">+</span>
       <span class="tx"><b>ผืนผ้าใบเปล่า</b><span>กำหนดขนาดเอง</span></span>
@@ -3711,7 +3961,6 @@ function showHome(){
   if($('hmBack')) $('hmBack').onclick = closeModal;
   if($('hmClose')) $('hmClose').onclick = closeModal;
   if($('hmSave')) $('hmSave').onclick = ()=>{ closeModal(); setTimeout(showSaveLoad, 30); };
-  $('hmChar').onclick = guard(showCharTemplates);
   $('hmBlank').onclick = guard(showNewProject);
   $('hmImage').onclick = ()=>$('hmImgInput').click();
   $('hmImgInput').onchange = async e => {
@@ -3774,61 +4023,6 @@ function showHome(){
   }
 }
 
-function showCharTemplates(){
-  let chosen = 'มาตรฐาน 32×32';
-  let withPalette = true;
-
-  openModal(`
-    <h2>เทมเพลตตัวละคร</h2>
-    <p class="sub">ตั้งขนาด เลเยอร์ เฟรม และช่วงอนิเมชั่นให้พร้อม เปิดมาวาดได้เลย</p>
-    <div id="ctList"></div>
-
-    <label class="lock-row"><input type="checkbox" id="ctPal" checked> ใส่จานสีวาดคนให้ด้วย</label>
-
-    <div class="rz-preview" id="ctPrev"></div>
-    <button class="big-btn" id="ctGo">สร้าง</button>
-    <button class="big-btn ghost" id="ctCancel">ยกเลิก</button>
-  `);
-
-  function update(){
-    const t = CHAR_TEMPLATES[chosen];
-    const frames = templateFrameCount(t);
-    const tags = templateTags(t);
-    const mem = (t.w*t.h*4*frames*t.layers.length)/1048576;
-    $('ctPrev').innerHTML =
-      `<b>${chosen}</b><br>` +
-      `ผืนผ้าใบ <b>${t.w}×${t.h}</b> · <b>${frames}</b> เฟรม · <b>${t.layers.length}</b> เลเยอร์ (${t.layers.slice().reverse().join(' บน ')})<br>` +
-      `ช่วงอนิเมชั่น: ${tags.map(x=>`${x.name} ${x.from}-${x.to}`).join(' · ')}<br>` +
-      `RAM ≈ <b>${mem.toFixed(2)} MB</b>`;
-  }
-
-  const list = $('ctList');
-  for(const [name, t] of Object.entries(CHAR_TEMPLATES)){
-    const frames = templateFrameCount(t);
-    const b = document.createElement('button');
-    b.className = 'preset-row ct-row' + (name===chosen ? ' on' : '');
-    b.innerHTML = `<b>${name}</b>
-      <span class="pr-hint">${t.note} · ${frames} เฟรม · ${t.clips.map(c=>c[0]).join('/')}</span>`;
-    b.onclick = ()=>{
-      chosen = name;
-      list.querySelectorAll('.ct-row').forEach(x=>x.classList.toggle('on', x===b));
-      update();
-    };
-    list.appendChild(b);
-  }
-
-  $('ctPal').onchange = e => { withPalette = e.target.checked; };
-  $('ctGo').onclick = ()=>{
-    closeModal();
-    setTimeout(()=>{
-      const r = applyCharTemplate(chosen, withPalette ? {palette:'ชุดวาดคน (รวม)'} : {});
-      if(r) toast(`สร้าง "${chosen}" · ${r.frames} เฟรม ${r.clips} ช่วง`);
-    }, 30);
-  };
-  $('ctCancel').onclick = ()=>{ closeModal(); setTimeout(showHome, 30); };
-  update();
-}
-
 function showNewProject(){
   openModal(`
     <h2>โปรเจกต์ใหม่</h2>
@@ -3847,13 +4041,11 @@ function showNewProject(){
     </div>
     <p class="warn" id="npWarn"></p>
     <button class="big-btn" id="npGo">เริ่มวาด</button>
-    <button class="big-btn ghost" id="npChar">เทมเพลตตัวละคร</button>
     <button class="big-btn ghost" id="npImage">เริ่มจากภาพ (PNG/JPG)</button>
     <input type="file" id="npImgInput" accept="image/*" style="display:none">
     ${hasAutosave() ? '<button class="big-btn ghost" id="npRestore">กู้งานล่าสุดที่ค้างไว้</button>' : ''}
     ${readIndex().length ? '<button class="big-btn ghost" id="npOpen">เปิดงานที่บันทึกไว้ ('+readIndex().length+')</button>' : ''}
   `);
-  $('npChar').onclick = ()=>{ closeModal(); showCharTemplates(); };
   $('npImage').onclick = ()=>$('npImgInput').click();
   $('npImgInput').onchange = (e)=>{
     const f = e.target.files[0];
@@ -3917,10 +4109,6 @@ function showSaveLoad(){
 
     <div class="hr"></div>
     <div class="sec-lbl">เริ่มงานใหม่</div>
-    <button class="exp-opt" id="slNewChar">
-      <span class="ic" style="background:#7c5cff">👤</span>
-      <span class="tx"><b>เทมเพลตตัวละคร</b><span>ตั้งขนาด เฟรม และช่วงอนิเมชั่นให้พร้อม</span></span>
-    </button>
     <button class="exp-opt" id="slNewBlank">
       <span class="ic" style="background:var(--panel);border:1px solid var(--line)">+</span>
       <span class="tx"><b>ผืนผ้าใบเปล่า</b><span>กำหนดขนาดเอง</span></span>
@@ -4006,7 +4194,6 @@ function showSaveLoad(){
     closeModal();
     setTimeout(fn, 30);
   };
-  $('slNewChar').onclick = guardNew(showCharTemplates);
   $('slNewBlank').onclick = guardNew(showNewProject);
   $('slImgIn').onclick = ()=>$('slImgInput').click();
   $('slImgInput').onchange = async (e)=>{
@@ -5164,6 +5351,17 @@ function showExport(){
   openModal(`
     <h2>ส่งออกงาน</h2>
     <p class="sub">${S.frameCount} เฟรม · ${S.layers.length} เลเยอร์ · ${S.W}×${S.H} px</p>
+
+    <div class="sec-lbl">ขยายตอนออก</div>
+    <div class="seg" id="expScaleSeg">
+      ${EXP_SCALES.map(x => `<button data-x="${x}"${expScale===x?' class="on"':''}>×${x}</button>`).join('')}
+    </div>
+    <p class="sub" id="expScaleInfo" style="margin-top:-8px"></p>
+
+    <button class="exp-opt" id="eFrame">
+      <span class="ic">PNG</span>
+      <span class="tx"><b>เฟรมนี้ใบเดียว</b><span>เฟรม ${S.curFrame+1} เป็นภาพนิ่ง · ฝังโปรเจกต์ไว้เหมือนกัน</span></span>
+    </button>
     <button class="exp-opt" id="eSheet">
       <span class="ic">PNG</span>
       <span class="tx"><b>Sprite sheet</b><span>ทุกเฟรมในภาพเดียว · ฝังโปรเจกต์ไว้ให้เปิดแก้ต่อได้</span></span>
@@ -5205,12 +5403,30 @@ function showExport(){
     <button class="big-btn ghost" id="eClose">ปิด</button>
     <button class="sup-btn" id="eSupport"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.7 1.1-1a5.5 5.5 0 0 0 0-7.9Z"/></svg> สนับสนุนผู้พัฒนา</button>
   `);
+  $('eFrame').onclick = exportFramePNG;
   $('eSheet').onclick = exportSheet;
   $('eZip').onclick = exportZip;
   $('eGif').onclick = exportGif;
   $('ePhaser').onclick = ()=>exportAtlas('phaser');
   $('eGodot').onclick = ()=>exportAtlas('godot');
   $('eAse').onclick = ()=>exportAtlas('aseprite');
+  const updScale = ()=>{
+    const {cols, rows} = sheetLayout();
+    const k = safeExpScale(S.W*cols, S.H*rows);
+    let msg = `เฟรมละ <b>${S.W*expScale}×${S.H*expScale}</b> · sheet <b>${S.W*cols*k}×${S.H*rows*k}</b>`;
+    if(k < expScale) msg += `<br><span class="warn-inline">sheet ที่ ×${expScale} ใหญ่เกินที่เบราว์เซอร์วาดไหว จะออกที่ ×${k} แทน</span>`;
+    if(expScale > 1) msg += `<br>ขยายแบบพิกเซลคมๆ · โปรเจกต์ที่ฝังในไฟล์ยังเป็นขนาดจริง ${S.W}×${S.H}`;
+    $('expScaleInfo').innerHTML = msg;
+  };
+  document.querySelectorAll('#expScaleSeg button').forEach(b=>{
+    b.onclick = ()=>{
+      expScale = +b.dataset.x;
+      document.querySelectorAll('#expScaleSeg button').forEach(x=>x.classList.toggle('on', x===b));
+      updScale();
+    };
+  });
+  updScale();
+
   $('eShare').onclick = ()=>{ closeModal(); setTimeout(showShare, 30); };
   $('eGallery').onclick = ()=>{ closeModal(); setTimeout(()=>showGallery('new'), 30); };
   $('eClose').onclick = closeModal;
@@ -5689,6 +5905,8 @@ document.addEventListener('keydown', e=>{
     const arrows = {ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,-1], ArrowDown:[0,1]};
     if(arrows[k]){ e.preventDefault(); nudgeFloat(...arrows[k]); return; }
   }
+  if(k==='[' || k===']'){ e.preventDefault(); stepBrush(k===']' ? 1 : -1); return; }
+  if(k==='k'){ e.preventDefault(); $('btnLock').click(); return; }
   if(k===','){ e.preventDefault(); stepShade(-1); return; }
   if(k==='.'){ e.preventDefault(); stepShade(1); return; }
   if(TOOL_KEYS[k]){ selectTool(TOOL_KEYS[k]); return; }
@@ -5719,6 +5937,11 @@ document.addEventListener('drop', e => {
   });
 });
 
+$('btnLock').onclick = ()=>{
+  S.lockAlpha = !S.lockAlpha;
+  $('btnLock').classList.toggle('on', S.lockAlpha);
+  toast(S.lockAlpha ? 'ล็อกพื้นที่โปร่งใส — วาดได้เฉพาะจุดที่มีสีอยู่' : 'ปลดล็อกพื้นที่โปร่งใส');
+};
 $('chromeGrab').onclick = ()=>{
   const hidden = document.body.classList.toggle('chrome-hidden');
   resizeView();
@@ -5751,6 +5974,7 @@ let lastAnts = 0;
 $('btnGrid').classList.add('on');
 buildPalette();
 renderRecent();
+updateToolTags();
 resizeView();
 initProject(64, 64);
 showHome();
