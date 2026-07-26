@@ -28,8 +28,11 @@ export default async function handler(req, res) {
         hidden      BOOLEAN NOT NULL DEFAULT FALSE,
         edit_hash   TEXT NOT NULL,
         ip_hash     TEXT,
+        project     TEXT,
         created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
       )`;
+    /* ตารางที่สร้างไว้ก่อนหน้านี้ยังไม่มีคอลัมน์ project — เติมให้ตอนรีรัน */
+    await sql`ALTER TABLE posts ADD COLUMN IF NOT EXISTS project TEXT`;
     await sql`CREATE INDEX IF NOT EXISTS posts_new_idx ON posts (created_at DESC, id DESC) WHERE hidden = FALSE`;
     await sql`CREATE INDEX IF NOT EXISTS posts_top_idx ON posts (likes DESC, id DESC) WHERE hidden = FALSE`;
     await sql`CREATE INDEX IF NOT EXISTS posts_ip_idx ON posts (ip_hash, created_at DESC)`;

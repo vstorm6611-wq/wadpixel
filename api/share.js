@@ -5,6 +5,9 @@ import {
 } from './_lib.js';
 
 const MAX_PER_HOUR = 6;
+/* ข้อมูลโปรเจกต์ที่ส่งมาพร้อมผลงาน (gzip+base64 จากแอป) — ใหญ่กว่านี้ไม่เก็บลง DB
+   แต่ยังฝังอยู่ในไฟล์ PNG ให้ /api/project ไปแกะได้ */
+const MAX_PROJECT = 1_200_000;
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['POST', 'DELETE'])) return;
@@ -35,6 +38,7 @@ async function create(req, res) {
 
   const { buf, ext, mime } = decodeImage(body.image);
   const kind = ext === 'gif' ? 'gif' : 'sheet';
+  const project = cleanProject(body.project);
 
   const ip = ipHash(req);
 
@@ -56,10 +60,10 @@ async function create(req, res) {
 
   const [row] = await sql`
     INSERT INTO posts (slug, title, author, image_url, image_path,
-                       width, height, frames, fps, kind, edit_hash, ip_hash)
+                       width, height, frames, fps, kind, edit_hash, ip_hash, project)
     VALUES (${slug}, ${title}, ${author}, ${blob.url}, ${path},
             ${width}, ${height}, ${frames}, ${fps}, ${kind},
-            ${hashToken(token)}, ${ip})
+            ${hashToken(token)}, ${ip}, ${project})
     RETURNING id, slug, title, author, image_url, width, height,
               frames, fps, kind, likes, created_at`;
 
@@ -85,6 +89,15 @@ async function remove(req, res) {
 }
 
 /* ══════════ utils ══════════ */
+/* รับเฉพาะรูปแบบที่แอปส่งมา: "gz:<base64>" หรือ "raw:<base64>"
+   ค่าอื่นทิ้งเงียบๆ — โพสต์สำคัญกว่าปุ่มรีมิกซ์ */
+function cleanProject(v) {
+  if (typeof v !== 'string' || !v) return null;
+  if (!/^(gz|raw):[A-Za-z0-9+/=]+$/.test(v)) return null;
+  if (v.length > MAX_PROJECT) return null;
+  return v;
+}
+
 function int(v, min, max, dflt = 0) {
   const n = Math.floor(Number(v));
   if (!Number.isFinite(n)) return dflt;
