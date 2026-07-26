@@ -105,8 +105,9 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
   transition:transform .26s cubic-bezier(.3,.8,.4,1);
   background:rgba(13,14,20,.86);border:1px solid var(--line);
   padding:5px 9px;border-radius:7px;font-size:11px;font-variant-numeric:tabular-nums;
-  color:var(--dim);backdrop-filter:blur(8px);pointer-events:none;
+  color:var(--dim);backdrop-filter:blur(8px);cursor:pointer;
 }
+#zoomTag:active{border-color:var(--accent)}
 #zoomTag b{color:var(--text);font-weight:600}
 
 /* ---------- REFERENCE BAR ---------- */
@@ -152,6 +153,41 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 #timeline{
   flex:0 0 auto;background:var(--panel);border-top:1px solid var(--line);
   padding:7px 8px 6px;z-index:20;
+}
+
+/* Grabber — the bottom chrome costs ~260px of a ~700px phone screen, which is
+   most of the drawing surface. One tap parks all of it. */
+#chromeGrab{
+  flex:0 0 auto;height:18px;background:var(--panel);border-top:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;z-index:21;
+}
+#chromeGrab i{width:34px;height:4px;border-radius:2px;background:var(--line);transition:background .12s,width .12s}
+#chromeGrab:active i{background:var(--accent)}
+body.chrome-hidden #timeline,
+body.chrome-hidden #tools,
+body.chrome-hidden #recentBar,
+body.chrome-hidden #palette{display:none}
+body.chrome-hidden #chromeGrab{height:calc(24px + env(safe-area-inset-bottom));align-items:flex-start;padding-top:10px}
+body.chrome-hidden #chromeGrab i{background:var(--accent);width:46px}
+
+/* A single-frame project doesn't need a filmstrip of one thumbnail */
+#btnAddFrameHead{display:none}
+body.solo-frame #frames{display:none}
+body.solo-frame #tlHead{margin-bottom:0}
+body.solo-frame #fpsWrap{display:none}
+body.solo-frame #btnAddFrameHead{display:flex}
+
+/* Landscape and small phones: give the canvas back what the chrome is
+   hoarding, rather than letting the stage collapse to a strip */
+@media (max-height:560px){
+  #topbar{height:46px}
+  #tools{padding:5px 8px}
+  .tool{width:38px;height:38px}
+  .frame,#addFrame{width:40px;height:40px}
+  #palette{padding:5px 8px calc(6px + env(safe-area-inset-bottom))}
+  .sw{width:30px;height:30px}
+  #curColor{width:34px;height:34px}
+  #timeline{padding:5px 8px 4px}
 }
 #tlHead{
   display:flex;align-items:center;gap:7px;margin-bottom:6px;height:26px;
@@ -344,6 +380,28 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
 .quota b{color:var(--text);font-variant-numeric:tabular-nums}
 .hr{height:1px;background:var(--line);margin:14px 0 12px}
 .sec-lbl{font-size:10px;letter-spacing:1.1px;text-transform:uppercase;color:var(--dim);font-weight:600;margin-bottom:8px}
+
+/* ---------- IMAGE → PIXEL ---------- */
+.px-stage{
+  display:flex;align-items:center;justify-content:center;min-height:110px;
+  padding:10px;margin-bottom:12px;border-radius:10px;
+  background:
+    linear-gradient(45deg,#252836 25%,transparent 25%,transparent 75%,#252836 75%) 0 0/14px 14px,
+    linear-gradient(45deg,#252836 25%,transparent 25%,transparent 75%,#252836 75%) 7px 7px/14px 14px,
+    var(--panel-2);
+}
+#pxCv{width:100%;max-height:240px;object-fit:contain;image-rendering:pixelated}
+#pxSize button,#pxSize2 button,#pxCol button{font-size:11.5px;padding:0 2px;white-space:nowrap}
+.px-sizes{margin-bottom:5px}
+.px-fit{
+  width:100%;height:34px;margin-bottom:14px;border-radius:10px;background:var(--panel-2);
+  color:var(--dim);font-size:11.5px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+}
+.px-fit.on{background:var(--accent);color:#fff}
+.px-fit b{font-variant-numeric:tabular-nums}
+.lock-row.off{opacity:.4}
+.lock-row input:disabled{cursor:not-allowed}
 
 /* ---------- RESIZE ---------- */
 .seg{display:flex;gap:4px;background:var(--panel-2);padding:4px;border-radius:11px;margin-bottom:14px}
@@ -690,6 +748,8 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
   <div id="toast"></div>
 </div>
 
+<button id="chromeGrab" title="ซ่อน/แสดงแถบล่าง"><i></i></button>
+
 <div id="timeline">
   <div id="tlHead">
     <span class="lbl">Frames</span>
@@ -697,6 +757,7 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
       <input type="range" id="fps" min="1" max="24" value="8">
       <span id="fpsVal">8 fps</span>
     </div>
+    <button class="tb-btn" id="btnAddFrameHead" style="height:26px;font-size:11px;padding:0 8px">+ เฟรม</button>
     <button class="tb-btn" id="btnTags" style="height:26px;font-size:11px;padding:0 8px">Tags</button>
     <button class="tb-btn" id="btnDupFrame" style="height:26px;font-size:11px;padding:0 8px">Dup</button>
     <button class="tb-btn" id="btnDelFrame" style="height:26px;font-size:11px;padding:0 8px">Del</button>
@@ -1171,11 +1232,28 @@ function pushUndo(){
   S.redoStack = [];
   updateUndoBtns();
 }
+/* The pixel stack can't express "a layer appeared", so an added layer gets
+   its own entry kind. Safe with LIFO order: any entry touching this layer is
+   newer and has already been undone by the time we remove it, and appending
+   never shifts the indices older entries point at. */
+function pushLayerAdd(index){
+  S.undoStack.push({seq: ++undoSeq, kind:'addlayer', index});
+  if(S.undoStack.length > MAX_UNDO) S.undoStack.shift();
+  S.redoStack = [];
+  updateUndoBtns();
+}
 function undo(){
   if(!S.undoStack.length) return;
   // a lifted selection would get stamped back on top of the restored pixels
   if(S.float){ S.float = null; S.floatRect = null; S.sel = null; }
   const st = S.undoStack.pop();
+  if(st.kind === 'addlayer'){
+    const L = S.layers.splice(st.index, 1)[0];
+    S.redoStack.push({kind:'addlayer', index:st.index, layer:L});
+    if(S.curLayer >= S.layers.length) S.curLayer = S.layers.length - 1;
+    bufDirty = true; renderAll(); updateUndoBtns(); markProjectDirty();
+    return;
+  }
   const layer = S.layers[st.l];
   if(!layer || !layer.frames[st.f]) return;
   S.redoStack.push({l:st.l, f:st.f, data:new Uint8ClampedArray(layer.frames[st.f])});
@@ -1187,6 +1265,13 @@ function redo(){
   if(!S.redoStack.length) return;
   if(S.float){ S.float = null; S.floatRect = null; S.sel = null; }
   const st = S.redoStack.pop();
+  if(st.kind === 'addlayer'){
+    S.layers.splice(st.index, 0, st.layer);
+    S.undoStack.push({seq: ++undoSeq, kind:'addlayer', index:st.index});
+    S.curLayer = st.index;
+    bufDirty = true; renderAll(); updateUndoBtns(); markProjectDirty();
+    return;
+  }
   const layer = S.layers[st.l];
   if(!layer || !layer.frames[st.f]) return;
   S.undoStack.push({l:st.l, f:st.f, data:new Uint8ClampedArray(layer.frames[st.f])});
@@ -1704,6 +1789,14 @@ function renderFrames(){
   wrap.appendChild(add);
   const sel = wrap.children[S.curFrame];
   if(sel) sel.scrollIntoView({block:'nearest', inline:'nearest', behavior:'smooth'});
+
+  // collapsing the strip changes the stage height, so the view has to be
+  // remeasured — but only on the transition, not on every repaint
+  const solo = S.frameCount === 1;
+  if(document.body.classList.contains('solo-frame') !== solo){
+    document.body.classList.toggle('solo-frame', solo);
+    requestAnimationFrame(resizeView);
+  }
 }
 function drawFrameThumb(canvas, idx){
   const c = canvas.getContext('2d');
@@ -2250,9 +2343,12 @@ async function exportSheet(){
     const f = flattenFrame(i);
     ctx.drawImage(f, (i%cols)*S.W, Math.floor(i/cols)*S.H);
   }
-  c.toBlob(b=>{
-    download(b, `spritesheet_${S.W}x${S.H}_${cols}x${rows}.png`);
-    expStatus(`เสร็จ · ${cols}×${rows} เฟรม`);
+  c.toBlob(async b=>{
+    // the sheet doubles as the project file — whoever gets it can open it
+    const out = await pngWithProject(b, {author: lsGet(SH_NAME, '')});
+    download(out, `spritesheet_${S.W}x${S.H}_${cols}x${rows}.png`);
+    const kb = Math.round((out.size - b.size)/1024);
+    expStatus(`เสร็จ · ${cols}×${rows} เฟรม · เปิดกลับมาแก้ต่อได้ (+${kb} KB)`);
   }, 'image/png');
 }
 async function exportZip(){
@@ -2632,6 +2728,169 @@ function importProjectFile(file){
   };
   rd.onerror = () => toast('อ่านไฟล์ไม่สำเร็จ');
   rd.readAsText(file);
+}
+
+/* ══════════════ PNG ที่เปิดต่อได้ (remixable share) ══════════════ */
+/* A shared PNG is a dead end for whoever receives it: they can look at the art
+   but not open it. PNG lets arbitrary tEXt chunks ride along, so the whole
+   project travels inside the image — still an ordinary PNG to every other
+   program, but wadpixel can unpack it back into layers, frames and palette.
+   Measured on projects with no repeated frames: 6 KB embedded for 32²x8,
+   31 KB for 64²x8x4 layers, 293 KB for a heavy 128² one. */
+const PNG_KEY = 'wadpixel';
+
+const CRC_TAB = (()=>{
+  const t = new Uint32Array(256);
+  for(let n=0;n<256;n++){
+    let c = n;
+    for(let k=0;k<8;k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(bytes){
+  let c = 0xFFFFFFFF;
+  for(let i=0;i<bytes.length;i++) c = CRC_TAB[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+/* gzip when the browser has it — the project JSON is mostly repeated RLE
+   tokens, so it collapses to a few percent. Falls back to plain base64. */
+async function packProjectText(obj){
+  const bytes = new TextEncoder().encode(JSON.stringify(obj));
+  if(typeof CompressionStream === 'function'){
+    try{
+      const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip'));
+      const gz = new Uint8Array(await new Response(stream).arrayBuffer());
+      return 'gz:' + b64enc(gz);
+    }catch{}
+  }
+  return 'raw:' + b64enc(bytes);
+}
+async function unpackProjectText(text){
+  const cut = text.indexOf(':');
+  const tag = text.slice(0, cut), body = b64dec(text.slice(cut+1));
+  if(tag === 'gz'){
+    const stream = new Blob([body]).stream().pipeThrough(new DecompressionStream('gzip'));
+    const raw = await new Response(stream).arrayBuffer();
+    return JSON.parse(new TextDecoder().decode(raw));
+  }
+  return JSON.parse(new TextDecoder().decode(body));
+}
+
+function pngChunks(b){
+  const out = [];
+  let p = 8;                                   // skip the 8-byte signature
+  while(p + 8 <= b.length){
+    const len = ((b[p]<<24)|(b[p+1]<<16)|(b[p+2]<<8)|b[p+3]) >>> 0;
+    out.push({
+      type: String.fromCharCode(b[p+4],b[p+5],b[p+6],b[p+7]),
+      start: p, dataStart: p + 8, len
+    });
+    p += 12 + len;
+  }
+  return out;
+}
+function isPNG(b){
+  return b.length > 8 && b[0]===137 && b[1]===80 && b[2]===78 && b[3]===71;
+}
+
+/* build a tEXt chunk: keyword \0 text, wrapped in length + type + CRC */
+function textChunk(keyword, text){
+  const key = new TextEncoder().encode(keyword);
+  const val = new Uint8Array(text.length);
+  for(let i=0;i<text.length;i++) val[i] = text.charCodeAt(i) & 0xFF;   // base64 is Latin-1 safe
+  const body = new Uint8Array(4 + key.length + 1 + val.length);
+  body.set([116,69,88,116], 0);                                        // 'tEXt'
+  body.set(key, 4);
+  body[4 + key.length] = 0;
+  body.set(val, 5 + key.length);
+  const len = body.length - 4;
+  const crc = crc32(body);
+  const out = new Uint8Array(8 + len + 4);
+  out[0]=(len>>>24)&255; out[1]=(len>>>16)&255; out[2]=(len>>>8)&255; out[3]=len&255;
+  out.set(body, 4);
+  const o = 4 + body.length;
+  out[o]=(crc>>>24)&255; out[o+1]=(crc>>>16)&255; out[o+2]=(crc>>>8)&255; out[o+3]=crc&255;
+  return out;
+}
+
+async function pngWithProject(blob, meta){
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  if(!isPNG(bytes)) return blob;
+  const payload = serialize(meta.title || curProjectName || 'wadpixel');
+  payload.by = meta.author || '';
+  payload.sharedAt = Date.now();
+  const chunk = textChunk(PNG_KEY, await packProjectText(payload));
+  const iend = pngChunks(bytes).find(c => c.type === 'IEND');
+  const at = iend ? iend.start : bytes.length;
+  const out = new Uint8Array(bytes.length + chunk.length);
+  out.set(bytes.subarray(0, at), 0);
+  out.set(chunk, at);
+  out.set(bytes.subarray(at), at + chunk.length);
+  return new Blob([out], {type:'image/png'});
+}
+
+async function projectFromPNGBytes(bytes){
+  if(!isPNG(bytes)) return null;
+  for(const c of pngChunks(bytes)){
+    if(c.type !== 'tEXt') continue;
+    let end = c.dataStart;
+    while(end < c.dataStart + c.len && bytes[end] !== 0) end++;
+    let key = '';
+    for(let i=c.dataStart;i<end;i++) key += String.fromCharCode(bytes[i]);
+    if(key !== PNG_KEY) continue;
+    let text = '';
+    for(let i=end+1;i<c.dataStart+c.len;i++) text += String.fromCharCode(bytes[i]);
+    try{ return await unpackProjectText(text); }catch{ return null; }
+  }
+  return null;
+}
+async function projectFromFile(file){
+  if(!file || !/png$/i.test(file.type || file.name || '')) return null;
+  try{ return await projectFromPNGBytes(new Uint8Array(await file.arrayBuffer())); }
+  catch{ return null; }
+}
+
+/* opening someone else's file: their work, so keep the credit attached */
+function openSharedProject(obj, {credit = true} = {}){
+  deserialize(obj);
+  curProjectId = null;
+  curProjectName = obj.name || 'นำเข้า';
+  dirtySinceSave = true;
+  closeModal();
+  const by = (obj.by || '').trim();
+  toast(by ? `เปิด "${curProjectName}" ของ ${by} แล้ว — แก้ต่อได้เลย` : `เปิด "${curProjectName}" แล้ว`, 2600);
+}
+
+/* an image drop/import that turns out to carry a project shouldn't silently
+   flatten someone's layers into one bitmap — ask which they wanted */
+async function offerEmbedded(file){
+  const obj = await projectFromFile(file);
+  if(!obj) return false;
+  const by = (obj.by || '').trim();
+  openModal(`
+    <h2>ไฟล์นี้เปิดต่อได้</h2>
+    <p class="sub">
+      <b>${esc(obj.name || 'ไม่มีชื่อ')}</b>${by ? ' · โดย ' + esc(by) : ''}<br>
+      ${obj.w}×${obj.h} · ${obj.frameCount || 1} เฟรม · ${(obj.layers||[]).length} เลเยอร์
+    </p>
+    <button class="big-btn" id="ceOpen">เปิดเป็นโปรเจกต์ (แก้ต่อได้)</button>
+    <button class="big-btn ghost" id="ceImg">นำเข้าเป็นภาพแบนๆ</button>
+    <button class="big-btn ghost" id="ceNo">ยกเลิก</button>
+  `);
+  $('ceOpen').onclick = ()=>{
+    try{ openSharedProject(obj); }
+    catch(err){ toast('เปิดไม่ได้: ' + err.message, 3000); }
+  };
+  $('ceImg').onclick = ()=>{
+    closeModal();
+    toast('กำลังอ่านภาพ…');
+    loadImageFile(file).then(img => showImportImage(img))
+                       .catch(err => toast(err.message, 3200));
+  };
+  $('ceNo').onclick = closeModal;
+  return true;
 }
 
 /* ---- autosave ---- */
@@ -3336,7 +3595,8 @@ function placeImage(img, mode, fit, opts){
       frames
     });
     S.curLayer = S.layers.length - 1;
-    S.undoStack = []; S.redoStack = []; updateUndoBtns();
+    // one undo step removes the whole imported layer instead of wiping history
+    pushLayerAdd(S.curLayer);
     bufDirty = true; renderAll(); markProjectDirty();
     return {w:sw, h:sh};
   }
@@ -3423,7 +3683,12 @@ function showHome(){
       <span class="ic" style="background:#ff9f1c;color:#0d0e14">PNG</span>
       <span class="tx"><b>เริ่มจากภาพ</b><span>เปิด PNG/JPG มาแก้ต่อ หรือ trace</span></span>
     </button>
+    <button class="exp-opt" id="hmPixel">
+      <span class="ic" style="background:var(--accent-2);color:#0d0e14">PX</span>
+      <span class="tx"><b>แปลงภาพเป็นพิกเซล</b><span>ย่อเป็นกริด ลดสี ใส่ดิเธอร์ ได้พิกเซลอาร์ตทันที</span></span>
+    </button>
     <input type="file" id="hmImgInput" accept="image/*" style="display:none">
+    <input type="file" id="hmPixInput" accept="image/*" style="display:none">
 
     <div class="hr"></div>
     <div class="sec-lbl">งานที่บันทึกไว้ (${saved.length})</div>
@@ -3449,14 +3714,25 @@ function showHome(){
   $('hmChar').onclick = guard(showCharTemplates);
   $('hmBlank').onclick = guard(showNewProject);
   $('hmImage').onclick = ()=>$('hmImgInput').click();
-  $('hmImgInput').onchange = e => {
+  $('hmImgInput').onchange = async e => {
     const f = e.target.files[0];
     if(!f) return;
     e.target.value = '';
+    if(await offerEmbedded(f)) return;
     if(dirty && !confirm('งานปัจจุบันยังไม่ได้บันทึก จะเริ่มใหม่ทับไหม?')) return;
     toast('กำลังอ่านภาพ…');
     loadImageFile(f)
       .then(img => { closeModal(); showImportImage(img); })
+      .catch(err => toast(err.message, 3200));
+  };
+  $('hmPixel').onclick = ()=>$('hmPixInput').click();
+  $('hmPixInput').onchange = e => {
+    const f = e.target.files[0];
+    if(!f) return;
+    e.target.value = '';
+    toast('กำลังอ่านภาพ…');
+    loadImageFile(f)
+      .then(img => { closeModal(); showPixelize(img); })
       .catch(err => toast(err.message, 3200));
   };
   if($('hmRestore')) $('hmRestore').onclick = ()=>{
@@ -3664,8 +3940,13 @@ function showSaveLoad(){
       <span class="ic" style="background:#ff9f1c;color:#0d0e14">PNG</span>
       <span class="tx"><b>นำเข้าภาพ</b><span>เปิด PNG/JPG มาแก้ต่อ หรือใช้เป็นภาพอ้างอิง</span></span>
     </button>
+    <button class="exp-opt" id="slPixIn">
+      <span class="ic" style="background:var(--accent-2);color:#0d0e14">PX</span>
+      <span class="tx"><b>แปลงภาพเป็นพิกเซล</b><span>ย่อเป็นกริด ลดสี ใส่ดิเธอร์</span></span>
+    </button>
     <input type="file" id="slFileInput" accept=".json,application/json" style="display:none">
     <input type="file" id="slImgInput" accept="image/*" style="display:none">
+    <input type="file" id="slPixInput" accept="image/*" style="display:none">
 
     <div class="hr"></div>
     <div class="sec-lbl">งานในเครื่อง (${idx.length})</div>
@@ -3728,13 +4009,24 @@ function showSaveLoad(){
   $('slNewChar').onclick = guardNew(showCharTemplates);
   $('slNewBlank').onclick = guardNew(showNewProject);
   $('slImgIn').onclick = ()=>$('slImgInput').click();
-  $('slImgInput').onchange = (e)=>{
+  $('slImgInput').onchange = async (e)=>{
+    const f = e.target.files[0];
+    if(!f) return;
+    e.target.value = '';
+    if(await offerEmbedded(f)) return;
+    toast('กำลังอ่านภาพ…');
+    loadImageFile(f)
+      .then(img => { closeModal(); showImportImage(img); })
+      .catch(err => toast(err.message, 3200));
+  };
+  $('slPixIn').onclick = ()=>$('slPixInput').click();
+  $('slPixInput').onchange = (e)=>{
     const f = e.target.files[0];
     if(!f) return;
     e.target.value = '';
     toast('กำลังอ่านภาพ…');
     loadImageFile(f)
-      .then(img => { closeModal(); showImportImage(img); })
+      .then(img => { closeModal(); showPixelize(img); })
       .catch(err => toast(err.message, 3200));
   };
   $('slClose').onclick = closeModal;
@@ -4038,6 +4330,401 @@ async function exportAtlas(kind){
   }
 }
 
+/* ══════════════ IMAGE → PIXEL ART ══════════════ */
+/* A photo turned into pixel art is two separate problems: too many pixels and
+   too many colours. Solve them in that order — box-average down to the grid
+   first (so detail averages instead of being dropped by point sampling), then
+   quantize to a small palette. Doing it the other way round bands the photo
+   before the averaging has a chance to keep the shapes readable. */
+
+const PX_MAX_GRID = 512;
+const PX_ORD_AMT  = 26;   // ordered-dither amplitude, in 0-255 colour units
+const PX_ALPHA_CUT = 128; // below this the pixel is dropped, not blended
+
+/* Box average. Weighted by alpha so transparent edges don't drag their
+   (often black) colour into the neighbouring solid pixels. */
+function pxDownscale(src, sw, sh, dw, dh){
+  const out = new Uint8ClampedArray(dw*dh*4);
+  const xr = sw/dw, yr = sh/dh;
+  for(let y=0;y<dh;y++){
+    const y0 = Math.floor(y*yr);
+    const y1 = Math.min(sh, Math.max(y0+1, Math.ceil((y+1)*yr)));
+    for(let x=0;x<dw;x++){
+      const x0 = Math.floor(x*xr);
+      const x1 = Math.min(sw, Math.max(x0+1, Math.ceil((x+1)*xr)));
+      let r=0,g=0,b=0,a=0,aw=0,n=0;
+      for(let yy=y0;yy<y1;yy++){
+        for(let xx=x0;xx<x1;xx++){
+          const i = (yy*sw+xx)*4, al = src[i+3]/255;
+          r += src[i]*al; g += src[i+1]*al; b += src[i+2]*al;
+          aw += al; a += src[i+3]; n++;
+        }
+      }
+      const o = (y*dw+x)*4;
+      if(aw > 0){ out[o]=r/aw; out[o+1]=g/aw; out[o+2]=b/aw; }
+      out[o+3] = n ? a/n : 0;
+    }
+  }
+  return out;
+}
+
+/* Point sample — keeps hard edges when the source is already pixel art */
+function pxPointScale(src, sw, sh, dw, dh){
+  const out = new Uint8ClampedArray(dw*dh*4);
+  for(let y=0;y<dh;y++){
+    const sy = Math.min(sh-1, Math.floor((y+0.5)*sh/dh));
+    for(let x=0;x<dw;x++){
+      const sx = Math.min(sw-1, Math.floor((x+0.5)*sw/dw));
+      const i=(sy*sw+sx)*4, o=(y*dw+x)*4;
+      out[o]=src[i]; out[o+1]=src[i+1]; out[o+2]=src[i+2]; out[o+3]=src[i+3];
+    }
+  }
+  return out;
+}
+
+/* Median cut — split the colour cloud on its widest axis until there are
+   enough boxes, then average each one. Cheap, and it keeps small bright
+   areas that a frequency count would throw away. */
+function pxSplitAxis(box){
+  let mn=[255,255,255], mx=[0,0,0];
+  for(const p of box) for(let c=0;c<3;c++){
+    if(p[c]<mn[c]) mn[c]=p[c];
+    if(p[c]>mx[c]) mx[c]=p[c];
+  }
+  let ch=0, range=-1;
+  for(let c=0;c<3;c++){ const r = mx[c]-mn[c]; if(r>range){ range=r; ch=c; } }
+  return {ch, range};
+}
+function pxMedianCut(data, n){
+  const total = data.length/4;
+  const step = Math.max(1, Math.floor(total/24000)) * 4;   // cap the sample
+  const px = [];
+  for(let i=0;i<data.length;i+=step){
+    if(data[i+3] >= PX_ALPHA_CUT) px.push([data[i], data[i+1], data[i+2]]);
+  }
+  if(!px.length) return [[0,0,0]];
+  let boxes = [px];
+  while(boxes.length < n){
+    let bi=-1, best=0;
+    for(let i=0;i<boxes.length;i++){
+      if(boxes[i].length < 2) continue;
+      // range alone hands a tiny speck the same budget as the background;
+      // sqrt(count) tilts it toward colours that actually cover area
+      const s = pxSplitAxis(boxes[i]).range * Math.sqrt(boxes[i].length);
+      if(s > best){ best = s; bi = i; }
+    }
+    if(bi < 0) break;                     // every box is a single colour
+    const b = boxes[bi], ch = pxSplitAxis(b).ch;
+    b.sort((p,q)=>p[ch]-q[ch]);
+    const mid = b.length >> 1;
+    boxes.splice(bi, 1, b.slice(0, mid), b.slice(mid));
+  }
+  return boxes.map(b=>{
+    let r=0,g=0,bl=0;
+    for(const p of b){ r+=p[0]; g+=p[1]; bl+=p[2]; }
+    return [Math.round(r/b.length), Math.round(g/b.length), Math.round(bl/b.length)];
+  });
+}
+
+/* Lloyd refinement — median cut only picks the boxes; this moves each colour
+   to the true centre of the pixels that ended up choosing it. Measured on a
+   900px source: RMSE drops 10-14% (64px/16 colours 13.79 -> 12.30).
+   Centroids only need a representative sample, so above the cap it strides
+   instead of touching every pixel — at 512x512 that is 31ms instead of 168ms
+   for the same RMSE (7.93), and 0.8% worse at 384. */
+function pxRefine(data, pal, iters, cap = 40000){
+  const step = Math.max(1, Math.floor((data.length/4)/cap)) * 4;
+  pal = pal.map(p => p.slice());
+  for(let it=0; it<iters; it++){
+    const sum = pal.map(()=>[0,0,0,0]);
+    for(let i=0;i<data.length;i+=step){
+      if(data[i+3] < PX_ALPHA_CUT) continue;
+      let bi=0, bd=Infinity;
+      for(let k=0;k<pal.length;k++){
+        const p = pal[k], dr = data[i]-p[0], dg = data[i+1]-p[1], db = data[i+2]-p[2];
+        const d = dr*dr*0.299 + dg*dg*0.587 + db*db*0.114;
+        if(d < bd){ bd = d; bi = k; }
+      }
+      const s = sum[bi];
+      s[0]+=data[i]; s[1]+=data[i+1]; s[2]+=data[i+2]; s[3]++;
+    }
+    for(let k=0;k<pal.length;k++) if(sum[k][3]){
+      pal[k] = [sum[k][0]/sum[k][3], sum[k][1]/sum[k][3], sum[k][2]/sum[k][3]];
+    }
+  }
+  return pal.map(p => p.map(Math.round));
+}
+
+/* Clusters that lost all their pixels keep their old centre, which can
+   collide with a neighbour — drop the duplicates so the reported (and
+   applied) colour count is the real one. */
+function pxDedupe(pal){
+  const seen = new Set(), out = [];
+  for(const c of pal){
+    const k = (c[0]<<16)|(c[1]<<8)|c[2];
+    if(!seen.has(k)){ seen.add(k); out.push(c); }
+  }
+  return out;
+}
+
+/* Saturation and contrast, around luma. A photo averaged down to 64px goes
+   flat, and quantizing a flat image just makes it muddy. Levels measured for
+   newly-clipped channels on a photo-like source: soft 0%, strong 3.3%
+   (1.6/1.3 hit 7.3% and was dropped). */
+const PX_BOOST = {none:null, soft:[1.15,1.06], hard:[1.40,1.20]};
+function pxBoostColors(data, sat, con){
+  const out = new Uint8ClampedArray(data);   // clamps for us on assignment
+  for(let i=0;i<data.length;i+=4){
+    if(data[i+3] === 0) continue;
+    const l = 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+    for(let c=0;c<3;c++) out[i+c] = (l + (data[i+c]-l)*sat - 128)*con + 128;
+  }
+  return out;
+}
+
+function pxNearest(pal, r, g, b){
+  let bi=0, bd=Infinity;
+  for(let i=0;i<pal.length;i++){
+    const p = pal[i], dr = r-p[0], dg = g-p[1], db = b-p[2];
+    // luma-weighted distance — matches what the eye notices
+    const d = dr*dr*0.299 + dg*dg*0.587 + db*db*0.114;
+    if(d < bd){ bd = d; bi = i; }
+  }
+  return pal[bi];
+}
+
+const PX_BAYER = [0,8,2,10, 12,4,14,6, 3,11,1,9, 15,7,13,5].map(v => v/16 - 0.47);
+
+/* Map every pixel onto the palette. 'floyd' pushes the rounding error onto
+   pixels not yet visited, so it needs a float working buffer — clamping
+   inside a Uint8 array would swallow the error and band the gradients. */
+function pxQuantize(data, w, h, pal, dither){
+  const n = w*h;
+  const work = new Float32Array(n*3);
+  for(let p=0;p<n;p++){
+    work[p*3] = data[p*4]; work[p*3+1] = data[p*4+1]; work[p*3+2] = data[p*4+2];
+  }
+  const out = new Uint8ClampedArray(n*4);
+  const cache = new Map();
+  const spill = (p, er, eg, eb, k) => {
+    if(p < 0 || p >= n) return;
+    work[p*3] += er*k; work[p*3+1] += eg*k; work[p*3+2] += eb*k;
+  };
+  const cl = v => v < 0 ? 0 : v > 255 ? 255 : v;
+
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      const p = y*w + x, i = p*4;
+      // a hard cut turns anti-aliased edges into stairs; when the user asked
+      // for dithering, dither the alpha decision too
+      const cut = dither === 'none'
+        ? PX_ALPHA_CUT
+        : (PX_BAYER[(y&3)*4 + (x&3)] + 0.47) * 255;
+      if(data[i+3] <= cut) continue;              // stays fully transparent
+      let r = work[p*3], g = work[p*3+1], b = work[p*3+2];
+      if(dither === 'ordered'){
+        const t = PX_BAYER[(y&3)*4 + (x&3)] * PX_ORD_AMT;
+        r += t; g += t; b += t;
+      }
+      r = cl(r); g = cl(g); b = cl(b);
+      const key = (Math.round(r)<<16) | (Math.round(g)<<8) | Math.round(b);
+      let c = cache.get(key);
+      if(!c){ c = pxNearest(pal, r, g, b); cache.set(key, c); }
+      out[i]=c[0]; out[i+1]=c[1]; out[i+2]=c[2]; out[i+3]=255;
+      if(dither === 'floyd'){
+        const er = r-c[0], eg = g-c[1], eb = b-c[2];
+        if(x+1 < w)  spill(p+1,   er,eg,eb, 7/16);
+        if(y+1 < h){
+          if(x > 0)   spill(p+w-1, er,eg,eb, 3/16);
+          spill(p+w, er,eg,eb, 5/16);
+          if(x+1 < w) spill(p+w+1, er,eg,eb, 1/16);
+        }
+      }
+    }
+  }
+  return out;
+}
+
+/* Target grid. 'fit' means the biggest size that still lands inside the
+   current canvas without distorting; a number means that width, aspect kept. */
+function pxGrid(img, size){
+  if(size === 'fit'){
+    // a 1024 canvas would ask for a megapixel preview on every tap — cap it
+    const k = Math.min(S.W/img.w, S.H/img.h, PX_MAX_GRID/img.w, PX_MAX_GRID/img.h);
+    return {w: Math.max(1, Math.round(img.w*k)), h: Math.max(1, Math.round(img.h*k))};
+  }
+  const tw = Math.min(PX_MAX_GRID, size);
+  return {w: tw, h: Math.max(1, Math.round(img.h * tw / img.w))};
+}
+
+const rgbToHex = c => '#' + [c[0],c[1],c[2]].map(v=>Math.max(0,Math.min(255,v|0)).toString(16).padStart(2,'0')).join('');
+
+function showPixelize(img){
+  const hasWork = artLayers().some(L => L.frames.some(v => v.some(x => x !== 0)));
+  let size = 64, colors = 16, dither = 'none', smooth = true, usePal = false, boost = 'none';
+  let mode = hasWork ? 'layer' : 'newproject';
+  let takePal = true;
+  let res = null;
+  let srcCache = {key:'', data:null};
+
+  openModal(`
+    <h2>แปลงภาพเป็นพิกเซล</h2>
+    <p class="sub"><b>${esc(img.name)}</b> · ต้นฉบับ <b>${img.w}×${img.h}</b></p>
+
+    <div class="px-stage"><canvas id="pxCv"></canvas></div>
+    <div class="rz-preview" id="pxInfo"></div>
+
+    <div class="sec-lbl">ความละเอียด (ด้านกว้าง)</div>
+    <div class="seg px-sizes" id="pxSize">
+      <button data-s="32">32</button>
+      <button data-s="48">48</button>
+      <button data-s="64" class="on">64</button>
+      <button data-s="96">96</button>
+    </div>
+    <div class="seg px-sizes" id="pxSize2">
+      <button data-s="128">128</button>
+      <button data-s="192">192</button>
+      <button data-s="256">256</button>
+      <button data-s="512">512</button>
+    </div>
+    <button class="px-fit" id="pxFit">พอดีผืนผ้าใบ · <b id="pxFitSize">—</b></button>
+
+    <div class="sec-lbl">จำนวนสี</div>
+    <div class="seg" id="pxCol">
+      <button data-c="4">4</button>
+      <button data-c="8">8</button>
+      <button data-c="16" class="on">16</button>
+      <button data-c="24">24</button>
+      <button data-c="32">32</button>
+    </div>
+
+    <div class="sec-lbl">ดิเธอร์ (มีผลกับขอบโปร่งด้วย)</div>
+    <div class="seg" id="pxDit">
+      <button data-d="none" class="on">ปิด</button>
+      <button data-d="ordered">ลายตาราง</button>
+      <button data-d="floyd">เกลี่ยไล่สี</button>
+    </div>
+
+    <div class="sec-lbl">ดันสี/คอนทราสต์ก่อนลดสี</div>
+    <div class="seg" id="pxBoost">
+      <button data-b="none" class="on">ปิด</button>
+      <button data-b="soft">อ่อน</button>
+      <button data-b="hard">แรง</button>
+    </div>
+
+    <label class="lock-row"><input type="checkbox" id="pxSmooth" checked> เฉลี่ยสีตอนย่อ — ปิดถ้าต้นฉบับเป็นพิกเซลอาร์ตอยู่แล้ว</label>
+    <label class="lock-row"><input type="checkbox" id="pxUsePal"> บังคับใช้จานสีของโปรเจกต์ (${S.palette.length} สี)</label>
+    <label class="lock-row" id="pxTakeRow"><input type="checkbox" id="pxTakePal" checked> ตั้งสีที่ได้เป็นจานสีโปรเจกต์</label>
+
+    <div class="sec-lbl">วางยังไง</div>
+    <div class="seg" id="pxMode">
+      <button data-m="newproject"${mode==='newproject'?' class="on"':''}>โปรเจกต์ใหม่</button>
+      <button data-m="layer"${mode==='layer'?' class="on"':''}>เลเยอร์ใหม่</button>
+      <button data-m="float">วางลอย</button>
+    </div>
+
+    <button class="big-btn" id="pxGo">ใช้ภาพนี้</button>
+    <button class="big-btn ghost" id="pxCancel">ยกเลิก</button>
+  `);
+
+  const cv = $('pxCv'), ctx = cv.getContext('2d');
+
+  /* 512x512 costs ~160ms per rebuild here and roughly triple that on a phone,
+     so tapping through the presets shouldn't queue one job per tap */
+  let buildTimer = null;
+  function scheduleBuild(){
+    clearTimeout(buildTimer);
+    const g = pxGrid(img, size);
+    buildTimer = setTimeout(build, g.w*g.h > 65536 ? 140 : 0);
+  }
+
+  function build(){
+    const g = pxGrid(img, size);
+    const key = g.w+'x'+g.h+(smooth?'s':'p');
+    if(srcCache.key !== key){
+      srcCache = {key, data: smooth
+        ? pxDownscale(img.data, img.w, img.h, g.w, g.h)
+        : pxPointScale(img.data, img.w, img.h, g.w, g.h)};
+    }
+    const b = PX_BOOST[boost];
+    const base = b ? pxBoostColors(srcCache.data, b[0], b[1]) : srcCache.data;
+    const pal = usePal && S.palette.length
+      ? S.palette.map(h => hexToRgba(h).slice(0,3))
+      : pxDedupe(pxRefine(base, pxMedianCut(base, colors), 4));
+    res = {data: pxQuantize(base, g.w, g.h, pal, dither), w:g.w, h:g.h, name:img.name, pal};
+
+    cv.width = g.w; cv.height = g.h;
+    ctx.putImageData(new ImageData(new Uint8ClampedArray(res.data), g.w, g.h), 0, 0);
+
+    const fit = pxGrid(img, 'fit');
+    $('pxFitSize').textContent = fit.w + '×' + fit.h;
+
+    let msg = `ผลลัพธ์ <b>${g.w}×${g.h}</b> · <b>${pal.length}</b> สี`;
+    if(usePal) msg += ' (จานสีโปรเจกต์)';
+    if(mode === 'newproject'){
+      msg += `<br>สร้างโปรเจกต์ใหม่ขนาด <b>${g.w}×${g.h}</b>`;
+      if(hasWork) msg += `<br><span class="warn-inline">งานที่ทำอยู่จะถูกแทนที่ทั้งหมด</span>`;
+    } else {
+      msg += `<br>${mode==='layer' ? `เพิ่มเป็นเลเยอร์ใหม่ที่เฟรม ${S.curFrame+1}` : 'วางลอยให้ลากย้ายได้'} · ผืนผ้าใบ <b>${S.W}×${S.H}</b>`;
+      if(g.w > S.W || g.h > S.H) msg += `<br><span class="warn-inline">ใหญ่กว่าผืนผ้าใบ — ผืนผ้าใบจะถูกขยายให้พอดี</span>`;
+    }
+    $('pxInfo').innerHTML = msg;
+  }
+
+  const seg = (wrap, attr, set) => document.querySelectorAll('#'+wrap+' button').forEach(b=>{
+    b.onclick = ()=>{
+      set(b.dataset[attr]);
+      document.querySelectorAll('#'+wrap+' button').forEach(x=>x.classList.toggle('on', x===b));
+      scheduleBuild();
+    };
+  });
+  // two rows plus the fit button behave as one exclusive group
+  const sizeBtns = ()=>[...document.querySelectorAll('#pxSize button, #pxSize2 button')];
+  function markSize(){
+    sizeBtns().forEach(b => b.classList.toggle('on', size !== 'fit' && +b.dataset.s === size));
+    $('pxFit').classList.toggle('on', size === 'fit');
+  }
+  sizeBtns().forEach(b => b.onclick = ()=>{ size = +b.dataset.s; markSize(); scheduleBuild(); });
+  $('pxFit').onclick = ()=>{ size = 'fit'; markSize(); scheduleBuild(); };
+
+  seg('pxCol',  'c', v => colors = +v);
+  seg('pxDit',  'd', v => dither = v);
+  seg('pxBoost','b', v => boost = v);
+  seg('pxMode', 'm', v => mode = v);
+
+  // forcing the project palette and harvesting one from the image are
+  // mutually exclusive — don't leave a checkbox that quietly does nothing
+  function syncPalRow(){
+    $('pxTakePal').disabled = usePal;
+    $('pxTakeRow').classList.toggle('off', usePal);
+  }
+  $('pxSmooth').onchange  = e => { smooth = e.target.checked; scheduleBuild(); };
+  $('pxUsePal').onchange  = e => { usePal = e.target.checked; syncPalRow(); scheduleBuild(); };
+  $('pxTakePal').onchange = e => { takePal = e.target.checked; };
+
+  $('pxGo').onclick = ()=>{
+    if(mode === 'newproject' && hasWork){
+      if(!confirm('งานที่ทำอยู่จะหายทั้งหมด ยืนยันไหม?')) return;
+      saveRestorePoint('ก่อนแปลงภาพเป็นพิกเซล');
+    }
+    closeModal();
+    setTimeout(()=>{
+      try {
+        const bigger = (res.w > S.W || res.h > S.H);
+        const r = placeImage(res, mode, bigger ? 'resize' : 'center', {center:true});
+        if(takePal && !usePal) applyPalette(res.pal.map(rgbToHex));
+        toast(`แปลงเป็นพิกเซล ${r.w}×${r.h} แล้ว`);
+      } catch(err){
+        toast('แปลงไม่สำเร็จ: ' + err.message, 3000);
+      }
+    }, 30);
+  };
+  $('pxCancel').onclick = closeModal;
+  syncPalRow();
+  markSize();
+  build();
+}
+
 function showImportImage(img){
   const sameSize = (img.w === S.W && img.h === S.H);
   const bigger = (img.w > S.W || img.h > S.H);
@@ -4073,6 +4760,7 @@ function showImportImage(img){
 
     <div class="rz-preview" id="imPrev"></div>
     <button class="big-btn" id="imGo">นำเข้า</button>
+    <button class="big-btn ghost" id="imPixel">แปลงเป็นพิกเซลอาร์ตก่อน…</button>
     <button class="big-btn ghost" id="imCancel">ยกเลิก</button>
   `);
 
@@ -4159,6 +4847,7 @@ function showImportImage(img){
       }
     }, 30);
   };
+  $('imPixel').onclick = ()=>{ closeModal(); setTimeout(()=>showPixelize(img), 30); };
   $('imCancel').onclick = closeModal;
   update();
 }
@@ -4477,7 +5166,7 @@ function showExport(){
     <p class="sub">${S.frameCount} เฟรม · ${S.layers.length} เลเยอร์ · ${S.W}×${S.H} px</p>
     <button class="exp-opt" id="eSheet">
       <span class="ic">PNG</span>
-      <span class="tx"><b>Sprite sheet</b><span>ทุกเฟรมเรียงในภาพเดียว พร้อมใช้ในเอนจิน</span></span>
+      <span class="tx"><b>Sprite sheet</b><span>ทุกเฟรมในภาพเดียว · ฝังโปรเจกต์ไว้ให้เปิดแก้ต่อได้</span></span>
     </button>
     <button class="exp-opt" id="eZip">
       <span class="ic">ZIP</span>
@@ -4552,6 +5241,26 @@ const likedAll = ()          => lsGet(SH_LIKED, []);
 const likedAdd = slug        => { const l = likedAll(); if(!l.includes(slug)){ l.push(slug); lsSet(SH_LIKED, l.slice(-400)); } };
 
 /* ---- สร้างภาพสำหรับอัปโหลด ---- */
+/* same sheet, with the project embedded — used for sharing so a post can be
+   reopened, not just looked at */
+async function sheetDataURLShare(author){
+  const {cols, rows, w, h} = sheetLayout();
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  for(let i=0;i<S.frameCount;i++){
+    ctx.drawImage(flattenFrame(i), (i%cols)*S.W, Math.floor(i/cols)*S.H);
+  }
+  const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+  const out  = await pngWithProject(blob, {author});
+  return await new Promise((res, rej)=>{
+    const rd = new FileReader();
+    rd.onload = ()=>res(rd.result);
+    rd.onerror = ()=>rej(new Error('อ่านไฟล์ไม่สำเร็จ'));
+    rd.readAsDataURL(out);
+  });
+}
 function sheetDataURL(){
   const {cols, rows, w, h} = sheetLayout();
   const c = document.createElement('canvas');
@@ -4625,7 +5334,7 @@ function showShare(){
 
     <div class="sec-lbl">รูปแบบที่จะแชร์</div>
     <div class="sh-pick">
-      <button data-k="sheet">Sprite sheet<small>ทุกเฟรมในภาพเดียว</small></button>
+      <button data-k="sheet">Sprite sheet<small>คนอื่นเปิดไปแก้ต่อได้</small></button>
       <button data-k="gif" ${S.frameCount < 2 ? 'disabled style="opacity:.35;pointer-events:none"' : ''}>GIF<small>${S.frameCount < 2 ? 'ต้องมี 2 เฟรมขึ้นไป' : 'เล่นวนที่ ' + S.fps + ' fps'}</small></button>
     </div>
 
@@ -4670,7 +5379,7 @@ function showShare(){
       stat(kind === 'gif' ? 'กำลังเข้ารหัส GIF…' : 'กำลังสร้างภาพ…');
       const image = kind === 'gif'
         ? await gifDataURL(p => stat('เข้ารหัส ' + p + '%'))
-        : sheetDataURL();
+        : await sheetDataURLShare(author);
 
       const kb = Math.round(image.length * 0.75 / 1024);
       if(kb > 3000) throw new Error('ไฟล์ใหญ่เกินไป (' + kb + ' KB) ลองลดเฟรมหรือขนาดภาพ');
@@ -4779,7 +5488,9 @@ function showGallery(sort){
           </button>
           ${mine
             ? '<button class="del">ลบ</button>'
-            : '<button class="op">เปิด</button>'}
+            : (p.kind === 'gif'
+                ? '<button class="op">เปิด</button>'
+                : '<button class="op rmx">รีมิกซ์</button>')}
         </div>
       </div>`;
 
@@ -4801,8 +5512,31 @@ function showGallery(sort){
       }
     };
 
-    const op = el.querySelector('.op');
+    // posts made by newer builds carry their project inside the PNG; older
+    // ones (or a host that re-encodes uploads) don't, so say so plainly
+    const op = el.querySelector('.op:not(.rmx)');
     if(op) op.onclick = ()=>window.open(p.url, '_blank', 'noopener,noreferrer');
+
+    const rmx = el.querySelector('.rmx');
+    if(rmx) rmx.onclick = async ()=>{
+      const label = rmx.textContent;
+      rmx.textContent = 'กำลังโหลด…';
+      rmx.disabled = true;
+      try{
+        const res = await fetch(p.url);
+        if(!res.ok) throw new Error('โหลดไฟล์ไม่ได้');
+        const obj = await projectFromPNGBytes(new Uint8Array(await res.arrayBuffer()));
+        if(!obj) throw new Error('ผลงานนี้ไม่ได้ฝังโปรเจกต์ไว้ — เปิดดูได้อย่างเดียว');
+        if(dirtySinceSave && !confirm('งานที่ทำอยู่ยังไม่ได้เซฟ จะเปิดผลงานนี้แทนไหม?')) throw new Error('');
+        obj.name = (obj.name || p.title) + ' (รีมิกซ์)';
+        obj.by = obj.by || p.author;
+        openSharedProject(obj);
+      }catch(err){
+        if(err.message) toast(err.message, 3000);
+        rmx.textContent = label;
+        rmx.disabled = false;
+      }
+    };
 
     const del = el.querySelector('.del');
     if(del) del.onclick = async ()=>{
@@ -4976,11 +5710,24 @@ document.addEventListener('drop', e => {
   const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
   if(!f) return;
   if(/\.json$/i.test(f.name)){ importProjectFile(f); return; }
-  toast('กำลังอ่านภาพ…');
-  loadImageFile(f)
-    .then(img => showImportImage(img))
-    .catch(err => toast(err.message, 3200));
+  offerEmbedded(f).then(handled => {
+    if(handled) return;
+    toast('กำลังอ่านภาพ…');
+    return loadImageFile(f)
+      .then(img => showImportImage(img))
+      .catch(err => toast(err.message, 3200));
+  });
 });
+
+$('chromeGrab').onclick = ()=>{
+  const hidden = document.body.classList.toggle('chrome-hidden');
+  resizeView();
+  if(hidden) toast('ซ่อนแถบล่างแล้ว — แตะขีดด้านล่างเพื่อเรียกกลับ', 2200);
+};
+$('btnAddFrameHead').onclick = addFrame;
+// the zoom readout is where the eye goes when the view is lost — make it the
+// way out instead of a label
+$('zoomTag').onclick = ()=>{ fitToScreen(); toast('พอดีจอ'); };
 
 window.addEventListener('resize', ()=>{ dpr = Math.min(window.devicePixelRatio||1, 2); resizeView(); });
 document.addEventListener('visibilitychange', ()=>{ if(document.hidden) runAutosave(); });
