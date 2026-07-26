@@ -1027,6 +1027,38 @@ function toast(msg, ms=1800){
 }
 function newFrameData(){ return new Uint8ClampedArray(S.W * S.H * 4); }
 
+/* One frame buffer of the wrong length makes ImageData throw, and that single
+   throw blanks the whole render — the canvas goes empty and the session looks
+   lost even though the other frames are fine. So: never hand a mismatched
+   buffer to ImageData. Repair it, keep whatever pixels fit, and name the layer
+   and frame that were wrong so the cause can be traced instead of guessed. */
+function fitFrameBuffer(data, pxCount){
+  const need = pxCount * 4;
+  if(data && data.length === need) return data;
+  const out = new Uint8ClampedArray(need);
+  if(data && data.length) out.set(data.subarray(0, Math.min(data.length, need)));
+  return out;
+}
+let frameSizeWarned = false;
+function frameFor(layer, idx){
+  const data = layer.frames[idx];
+  const need = S.W * S.H * 4;
+  if(data && data.length === need) return data;
+  if(!data && !layer.frames.length) return null;
+  const fixed = fitFrameBuffer(data, S.W * S.H);
+  layer.frames[idx] = fixed;
+  if(!frameSizeWarned){
+    frameSizeWarned = true;
+    toast(`ข้อมูลเลเยอร์ "${layer.name}" เฟรม ${idx+1} ขนาดไม่ตรงผ้าใบ `
+        + `(${data ? data.length : 0} → ${need} ไบต์) ซ่อมให้แล้ว`, 6000);
+    console.warn('[wadpixel] frame size mismatch', {
+      build: BUILD_ID, layer: layer.name, frame: idx,
+      got: data ? data.length : 0, need, W: S.W, H: S.H
+    });
+  }
+  return fixed;
+}
+
 /* ══════════════ PROJECT INIT ══════════════ */
 function initProject(w, h){
   // a fresh canvas is NOT the project that was open a moment ago
@@ -1375,7 +1407,7 @@ function compositeFrame(ctx, frameIdx, alphaMul=1){
     // the guide already sits under the current frame — ghosting it again for
     // onion skin just muddies it
     if(layer.ref && alphaMul !== 1) continue;
-    const data = layer.frames[frameIdx];
+    const data = frameFor(layer, frameIdx);
     if(!data) continue;
     const imgData = new ImageData(new Uint8ClampedArray(data), S.W, S.H);
     sctx.putImageData(imgData, 0, 0);
@@ -1905,7 +1937,7 @@ function drawFrameThumb(canvas, idx){
   c.fillStyle = '#fff'; c.fillRect(0,0,S.W,S.H);
   for(const layer of S.layers){
     if(!layer.visible || layer.ref) continue;
-    const data = layer.frames[idx];
+    const data = frameFor(layer, idx);
     if(!data) continue;
     sctx.putImageData(new ImageData(new Uint8ClampedArray(data), S.W, S.H), 0, 0);
     c.globalAlpha = layer.opacity;
@@ -2079,7 +2111,7 @@ function drawLayerThumb(canvas, li){
   c.imageSmoothingEnabled = false;
   c.clearRect(0,0,S.W,S.H);
   c.fillStyle='#fff'; c.fillRect(0,0,S.W,S.H);
-  const data = S.layers[li].frames[S.curFrame];
+  const data = frameFor(S.layers[li], S.curFrame);
   if(data){
     sctx.putImageData(new ImageData(new Uint8ClampedArray(data), S.W, S.H), 0, 0);
     c.drawImage(scratch, 0, 0);
@@ -2539,7 +2571,7 @@ function flattenFrame(idx){
   ctx.imageSmoothingEnabled = false;
   for(const layer of S.layers){
     if(!layer.visible || layer.ref) continue;
-    const data = layer.frames[idx];
+    const data = frameFor(layer, idx);
     if(!data) continue;
     sctx.putImageData(new ImageData(new Uint8ClampedArray(data), S.W, S.H), 0, 0);
     ctx.globalAlpha = layer.opacity;
@@ -2720,7 +2752,11 @@ function packFrame(data){
 }
 function unpackFrame(pair, pxCount){
   if(!pair) return new Uint8ClampedArray(pxCount*4);
-  return pair[0] === 'r' ? decodeRLE(pair[1], pxCount) : b64dec(pair[1]);
+  // decodeRLE always allocates the right size; the base64 branch returns
+  // whatever length was stored, so a file whose frames don't match its own
+  // w x h would only blow up later, far from the file that caused it
+  const data = pair[0] === 'r' ? decodeRLE(pair[1], pxCount) : b64dec(pair[1]);
+  return fitFrameBuffer(data, pxCount);
 }
 
 function serialize(name){
@@ -4147,7 +4183,7 @@ function showSaveLoad(){
     <div class="hr"></div>
     <div class="sec-lbl">งานในเครื่อง (${idx.length})</div>
     <div id="slList"></div>
-    <p class="quota">ใช้พื้นที่ <b>${fmtSize(used)}</b> · โควตาเบราว์เซอร์ราว 5 MB<br>งานใหญ่ควรส่งออกเป็นไฟล์ .json เก็บไว้</p>
+    <p class="quota">ใช้พื้นที่ <b>${fmtSize(used)}</b> · โควตาเบราว์เซอร์ราว 5 MB<br>งานใหญ่ควรส่งออกเป็นไฟล์ .json เก็บไว้<br>build <b>${BUILD_ID}</b></p>
     <button class="big-btn ghost" id="slClose">ปิด</button>
     <button class="sup-btn" id="slSupport"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.7 1.1-1a5.5 5.5 0 0 0 0-7.9Z"/></svg> สนับสนุนผู้พัฒนา</button>
   `);
@@ -5446,6 +5482,8 @@ function showExport(){
    เก็บ editToken ของผลงานตัวเองไว้ใน localStorage เพื่อให้ลบเองได้ทีหลัง */
 const API_SHARE   = '/api/share';
 const API_PROJECT = '/api/project';
+/* bump when deploying — the fastest way to tell a stale cache from a real bug */
+const BUILD_ID = '2026-07-26 remix-3';
 const API_GALLERY = '/api/gallery';
 const API_LIKE    = '/api/like';
 
@@ -5700,6 +5738,72 @@ async function loadPostProject(p){
   throw lastErr;
 }
 
+/* Every hop a remix depends on, checked one at a time. A single toast saying
+   "ไม่ได้" is unactionable on a phone with no devtools — this says which hop
+   broke and lets the result be copied out. */
+async function diagnoseRemix(p){
+  const steps = [];
+  const add = (name, ok, note) => steps.push({name, ok, note});
+
+  add('field project ที่มากับรายการ', !!p.project,
+      p.project ? `${p.project.slice(0,3)}… ${p.project.length} ตัวอักษร`
+                : 'ไม่มี (ปกติ — รายการแกลเลอรีไม่ส่งมาให้)');
+
+  try{
+    const r = await fetch(API_PROJECT + '?slug=' + encodeURIComponent(p.slug || ''));
+    const txt = await r.text();
+    let body = null;
+    try{ body = JSON.parse(txt); }catch{}
+    if(!body) add('GET /api/project', false, `HTTP ${r.status} · ตอบกลับไม่ใช่ JSON — endpoint ยังไม่ถูก deploy? · ${txt.slice(0,70)}`);
+    else if(body.ok && body.project) add('GET /api/project', true, `HTTP ${r.status} · source=${body.source} · ${body.project.length} ตัวอักษร`);
+    else add('GET /api/project', false, `HTTP ${r.status} · ${body.error || 'ไม่มี field project'}`);
+  }catch(err){
+    add('GET /api/project', false, 'ยิงไม่ถึง: ' + (err.message || 'network'));
+  }
+
+  try{
+    const r = await fetch(p.url, {cache:'no-store'});
+    const bytes = new Uint8Array(await r.arrayBuffer());
+    add('ดึงไฟล์รูปตรงๆ จากเบราว์เซอร์', r.ok,
+        `HTTP ${r.status} · ${(bytes.length/1024).toFixed(0)} KB · ${r.headers.get('content-type') || 'ไม่บอกชนิด'} · ${isPNG(bytes) ? 'เป็น PNG' : 'ไม่ใช่ PNG'}`);
+    if(isPNG(bytes)){
+      let obj = null;
+      try{ obj = await projectFromPNGBytes(bytes); }catch{}
+      add('chunk wadpixel ในไฟล์', !!obj,
+          obj ? `เจอ · ${obj.w}×${obj.h} · ${(obj.layers||[]).length} เลเยอร์` : 'ไม่เจอ — ไฟล์นี้แชร์ตอนยังไม่มีฟีเจอร์ฝัง');
+    }
+  }catch(err){
+    add('ดึงไฟล์รูปตรงๆ จากเบราว์เซอร์', false,
+        'ล้มเหลว: ' + (err.message || 'network') + ' — มักเป็น CORS ของโฮสต์รูป');
+  }
+  return steps;
+}
+
+async function showRemixReport(p, firstError){
+  openModal(`
+    <h2>รีมิกซ์ไม่สำเร็จ</h2>
+    <p class="sub"><b>${esc(p.title || '')}</b> · slug <b>${esc(p.slug || '-')}</b> · build ${BUILD_ID}</p>
+    <div class="rz-preview" id="rrBody">กำลังตรวจทีละขั้น…</div>
+    <button class="big-btn ghost" id="rrCopy">คัดลอกผลตรวจ</button>
+    <button class="big-btn ghost" id="rrClose">ปิด</button>
+  `);
+  const steps = await diagnoseRemix(p);
+  const lines = steps.map(s => `${s.ok ? '✅' : '❌'} ${s.name}\n   ${s.note}`);
+  const plain = [`build ${BUILD_ID}`, `slug ${p.slug}`, `kind ${p.kind}`, `url ${p.url}`,
+                 `error ${firstError || '-'}`, ...lines].join('\n');
+  const body = $('rrBody');
+  if(body) body.innerHTML = steps.map(s =>
+    `${s.ok ? '✅' : '❌'} <b>${esc(s.name)}</b><br><span style="color:var(--dim)">${esc(s.note)}</span>`
+  ).join('<br><br>');
+  const c = $('rrCopy');
+  if(c) c.onclick = async ()=>{
+    try{ await navigator.clipboard.writeText(plain); toast('คัดลอกแล้ว'); }
+    catch{ toast('คัดลอกไม่ได้ — จับภาพหน้าจอส่งมาก็ได้'); }
+  };
+  const cl = $('rrClose');
+  if(cl) cl.onclick = closeModal;
+}
+
 /* ══════ หน้าแกลเลอรี ══════ */
 function showGallery(sort){
   let mode   = sort === 'top' ? 'top' : 'new';
@@ -5819,9 +5923,9 @@ function showGallery(sort){
         obj.by = obj.by || p.author;
         openSharedProject(obj);
       }catch(err){
-        if(err.message) toast(err.message, 3600);
         rmx.textContent = label;
         rmx.disabled = false;
+        if(err.message) showRemixReport(p, err.message);
       }
     };
 
