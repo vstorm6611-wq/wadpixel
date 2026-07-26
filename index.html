@@ -4184,6 +4184,7 @@ function showSaveLoad(){
     <div class="sec-lbl">งานในเครื่อง (${idx.length})</div>
     <div id="slList"></div>
     <p class="quota">ใช้พื้นที่ <b>${fmtSize(used)}</b> · โควตาเบราว์เซอร์ราว 5 MB<br>งานใหญ่ควรส่งออกเป็นไฟล์ .json เก็บไว้<br>build <b>${BUILD_ID}</b></p>
+    <button class="big-btn ghost" id="slInit">ตั้งค่าเซิร์ฟเวอร์ครั้งแรก</button>
     <button class="big-btn ghost" id="slClose">ปิด</button>
     <button class="sup-btn" id="slSupport"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.7 1.1-1a5.5 5.5 0 0 0 0-7.9Z"/></svg> สนับสนุนผู้พัฒนา</button>
   `);
@@ -4260,6 +4261,7 @@ function showSaveLoad(){
       .then(img => { closeModal(); showPixelize(img); })
       .catch(err => toast(err.message, 3200));
   };
+  $('slInit').onclick = showServerInit;
   $('slClose').onclick = closeModal;
   $('slSupport').onclick = showSupport;
 }
@@ -5482,8 +5484,9 @@ function showExport(){
    เก็บ editToken ของผลงานตัวเองไว้ใน localStorage เพื่อให้ลบเองได้ทีหลัง */
 const API_SHARE   = '/api/share';
 const API_PROJECT = '/api/project';
+const API_INIT    = '/api/admin-init';
 /* bump when deploying — the fastest way to tell a stale cache from a real bug */
-const BUILD_ID = '2026-07-26 remix-3';
+const BUILD_ID = '2026-07-26 remix-4';
 const API_GALLERY = '/api/gallery';
 const API_LIKE    = '/api/like';
 
@@ -5802,6 +5805,65 @@ async function showRemixReport(p, firstError){
   };
   const cl = $('rrClose');
   if(cl) cl.onclick = closeModal;
+}
+
+/* Running admin-init needs a POST with the secret key. On a phone there's no
+   curl and no dev console, so the app does the POST itself. The key is only
+   held in the input for the length of the request — never stored. */
+function showServerInit(){
+  openModal(`
+    <h2>ตั้งค่าเซิร์ฟเวอร์ครั้งแรก</h2>
+    <p class="sub">สร้าง/อัปเดตตารางในฐานข้อมูล ทำครั้งเดียวหลัง deploy · รันซ้ำได้ไม่พัง</p>
+
+    <div class="sec-lbl">ADMIN_KEY</div>
+    <input id="siKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false"
+           placeholder="ค่าที่ตั้งไว้ใน Vercel → Environment Variables"
+           style="width:100%;height:44px;padding:0 12px;border-radius:10px;background:var(--panel-2);
+                  color:var(--fg);border:1px solid var(--line);font-size:13px;margin-bottom:6px">
+    <p class="sub" style="font-size:10.5px;margin-bottom:14px">
+      ต้องตั้ง env ชื่อ <b>ADMIN_KEY</b> ใน Vercel แล้ว redeploy ก่อน · คีย์นี้ไม่ถูกเก็บไว้ในเครื่อง
+    </p>
+
+    <div class="rz-preview" id="siOut" style="display:none"></div>
+
+    <button class="big-btn" id="siGo">รันเลย</button>
+    <button class="big-btn ghost" id="siClose">ปิด</button>
+  `);
+
+  const out = (msg, ok) => {
+    const o = $('siOut');
+    o.style.display = '';
+    o.innerHTML = msg;
+    o.style.color = ok ? 'var(--accent-2)' : 'var(--danger, #ff6b6b)';
+  };
+
+  $('siGo').onclick = async ()=>{
+    const key = $('siKey').value.trim();
+    if(!key) return out('ใส่ ADMIN_KEY ก่อน', false);
+    const btn = $('siGo');
+    btn.disabled = true; btn.textContent = 'กำลังรัน…';
+    try{
+      // key rides in the query string exactly as admin-init reads it
+      const r = await fetch(API_INIT + '?key=' + encodeURIComponent(key), {method:'POST'});
+      let body = null;
+      try{ body = await r.json(); }catch{}
+      if(r.ok && body && body.ok){
+        out('✅ สำเร็จ — ตารางพร้อมแล้ว ลองแชร์งานได้เลย', true);
+        toast('ตั้งค่าเซิร์ฟเวอร์สำเร็จ');
+      } else if(r.status === 401 || (body && body.error === 'unauthorized')){
+        out('❌ ADMIN_KEY ไม่ตรง — เช็คค่าใน Vercel แล้วลองใหม่<br><span style="color:var(--dim);font-size:10.5px">ถ้าเพิ่งตั้ง env ต้อง redeploy ก่อนค่าใหม่ถึงจะมีผล</span>', false);
+      } else if(r.status === 405){
+        out('❌ endpoint ตอบ method not allowed — เวอร์ชัน API ที่ deploy อาจยังเก่า', false);
+      } else {
+        out('❌ ' + ((body && body.error) || ('เซิร์ฟเวอร์ตอบ HTTP ' + r.status)) + '<br><span style="color:var(--dim);font-size:10.5px">ถ้าเป็น 500 มักเป็นฐานข้อมูลต่อไม่ติด — เช็ค env DATABASE_URL และ Neon ว่าตื่นอยู่</span>', false);
+      }
+    }catch(err){
+      out('❌ ยิงไม่ถึงเซิร์ฟเวอร์: ' + (err.message || 'network'), false);
+    }finally{
+      btn.disabled = false; btn.textContent = 'รันอีกครั้ง';
+    }
+  };
+  $('siClose').onclick = closeModal;
 }
 
 /* ══════ หน้าแกลเลอรี ══════ */
