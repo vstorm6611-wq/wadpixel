@@ -4184,7 +4184,7 @@ function showSaveLoad(){
     <div class="sec-lbl">งานในเครื่อง (${idx.length})</div>
     <div id="slList"></div>
     <p class="quota">ใช้พื้นที่ <b>${fmtSize(used)}</b> · โควตาเบราว์เซอร์ราว 5 MB<br>งานใหญ่ควรส่งออกเป็นไฟล์ .json เก็บไว้<br>build <b>${BUILD_ID}</b></p>
-    <button class="big-btn ghost" id="slInit">ตั้งค่าเซิร์ฟเวอร์ครั้งแรก</button>
+    ${IS_ADMIN ? '<button class="big-btn ghost" id="slInit">ตั้งค่าเซิร์ฟเวอร์ครั้งแรก</button>' : ''}
     <button class="big-btn ghost" id="slClose">ปิด</button>
     <button class="sup-btn" id="slSupport"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.7 1.1-1a5.5 5.5 0 0 0 0-7.9Z"/></svg> สนับสนุนผู้พัฒนา</button>
   `);
@@ -4261,7 +4261,7 @@ function showSaveLoad(){
       .then(img => { closeModal(); showPixelize(img); })
       .catch(err => toast(err.message, 3200));
   };
-  $('slInit').onclick = showServerInit;
+  if($('slInit')) $('slInit').onclick = showServerInit;
   $('slClose').onclick = closeModal;
   $('slSupport').onclick = showSupport;
 }
@@ -5485,8 +5485,16 @@ function showExport(){
 const API_SHARE   = '/api/share';
 const API_PROJECT = '/api/project';
 const API_INIT    = '/api/admin-init';
+/* the server-setup button is for the owner only. It shows when the URL carries
+   ?admin — remembered per-tab so it survives closing the menu, but never
+   written to storage, so a fresh visit is clean unless the flag is passed. */
+const IS_ADMIN = new URLSearchParams(location.search).has('admin')
+  || sessionStorage.getItem('wp_admin') === '1';
+if(new URLSearchParams(location.search).has('admin')){
+  try{ sessionStorage.setItem('wp_admin', '1'); }catch{}
+}
 /* bump when deploying — the fastest way to tell a stale cache from a real bug */
-const BUILD_ID = '2026-07-26 remix-4';
+const BUILD_ID = '2026-07-26 remix-5';
 const API_GALLERY = '/api/gallery';
 const API_LIKE    = '/api/like';
 
