@@ -2663,15 +2663,28 @@ async function exportZip(){
   download(out, `frames_${S.W*k}x${S.H*k}.zip`);
   expStatus(`เสร็จ · ${S.frameCount} ไฟล์ · ${S.W*k}×${S.H*k}`);
 }
-function exportGif(){
+let _gifWorkerURL = null;
+async function gifWorkerURL(){
+  if(_gifWorkerURL) return _gifWorkerURL;
+  const src = 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js';
+  const res = await fetch(src);
+  if(!res.ok) throw new Error('โหลด gif.worker.js ไม่สำเร็จ');
+  const code = await res.text();
+  _gifWorkerURL = URL.createObjectURL(new Blob([code], {type:'application/javascript'}));
+  return _gifWorkerURL;
+}
+async function exportGif(){
   if(typeof GIF === 'undefined'){ expStatus('โหลด gif.js ไม่สำเร็จ — ตรวจอินเทอร์เน็ต'); return; }
+  let workerScript;
+  try{ workerScript = await gifWorkerURL(); }
+  catch(e){ expStatus(e.message); return; }
   expStatus('กำลังเข้ารหัส GIF…');
   const scale = expScale > 1
     ? safeExpScale(S.W, S.H)
     : Math.max(1, Math.min(8, Math.floor(512/Math.max(S.W,S.H))));
   const gif = new GIF({
     workers: 2, quality: 1, width: S.W*scale, height: S.H*scale,
-    workerScript: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'
+    workerScript
   });
   for(let i=0;i<S.frameCount;i++){
     const f = flattenFrame(i);
@@ -5547,12 +5560,15 @@ function sheetDataURL(){
   return c.toDataURL('image/png');
 }
 function gifDataURL(onProgress){
-  return new Promise((resolve, reject)=>{
+  return new Promise(async (resolve, reject)=>{
     if(typeof GIF === 'undefined') return reject(new Error('โหลด gif.js ไม่สำเร็จ — ตรวจอินเทอร์เน็ต'));
+    let workerScript;
+    try{ workerScript = await gifWorkerURL(); }
+    catch(e){ return reject(e); }
     const scale = Math.max(1, Math.min(6, Math.floor(256/Math.max(S.W, S.H))));
     const gif = new GIF({
       workers: 2, quality: 1, width: S.W*scale, height: S.H*scale,
-      workerScript: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'
+      workerScript
     });
     for(let i=0;i<S.frameCount;i++){
       const c = document.createElement('canvas');
