@@ -781,6 +781,7 @@ body.solo-frame #btnAddFrameHead{display:flex}
   <button class="tool" id="btnLock" title="ล็อกพื้นที่โปร่งใส — วาดทับเฉพาะจุดที่มีสีอยู่แล้ว"><svg viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg></button>
   <button class="tool" id="btnSym" title="วาดสมมาตร"><svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22" stroke-dasharray="3 3"/><path d="M9 6 4 12l5 6"/><path d="M15 6l5 6-5 6"/></svg><span class="sym-tag" id="symTag"></span></button>
   <button class="tool" id="btnFlip" title="พลิก / หมุนภาพ"><svg viewBox="0 0 24 24"><path d="M12 3v18" stroke-dasharray="3 3"/><path d="M8 7H3l5 10V7Z"/><path d="M16 7h5l-5 10V7Z"/></svg></button>
+  <button class="tool" id="btnOutline" title="เส้นขอบอัตโนมัติ"><svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1"/><rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="3 3" opacity=".55"/></svg></button>
   <button class="tool" id="btnGrid" title="เส้นกริด"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1.5"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg></button>
 </div>
 
@@ -830,9 +831,10 @@ const S = {
   playing:false,
   tool:'pencil',
   brush:1,             // pencil/eraser nib size in pixels (square)
+  dither:false,        // pencil: lay a 2-colour checkerboard instead of a solid nib
+  color2:'#ffffff',    // the second colour used when dither is on
   lockAlpha:false,     // paint only where pixels already exist
-  eraseMode:'brush',   // 'brush' | 'color' — erase what you touch, or every pixel of that colour
-  eraseScope:'frame',  // 'frame' | 'all' — how far a colour erase reaches
+  eraseMode:'brush',   // 'brush' | 'color' — erase what you touch, or a connected colour region
   shapeFill:false,     // rectangles: outline or solid
   fillMode:'flood',    // 'flood' = spread from the tap, 'replace' = every matching pixel
   fillScope:'frame',   // 'frame' | 'all' — how far a colour replace reaches
@@ -1191,6 +1193,29 @@ function stampPixel(data, x, y, rgba){
       if(setPixel(data, x+dx, y+dy, rgba)) changed = true;
   return changed;
 }
+/* Dither nib: two colours in a checkerboard keyed to the canvas grid, not the
+   stroke — so overlapping strokes line up into one continuous pattern instead
+   of clashing. rgba is colour A (the current colour); colour B is S.color2.
+   Keyed on absolute (x+y) parity so the weave is stable wherever you paint. */
+function stampDither(data, x, y, rgba){
+  const n = S.brush|0;
+  const B = hexToRgba(S.color2);
+  const put = (px,py)=>{
+    const c = ((px+py) & 1) === 0 ? rgba : B;
+    return setPixel(data, px, py, c);
+  };
+  if(n <= 1) return put(x, y);
+  const h = (n-1) >> 1;
+  let changed = false;
+  for(let dy=-h; dy<n-h; dy++)
+    for(let dx=-h; dx<n-h; dx++)
+      if(put(x+dx, y+dy)) changed = true;
+  return changed;
+}
+/* The pencil's active plotter — swaps to the dither weave when the mode is on. */
+function pencilPlot(data, x, y, rgba){
+  return S.dither ? stampDither(data, x, y, rgba) : stampPixel(data, x, y, rgba);
+}
 function drawLine(data, x0,y0,x1,y1, rgba, plot = setPixel){
   const dx = Math.abs(x1-x0), sx = x0<x1?1:-1;
   const dy = -Math.abs(y1-y0), sy = y0<y1?1:-1;
@@ -1269,7 +1294,32 @@ function swapColorAt(x, y, to, scope){
   }
   return hits;
 }
-function eraseColorAt(x, y){ return swapColorAt(x, y, [0,0,0,0], S.eraseScope); }
+/* Flood erase: clear only the contiguous patch of one colour under the finger,
+   the way the fill tool spreads — stops at any pixel of a different colour.
+   Single frame only; "connected" has no meaning across frames. */
+function floodEraseAt(sx, sy){
+  const L = S.layers[S.curLayer];
+  if(!L || L.ref) return 0;
+  const data = L.frames[S.curFrame];
+  if(sx<0 || sy<0 || sx>=S.W || sy>=S.H) return 0;
+  const i0 = (sy*S.W + sx)*4;
+  const tr = data[i0], tg = data[i0+1], tb = data[i0+2], ta = data[i0+3];
+  if(ta === 0) return 0;                        // transparent — nothing to clear
+  const wrapc = (v,n)=>((v%n)+n)%n;
+  const stack = [[sx,sy]];
+  let hits = 0;
+  while(stack.length){
+    let [x,y] = stack.pop();
+    if(S.tileMode){ x = wrapc(x,S.W); y = wrapc(y,S.H); }
+    else if(x<0||y<0||x>=S.W||y>=S.H) continue;
+    const i = (y*S.W + x)*4;
+    if(data[i]!==tr || data[i+1]!==tg || data[i+2]!==tb || data[i+3]!==ta) continue;
+    data[i]=0; data[i+1]=0; data[i+2]=0; data[i+3]=0;
+    hits++;
+    stack.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);
+  }
+  return hits;
+}
 function symDrawRect(data, x0,y0,x1,y1, rgba, plot = setPixel, filled = false){
   drawRect(data, x0,y0,x1,y1, rgba, plot, filled);
   if(S.sym === 1 || S.sym === 3) drawRect(data, symX(x0),y0,symX(x1),y1, rgba, plot, filled);
@@ -1728,14 +1778,16 @@ view.addEventListener('pointerdown', e => {
     shapeBackup = new Uint8ClampedArray(data);
   } else if(S.tool === 'eraser' && S.eraseMode === 'color'){
     clearTimeout(pressTimer);
-    if(S.eraseScope === 'all') swapUndoForFrames(S.curLayer);
-    const hits = eraseColorAt(p.x, p.y);
+    const pushed = !S.layers[S.curLayer].ref;
+    if(pushed) pushUndo();
+    const hits = floodEraseAt(p.x, p.y);
     drawing = false;
     if(hits) markDirty();
-    else toast('ตรงนั้นโปร่งใสอยู่แล้ว');
+    else { if(pushed) S.undoStack.pop(); toast('ตรงนั้นโปร่งใสอยู่แล้ว'); }
   } else {
     const rgba = S.tool === 'eraser' ? [0,0,0,0] : hexToRgba(S.color);
-    symSetPixel(data, p.x, p.y, rgba, stampPixel);
+    const plot = (S.tool === 'pencil') ? pencilPlot : stampPixel;
+    symSetPixel(data, p.x, p.y, rgba, plot);
     lastPx = p;
     markDirty();
   }
@@ -1814,7 +1866,8 @@ view.addEventListener('pointermove', e => {
   } else {
     if(lastPx && (lastPx.x !== p.x || lastPx.y !== p.y)){
       const rgba = S.tool === 'eraser' ? [0,0,0,0] : hexToRgba(S.color);
-      symDrawLine(data, lastPx.x, lastPx.y, p.x, p.y, rgba, stampPixel);
+      const plot = (S.tool === 'pencil') ? pencilPlot : stampPixel;
+      symDrawLine(data, lastPx.x, lastPx.y, p.x, p.y, rgba, plot);
       lastPx = p;
       markDirty();
     }
@@ -2449,7 +2502,7 @@ const TOOL_TITLE = {pencil:'ดินสอ', eraser:'ยางลบ', line:'�
 function updateToolTags(){
   const n = S.brush|0, tag = n > 1 ? String(n) : '';
   const set = (id, v) => { const el = $(id); if(el) el.textContent = v; };
-  set('pencilTag', tag);
+  set('pencilTag', S.dither ? '▚' : tag);
   set('eraserTag', S.eraseMode === 'color' ? '◈' : tag);
   set('lineTag',   tag);
   set('rectTag',   S.shapeFill ? '■' : tag);
@@ -2468,6 +2521,7 @@ function showBrushOpts(){
   const isEraser = tool === 'eraser';
   const isFill   = tool === 'fill';
   const isRect   = tool === 'rect';
+  const isPencil = tool === 'pencil';
   const hasNib   = !isFill;
   openModal(`
     <h2>${TOOL_TITLE[tool] || 'เครื่องมือ'}</h2>
@@ -2487,6 +2541,19 @@ function showBrushOpts(){
       <button data-f="1"${S.shapeFill?' class="on"':''}>ทึบทั้งก้อน</button>
     </div>
     <p class="sub" style="font-size:10.5px;margin-top:-8px">แบบทึบใช้ขอบเป็นตัวกำหนดพื้นที่ ขนาดหัวจึงไม่มีผล</p>` : ''}
+    ${isPencil ? `
+    <div class="sec-lbl">ลายดิเธอร์ (สลับสองสี)</div>
+    <div class="seg" id="brDither">
+      <button data-d="0"${!S.dither?' class="on"':''}>สีเดียว</button>
+      <button data-d="1"${S.dither?' class="on"':''}>สลับฟันปลา</button>
+    </div>
+    <div id="brDitherWrap"${S.dither?'':' style="display:none"'}>
+      <div class="sec-lbl">สีที่สอง</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button id="brColor2" style="width:44px;height:44px;border-radius:10px;border:2px solid var(--line);background:${esc(S.color2)};flex:0 0 auto"></button>
+        <span class="sub" style="margin:0">สีหลักสลับกับสีนี้เป็นตาราง · แตะเพื่อเปลี่ยน</span>
+      </div>
+    </div>` : ''}
     ${isFill ? `
     <div class="sec-lbl">วิธีเท</div>
     <div class="seg" id="brFillMode">
@@ -2505,15 +2572,10 @@ function showBrushOpts(){
     <div class="sec-lbl">วิธีลบ</div>
     <div class="seg" id="brMode">
       <button data-m="brush"${S.eraseMode==='brush'?' class="on"':''}>ลบตามที่ลาก</button>
-      <button data-m="color"${S.eraseMode==='color'?' class="on"':''}>แตะสีไหน ลบสีนั้น</button>
+      <button data-m="color"${S.eraseMode==='color'?' class="on"':''}>แตะลบสีที่ต่อกัน</button>
     </div>
     <div id="brScopeWrap"${S.eraseMode==='color'?'':' style="display:none"'}>
-      <div class="sec-lbl">ลบสีนั้นแค่ไหน</div>
-      <div class="seg" id="brScope">
-        <button data-s="frame"${S.eraseScope==='frame'?' class="on"':''}>เฟรมนี้</button>
-        <button data-s="all"${S.eraseScope==='all'?' class="on"':''}>ทุกเฟรมในเลเยอร์</button>
-      </div>
-      <p class="sub" style="font-size:10.5px;margin-top:-8px">เทียบสีแบบตรงเป๊ะ ไม่มีค่าความคลาดเคลื่อน · ลบเฉพาะเลเยอร์ที่เลือกอยู่</p>
+      <p class="sub" style="font-size:10.5px;margin-top:2px">แตะจุดไหน ลบเฉพาะสีเดียวกันที่ต่อเนื่องกันจากจุดนั้น หยุดที่ขอบสีอื่น (เหมือนถังสีแต่เป็นการลบ) · ทำทีละเฟรม เฉพาะเลเยอร์ที่เลือก</p>
     </div>` : ''}
 
     <button class="big-btn" id="brDone">เสร็จ</button>
@@ -2531,8 +2593,14 @@ function showBrushOpts(){
       return;
     }
     const n = S.brush|0, h = (n-1) >> 1;
+    const weave = isPencil && S.dither;
     for(let dy=-h; dy<n-h; dy++)
-      for(let dx=-h; dx<n-h; dx++) ctx.fillRect(c+dx, c+dy, 1, 1);
+      for(let dx=-h; dx<n-h; dx++){
+        // preview keyed to the same absolute-parity grid the tool paints on
+        ctx.fillStyle = weave && (((c+dx)+(c+dy)) & 1)
+          ? S.color2 : (isEraser ? '#ff5d73' : S.color);
+        ctx.fillRect(c+dx, c+dy, 1, 1);
+      }
   }
   const pick = (wrap, attr, set) => document.querySelectorAll('#'+wrap+' button').forEach(b=>{
     b.onclick = ()=>{
@@ -2557,7 +2625,19 @@ function showBrushOpts(){
       const w = $('brScopeWrap');
       if(w) w.style.display = v === 'color' ? '' : 'none';
     });
-    pick('brScope', 's', v => S.eraseScope = v);
+  }
+  if(isPencil){
+    pick('brDither', 'd', v => {
+      S.dither = v === '1';
+      const w = $('brDitherWrap');
+      if(w) w.style.display = S.dither ? '' : 'none';
+    });
+    const c2 = $('brColor2');
+    if(c2) c2.onclick = ()=> showColorPicker(S.color2, hex => {
+      S.color2 = hex;
+      updateToolTags();
+      showBrushOpts();   // picker replaced this modal; reopen it with the new colour
+    });
   }
   $('brDone').onclick = closeModal;
   drawNib();
@@ -3093,7 +3173,7 @@ function openSharedProject(obj, {credit = true} = {}){
   deserialize(obj);
   curProjectId = null;
   curProjectName = obj.name || 'นำเข้า';
-  dirtySinceSave = true;
+  dirtySinceSave = false;   // just opened — not edited yet; first real change marks it dirty
   closeModal();
   const by = (obj.by || '').trim();
   toast(by ? `เปิด "${curProjectName}" ของ ${by} แล้ว — แก้ต่อได้เลย` : `เปิด "${curProjectName}" แล้ว`, 2600);
@@ -3704,6 +3784,104 @@ function doFlip(kind, scope){
   if(wide && saved) showRestoreBar(saved);
   toast(`พลิก${kind === 'flipH' ? 'แนวนอน' : 'แนวตั้ง'} · ${FLIP_SCOPE_LABEL[scope]}`);
 }
+/* ══════════════ AUTO OUTLINE ══════════════ */
+/* Trace a 1px border around every opaque cluster in a frame. A transparent
+   pixel becomes the outline colour when at least one neighbour is opaque —
+   so the line hugs the outside of the shape without touching the art itself.
+   4-way gives clean orthogonal edges; 8-way also fills diagonal corners. */
+const OUTLINE_N4 = [[1,0],[-1,0],[0,1],[0,-1]];
+const OUTLINE_N8 = OUTLINE_N4.concat([[1,1],[1,-1],[-1,1],[-1,-1]]);
+function outlineBuffer(src, w, h, rgba, diag){
+  const out = new Uint8ClampedArray(src);   // copy — art stays, only gaps fill
+  const nb = diag ? OUTLINE_N8 : OUTLINE_N4;
+  const opaque = (x,y)=>{
+    if(x<0||y<0||x>=w||y>=h) return S.tileMode
+      ? src[((((y%h)+h)%h)*w + (((x%w)+w)%w))*4 + 3] > 0
+      : false;
+    return src[(y*w+x)*4 + 3] > 0;
+  };
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      const i=(y*w+x)*4;
+      if(src[i+3] > 0) continue;            // already art — leave it
+      let touch = false;
+      for(const [dx,dy] of nb){ if(opaque(x+dx,y+dy)){ touch = true; break; } }
+      if(touch){ out[i]=rgba[0]; out[i+1]=rgba[1]; out[i+2]=rgba[2]; out[i+3]=rgba[3]; }
+    }
+  }
+  return out;
+}
+function applyOutline(scope, hex, diag){
+  const rgba = hexToRgba(hex);
+  const wide = scope === 'frame';   // touches every layer — one undo entry can't hold that
+  const targets = wide ? S.layers : [S.layers[S.curLayer]];
+  let touched = false, skippedRef = false;
+  // scope 'layer' is a single layer+frame edit the undo stack can hold; 'frame'
+  // spans every layer, so it uses a restore point and clears undo — same as flip
+  let saved = null, pushed = false;
+  if(wide) saved = saveRestorePoint('ก่อนใส่เส้นขอบ');
+  else if(!S.layers[S.curLayer].ref){ pushUndo(); pushed = true; }
+  for(const L of targets){
+    if(L.ref){ skippedRef = true; continue; }
+    L.frames[S.curFrame] = outlineBuffer(L.frames[S.curFrame], S.W, S.H, rgba, diag);
+    touched = true;
+  }
+  if(!touched){
+    if(pushed) S.undoStack.pop();   // undo the snapshot we just pushed for nothing
+    toast('เลเยอร์นี้เป็นภาพอ้างอิง วาดเส้นขอบไม่ได้');
+    return;
+  }
+  if(wide){ S.undoStack = []; S.redoStack = []; updateUndoBtns(); }
+  bufDirty = true; renderAll(); markProjectDirty(); refreshThumbs();
+  if(wide && saved) showRestoreBar(saved);
+  toast('ใส่เส้นขอบแล้ว' + (skippedRef ? ' (ข้ามภาพอ้างอิง)' : ''));
+}
+function showOutlineDialog(init){
+  if(S.layers[S.curLayer].ref){ toast('เลเยอร์นี้เป็นภาพอ้างอิง วาดเส้นขอบไม่ได้'); return; }
+  // state is threaded through init so it survives the colour picker, which
+  // replaces this modal wholesale — the picker's callback re-opens us with it
+  let scope = init && init.scope || 'layer';
+  let diag  = init ? !!init.diag : false;
+  let hex   = init && init.hex || S.color;
+  commitFloat();
+  openModal(`
+    <h2>เส้นขอบอัตโนมัติ</h2>
+    <p class="sub">วาดเส้นขอบ 1 พิกเซลรอบภาพในเฟรมนี้</p>
+
+    <div class="sec-lbl">สีเส้นขอบ</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <button id="olColor" style="width:44px;height:44px;border-radius:10px;border:2px solid var(--line);background:${esc(hex)};flex:0 0 auto"></button>
+      <span class="sub" style="margin:0">เริ่มจากสีที่ใช้อยู่ · แตะเพื่อเปลี่ยน</span>
+    </div>
+
+    <div class="sec-lbl">มุมทแยง</div>
+    <div class="seg" id="olDiag">
+      <button data-d="0"${!diag?' class="on"':''}>เฉพาะแนวตั้ง-นอน</button>
+      <button data-d="1"${diag?' class="on"':''}>รวมมุมทแยง</button>
+    </div>
+
+    <div class="sec-lbl">ขอบเขต</div>
+    <div class="seg" id="olScope">
+      <button data-s="layer"${scope==='layer'?' class="on"':''}>เลเยอร์นี้</button>
+      <button data-s="frame"${scope==='frame'?' class="on"':''}>ทุกเลเยอร์ เฟรมนี้</button>
+    </div>
+
+    <button class="big-btn" id="olGo">ใส่เส้นขอบ</button>
+    <button class="big-btn ghost" id="olCancel">ยกเลิก</button>
+  `);
+  const seg = (id, attr, fn) => document.querySelectorAll('#'+id+' button').forEach(b=>{
+    b.onclick = ()=>{
+      fn(b.dataset[attr]);
+      document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('on', x===b));
+    };
+  });
+  seg('olDiag', 'd', v => diag = v === '1');
+  seg('olScope', 's', v => scope = v);
+  // picker replaces this modal; carry the current choices back in when it returns
+  $('olColor').onclick = ()=> showColorPicker(hex, c => showOutlineDialog({scope, diag, hex:c}));
+  $('olGo').onclick = ()=>{ applyOutline(scope, hex, diag); closeModal(); };
+  $('olCancel').onclick = closeModal;
+}
 function showFlipDialog(){
   let kind = 'flipH', scope = 'cell';
   const refOnly = S.layers[S.curLayer].ref;
@@ -3847,7 +4025,7 @@ function placeImage(img, mode, fit, opts){
     scratch.width = sw; scratch.height = sh;
     bufDirty = true;
     fitToScreen(); renderAll(); updateUndoBtns();
-    markProjectDirty();
+    dirtySinceSave = false;   // freshly created — nothing edited yet, so don't nag to save
     return {w:sw, h:sh};
   }
 
@@ -6042,6 +6220,7 @@ $('btnSym').onclick = ()=>{
   toast('วาดสมมาตร: ' + SYM_LABEL[S.sym]);
 };
 $('btnFlip').onclick = showFlipDialog;
+$('btnOutline').onclick = showOutlineDialog;
 (function wireRefBar(){
   const cur = ()=> { const L = S.layers[S.curLayer]; return (L && L.ref && L.src) ? L : null; };
   $('rfScale').oninput = e => { const L = cur(); if(L) setRefScale(L, (+e.target.value)/100); };
