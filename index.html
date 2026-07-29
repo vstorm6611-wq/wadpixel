@@ -774,6 +774,7 @@ body.solo-frame #btnAddFrameHead{display:flex}
   <div class="divider"></div>
   <button class="tool" data-tool="line" title="เส้นตรง · แตะซ้ำเพื่อตั้งขนาด"><svg viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4"/><circle cx="4" cy="20" r="2"/><circle cx="20" cy="4" r="2"/></svg><span class="sym-tag" id="lineTag"></span></button>
   <button class="tool" data-tool="rect" title="สี่เหลี่ยม · แตะซ้ำเพื่อตั้งขนาด/ทึบ"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/></svg><span class="sym-tag" id="rectTag"></span></button>
+  <button class="tool" data-tool="ellipse" title="วงรี / วงกลม · แตะซ้ำเพื่อตั้งขนาด/ทึบ"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="9" ry="7"/></svg><span class="sym-tag" id="ellipseTag"></span></button>
   <div class="divider"></div>
   <button class="tool" id="btnFit" title="พอดีจอ"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
   <button class="tool" id="btnTile" title="โหมดต่อลาย (seamless)"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg></button>
@@ -782,6 +783,7 @@ body.solo-frame #btnAddFrameHead{display:flex}
   <button class="tool" id="btnSym" title="วาดสมมาตร"><svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22" stroke-dasharray="3 3"/><path d="M9 6 4 12l5 6"/><path d="M15 6l5 6-5 6"/></svg><span class="sym-tag" id="symTag"></span></button>
   <button class="tool" id="btnFlip" title="พลิก / หมุนภาพ"><svg viewBox="0 0 24 24"><path d="M12 3v18" stroke-dasharray="3 3"/><path d="M8 7H3l5 10V7Z"/><path d="M16 7h5l-5 10V7Z"/></svg></button>
   <button class="tool" id="btnOutline" title="เส้นขอบอัตโนมัติ"><svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1"/><rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="3 3" opacity=".55"/></svg></button>
+  <button class="tool" id="btnShift" title="เลื่อนภาพทั้งเฟรม"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/><path d="M5 12l3-3M5 12l3 3"/><path d="M19 12l-3-3M19 12l-3 3"/><path d="M12 5l-3 3M12 5l3 3"/><path d="M12 19l-3-3M12 19l3-3"/></svg></button>
   <button class="tool" id="btnGrid" title="เส้นกริด"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1.5"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg></button>
 </div>
 
@@ -1326,6 +1328,52 @@ function symDrawRect(data, x0,y0,x1,y1, rgba, plot = setPixel, filled = false){
   if(S.sym === 2 || S.sym === 3) drawRect(data, x0,symY(y0),x1,symY(y1), rgba, plot, filled);
   if(S.sym === 3) drawRect(data, symX(x0),symY(y0),symX(x1),symY(y1), rgba, plot, filled);
 }
+/* Midpoint ellipse from a bounding box (two opposite corners). Outline honours
+   the nib via `plot`; a solid ellipse scans horizontal spans so the interior is
+   laid one pixel at a time, the way drawRect fills — a wide nib would only bulge
+   the rim. Works for 1px-thin and degenerate boxes too. */
+function drawEllipse(data, x0,y0,x1,y1, rgba, plot = setPixel, filled = false){
+  const [ax,bx] = x0<x1?[x0,x1]:[x1,x0];
+  const [ay,by] = y0<y1?[y0,y1]:[y1,y0];
+  const w = bx-ax, h = by-ay;
+  let changed = false;
+  if(w === 0 || h === 0){                       // flat box → just a line
+    return drawLine(data, ax,ay,bx,by, rgba, plot);
+  }
+  // work in a centred integer frame; a/b are the semi-axes
+  const cx = (ax+bx)/2, cy = (ay+by)/2;
+  const a = w/2, b = h/2;
+  if(filled){
+    // exact test per row keeps the fill flush with the outline
+    for(let y=ay;y<=by;y++){
+      const ny = (y - cy)/b;
+      const inside = 1 - ny*ny;
+      if(inside < 0) continue;
+      const dx = a*Math.sqrt(inside);
+      const xL = Math.round(cx - dx), xR = Math.round(cx + dx);
+      for(let x=xL;x<=xR;x++) if(setPixel(data,x,y,rgba)) changed = true;
+    }
+    return changed;
+  }
+  // outline: sample the ellipse densely enough that neighbouring points touch,
+  // then plot — robust for any aspect ratio without integer-error gaps
+  const put = (x,y)=>{ if(plot(data, Math.round(x), Math.round(y), rgba)) changed = true; };
+  const steps = Math.max(8, Math.ceil((a+b) * 4));
+  let px = cx + a, py = cy;
+  for(let i=1;i<=steps;i++){
+    const t = i/steps * Math.PI * 2;
+    const nx = cx + a*Math.cos(t), ny = cy + b*Math.sin(t);
+    drawLine(data, Math.round(px),Math.round(py), Math.round(nx),Math.round(ny), rgba, plot);
+    px = nx; py = ny;
+  }
+  return changed;
+}
+function symDrawEllipse(data, x0,y0,x1,y1, rgba, plot = setPixel, filled = false){
+  drawEllipse(data, x0,y0,x1,y1, rgba, plot, filled);
+  if(S.sym === 1 || S.sym === 3) drawEllipse(data, symX(x0),y0,symX(x1),y1, rgba, plot, filled);
+  if(S.sym === 2 || S.sym === 3) drawEllipse(data, x0,symY(y0),x1,symY(y1), rgba, plot, filled);
+  if(S.sym === 3) drawEllipse(data, symX(x0),symY(y0),symX(x1),symY(y1), rgba, plot, filled);
+}
 function symFloodFill(data, x, y, rgba){
   // the mirrored seed may already be inside the region the first fill
   // covered — floodFill is a no-op there, which is the wanted result
@@ -1773,7 +1821,7 @@ view.addEventListener('pointerdown', e => {
     drawing = false;
     commitRecent();
     markDirty();
-  } else if(S.tool === 'line' || S.tool === 'rect'){
+  } else if(S.tool === 'line' || S.tool === 'rect' || S.tool === 'ellipse'){
     shapeStart = p;
     shapeBackup = new Uint8ClampedArray(data);
   } else if(S.tool === 'eraser' && S.eraseMode === 'color'){
@@ -1857,11 +1905,12 @@ view.addEventListener('pointermove', e => {
 
   const data = curData();
 
-  if(S.tool === 'line' || S.tool === 'rect'){
+  if(S.tool === 'line' || S.tool === 'rect' || S.tool === 'ellipse'){
     data.set(shapeBackup);
     const rgba = hexToRgba(S.color);
     if(S.tool === 'line') symDrawLine(data, shapeStart.x, shapeStart.y, p.x, p.y, rgba, stampPixel);
-    else symDrawRect(data, shapeStart.x, shapeStart.y, p.x, p.y, rgba, stampPixel, S.shapeFill);
+    else if(S.tool === 'rect') symDrawRect(data, shapeStart.x, shapeStart.y, p.x, p.y, rgba, stampPixel, S.shapeFill);
+    else symDrawEllipse(data, shapeStart.x, shapeStart.y, p.x, p.y, rgba, stampPixel, S.shapeFill);
     markDirty();
   } else {
     if(lastPx && (lastPx.x !== p.x || lastPx.y !== p.y)){
@@ -2497,8 +2546,8 @@ document.querySelectorAll('.tool[data-tool]').forEach(b=>{
 });
 
 const BRUSH_SIZES = [1,2,3,4,6,8];
-const OPT_TOOLS = ['pencil','eraser','line','rect','fill'];
-const TOOL_TITLE = {pencil:'ดินสอ', eraser:'ยางลบ', line:'เส้นตรง', rect:'สี่เหลี่ยม', fill:'ถังสี'};
+const OPT_TOOLS = ['pencil','eraser','line','rect','ellipse','fill'];
+const TOOL_TITLE = {pencil:'ดินสอ', eraser:'ยางลบ', line:'เส้นตรง', rect:'สี่เหลี่ยม', ellipse:'วงรี / วงกลม', fill:'ถังสี'};
 function updateToolTags(){
   const n = S.brush|0, tag = n > 1 ? String(n) : '';
   const set = (id, v) => { const el = $(id); if(el) el.textContent = v; };
@@ -2506,6 +2555,7 @@ function updateToolTags(){
   set('eraserTag', S.eraseMode === 'color' ? '◈' : tag);
   set('lineTag',   tag);
   set('rectTag',   S.shapeFill ? '■' : tag);
+  set('ellipseTag', S.shapeFill ? '●' : tag);
   set('fillTag',   S.fillMode === 'replace' ? '◈' : '');
 }
 function stepBrush(dir){
@@ -2521,6 +2571,8 @@ function showBrushOpts(){
   const isEraser = tool === 'eraser';
   const isFill   = tool === 'fill';
   const isRect   = tool === 'rect';
+  const isEllipse = tool === 'ellipse';
+  const isShape  = isRect || isEllipse;
   const isPencil = tool === 'pencil';
   const hasNib   = !isFill;
   openModal(`
@@ -2534,7 +2586,7 @@ function showBrushOpts(){
     <div class="seg" id="brSize">
       ${BRUSH_SIZES.map(n => `<button data-n="${n}"${S.brush===n?' class="on"':''}>${n}</button>`).join('')}
     </div>` : ''}
-    ${isRect ? `
+    ${isShape ? `
     <div class="sec-lbl">รูปทรง</div>
     <div class="seg" id="brShape">
       <button data-f="0"${!S.shapeFill?' class="on"':''}>เฉพาะขอบ</button>
@@ -2588,8 +2640,14 @@ function showBrushOpts(){
     cv.width = G; cv.height = G;
     ctx.clearRect(0,0,G,G);
     ctx.fillStyle = isEraser ? '#ff5d73' : S.color;
-    if(isRect && S.shapeFill){
-      ctx.fillRect(3, 4, 9, 7);              // solid rect ignores the nib
+    if(isShape && S.shapeFill){
+      if(isEllipse){
+        ctx.beginPath();
+        ctx.ellipse(7.5, 7.5, 5, 4, 0, 0, Math.PI*2);
+        ctx.fill();
+      } else {
+        ctx.fillRect(3, 4, 9, 7);            // solid rect ignores the nib
+      }
       return;
     }
     const n = S.brush|0, h = (n-1) >> 1;
@@ -2610,7 +2668,7 @@ function showBrushOpts(){
     };
   });
   pick('brSize', 'n', v => S.brush = +v);
-  if(isRect) pick('brShape', 'f', v => S.shapeFill = v === '1');
+  if(isShape) pick('brShape', 'f', v => S.shapeFill = v === '1');
   if(isFill){
     pick('brFillMode', 'm', v => {
       S.fillMode = v;
@@ -3753,6 +3811,7 @@ function doRotate(turn, scope){
   bufDirty = true;
   renderAll();
   markProjectDirty();
+  if(wide){ S.undoStack = []; S.redoStack = []; updateUndoBtns(); }
   if(wide && saved) showRestoreBar(saved);
   toast(`${TURN_LABEL[turn]} · ${FLIP_SCOPE_LABEL[scope]}` + (skippedRef ? ' (ภาพอ้างอิงไม่หมุนตาม)' : ''));
 }
@@ -3881,6 +3940,112 @@ function showOutlineDialog(init){
   $('olColor').onclick = ()=> showColorPicker(hex, c => showOutlineDialog({scope, diag, hex:c}));
   $('olGo').onclick = ()=>{ applyOutline(scope, hex, diag); closeModal(); };
   $('olCancel').onclick = closeModal;
+}
+/* ══════════════ SHIFT / OFFSET ══════════════ */
+/* Move every pixel of a frame by (dx,dy). Wrap rolls pixels that fall off one
+   edge back in on the opposite side — the way you build a seamless scrolling
+   background or slide a walk-cycle body a pixel at a time. Without wrap the
+   vacated edge is cleared. */
+function shiftBuffer(src, w, h, dx, dy, wrap){
+  const out = new Uint8ClampedArray(w*h*4);
+  const mod = (v,n)=>((v%n)+n)%n;
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      let sx = x - dx, sy = y - dy;
+      if(wrap){ sx = mod(sx,w); sy = mod(sy,h); }
+      else if(sx<0||sy<0||sx>=w||sy>=h) continue;   // leaves destination transparent
+      const si=(sy*w+sx)*4, di=(y*w+x)*4;
+      out[di]=src[si]; out[di+1]=src[si+1]; out[di+2]=src[si+2]; out[di+3]=src[si+3];
+    }
+  }
+  return out;
+}
+function doShift(dx, dy, scope, wrap){
+  if(dx === 0 && dy === 0){ toast('ยังไม่ได้เลือกทิศ'); return; }
+  commitFloat();
+  S.sel = null;
+  const wide = scope !== 'cell';
+  let saved = null, pushed = false;
+  if(wide) saved = saveRestorePoint('ก่อนเลื่อนภาพ');
+  else if(!S.layers[S.curLayer].ref){ pushUndo(); pushed = true; }
+
+  const targets = (scope === 'cell' || scope === 'layer') ? [S.layers[S.curLayer]] : S.layers;
+  let touched = false, skippedRef = false;
+  for(const L of targets){
+    if(L.ref){ skippedRef = true; continue; }
+    if(scope === 'cell' || scope === 'frame'){
+      L.frames[S.curFrame] = shiftBuffer(L.frames[S.curFrame], S.W, S.H, dx, dy, wrap);
+    } else {
+      L.frames = L.frames.map(f => shiftBuffer(f, S.W, S.H, dx, dy, wrap));
+    }
+    touched = true;
+  }
+  if(!touched){
+    if(pushed) S.undoStack.pop();
+    toast('เลเยอร์นี้เป็นภาพอ้างอิง เลื่อนไม่ได้');
+    return;
+  }
+  bufDirty = true; renderAll(); markProjectDirty(); refreshThumbs();
+  if(wide){ S.undoStack = []; S.redoStack = []; updateUndoBtns(); }
+  if(wide && saved) showRestoreBar(saved);
+  toast('เลื่อนภาพแล้ว' + (skippedRef ? ' (ข้ามภาพอ้างอิง)' : ''));
+}
+function showShiftDialog(){
+  if(S.layers[S.curLayer].ref){ toast('เลเยอร์นี้เป็นภาพอ้างอิง เลื่อนไม่ได้'); return; }
+  let scope = 'cell', wrap = true, step = 1;
+  commitFloat();
+  openModal(`
+    <h2>เลื่อนภาพ</h2>
+    <p class="sub">ขยับพิกเซลทั้งภาพไปเป็นทิศ · เหมาะกับทำ walk cycle หรือฉากเลื่อน</p>
+
+    <div class="sec-lbl">ระยะต่อการกด (พิกเซล)</div>
+    <div class="seg" id="shStep">
+      <button data-v="1" class="on">1</button>
+      <button data-v="2">2</button>
+      <button data-v="4">4</button>
+      <button data-v="8">8</button>
+    </div>
+
+    <div class="sec-lbl">ทิศทาง</div>
+    <div class="sh-pad" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:220px;margin:0 auto">
+      <span></span>
+      <button class="big-btn" id="shU" style="margin:0">↑</button>
+      <span></span>
+      <button class="big-btn" id="shL" style="margin:0">←</button>
+      <button class="big-btn ghost" id="shC" style="margin:0;font-size:12px">กลาง</button>
+      <button class="big-btn" id="shR" style="margin:0">→</button>
+      <span></span>
+      <button class="big-btn" id="shD" style="margin:0">↓</button>
+      <span></span>
+    </div>
+
+    <label class="lock-row"><input type="checkbox" id="shWrap" checked> วนขอบ (พิกเซลที่ตกขอบกลับมาโผล่อีกด้าน)</label>
+
+    <div class="sec-lbl">ขอบเขต</div>
+    <div class="seg" id="shScope" style="flex-wrap:wrap">
+      <button data-s="cell" class="on">เฟรมนี้</button>
+      <button data-s="layer">ทั้งเลเยอร์</button>
+      <button data-s="frame">ทุกเลเยอร์</button>
+      <button data-s="all">ทั้งโปรเจกต์</button>
+    </div>
+
+    <p class="sub" id="shNote" style="font-size:10.5px">ปุ่มกลางไม่ทำอะไร · กดทิศเพื่อเลื่อนทันที เปิดหน้านี้ค้างไว้กดซ้ำได้</p>
+    <button class="big-btn ghost" id="shDone">เสร็จ</button>
+  `);
+  const seg = (id, attr, fn) => document.querySelectorAll('#'+id+' button').forEach(b=>{
+    b.onclick = ()=>{ fn(b.dataset[attr]);
+      document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('on', x===b)); };
+  });
+  seg('shStep', 'v', v => step = +v);
+  seg('shScope', 's', v => scope = v);
+  $('shWrap').onchange = e => wrap = e.target.checked;
+  const go = (ux, uy) => doShift(ux*step, uy*step, scope, wrap);
+  $('shU').onclick = ()=> go(0,-1);
+  $('shD').onclick = ()=> go(0, 1);
+  $('shL').onclick = ()=> go(-1,0);
+  $('shR').onclick = ()=> go(1, 0);
+  $('shC').onclick = ()=>{};
+  $('shDone').onclick = closeModal;
 }
 function showFlipDialog(){
   let kind = 'flipH', scope = 'cell';
@@ -4147,7 +4312,10 @@ function showHome(){
   openModal(`
     <div style="display:flex;align-items:center;gap:11px;margin-bottom:2px">
       <div class="logo-mark" style="width:56px;height:56px"></div>
-      <h2 style="margin:0;background:linear-gradient(92deg,var(--accent-2),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">wadpixel</h2>
+      <div>
+        <h2 style="margin:0;background:linear-gradient(92deg,var(--accent-2),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent">wadpixel</h2>
+        <span style="font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums">เวอร์ชัน ${APP_VERSION} · อัปเดต ${APP_UPDATED}</span>
+      </div>
     </div>
     <p class="sub">
       ${hasWork
@@ -4806,6 +4974,40 @@ function pxPointScale(src, sw, sh, dw, dh){
   return out;
 }
 
+/* Denoise the downscaled grid before quantizing. A photo shrunk to 64px
+   carries sensor/JPEG grain that median cut then spends palette slots on,
+   which is what reads as "busy/noisy". A 3x3 median kills lone specks; we
+   blend it back by strength so edges (which the median also softens) survive
+   at the lighter setting. 'soft' = 55% median, 'hard' = full median. */
+const PX_DENOISE = {none:0, soft:0.55, hard:1};
+function pxDenoise(data, w, h, amt){
+  if(!amt) return data;
+  const out = new Uint8ClampedArray(data);
+  const med = arr => { arr.sort((a,b)=>a-b); return arr[arr.length>>1]; };
+  const R=[], G=[], B=[];
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      const i=(y*w+x)*4;
+      if(data[i+3] < PX_ALPHA_CUT) continue;
+      R.length=0; G.length=0; B.length=0;
+      for(let dy=-1;dy<=1;dy++){
+        const yy=y+dy; if(yy<0||yy>=h) continue;
+        for(let dx=-1;dx<=1;dx++){
+          const xx=x+dx; if(xx<0||xx>=w) continue;
+          const j=(yy*w+xx)*4;
+          if(data[j+3] < PX_ALPHA_CUT) continue;
+          R.push(data[j]); G.push(data[j+1]); B.push(data[j+2]);
+        }
+      }
+      if(R.length < 3) continue;   // edge/corner with few samples — leave as is
+      out[i]   = data[i]   + (med(R)-data[i])   * amt;
+      out[i+1] = data[i+1] + (med(G)-data[i+1]) * amt;
+      out[i+2] = data[i+2] + (med(B)-data[i+2]) * amt;
+    }
+  }
+  return out;
+}
+
 /* Median cut — split the colour cloud on its widest axis until there are
    enough boxes, then average each one. Cheap, and it keeps small bright
    areas that a frequency count would throw away. */
@@ -4985,7 +5187,7 @@ const rgbToHex = c => '#' + [c[0],c[1],c[2]].map(v=>Math.max(0,Math.min(255,v|0)
 
 function showPixelize(img){
   const hasWork = artLayers().some(L => L.frames.some(v => v.some(x => x !== 0)));
-  let size = 64, colors = 16, dither = 'none', smooth = true, usePal = false, boost = 'none';
+  let size = 64, colors = 16, dither = 'none', smooth = true, usePal = false, boost = 'none', denoise = 'none';
   let mode = hasWork ? 'layer' : 'newproject';
   let takePal = true;
   let res = null;
@@ -5036,6 +5238,13 @@ function showPixelize(img){
       <button data-b="hard">แรง</button>
     </div>
 
+    <div class="sec-lbl">ลดนอยส์ (สำหรับภาพถ่าย — เก็บขอบไว้)</div>
+    <div class="seg" id="pxDenoise">
+      <button data-n="none" class="on">ปิด</button>
+      <button data-n="soft">เบา</button>
+      <button data-n="hard">แรง</button>
+    </div>
+
     <label class="lock-row"><input type="checkbox" id="pxSmooth" checked> เฉลี่ยสีตอนย่อ — ปิดถ้าต้นฉบับเป็นพิกเซลอาร์ตอยู่แล้ว</label>
     <label class="lock-row"><input type="checkbox" id="pxUsePal"> บังคับใช้จานสีของโปรเจกต์ (${S.palette.length} สี)</label>
     <label class="lock-row" id="pxTakeRow"><input type="checkbox" id="pxTakePal" checked> ตั้งสีที่ได้เป็นจานสีโปรเจกต์</label>
@@ -5070,11 +5279,13 @@ function showPixelize(img){
         ? pxDownscale(img.data, img.w, img.h, g.w, g.h)
         : pxPointScale(img.data, img.w, img.h, g.w, g.h)};
     }
+    const dn = PX_DENOISE[denoise];
+    const clean = dn ? pxDenoise(srcCache.data, g.w, g.h, dn) : srcCache.data;
     const b = PX_BOOST[boost];
-    const base = b ? pxBoostColors(srcCache.data, b[0], b[1]) : srcCache.data;
+    const base = b ? pxBoostColors(clean, b[0], b[1]) : clean;
     const pal = usePal && S.palette.length
       ? S.palette.map(h => hexToRgba(h).slice(0,3))
-      : pxDedupe(pxRefine(base, pxMedianCut(base, colors), 4));
+      : pxDedupe(pxRefine(base, pxMedianCut(base, colors), 8));
     res = {data: pxQuantize(base, g.w, g.h, pal, dither), w:g.w, h:g.h, name:img.name, pal};
 
     cv.width = g.w; cv.height = g.h;
@@ -5114,6 +5325,7 @@ function showPixelize(img){
   seg('pxCol',  'c', v => colors = +v);
   seg('pxDit',  'd', v => dither = v);
   seg('pxBoost','b', v => boost = v);
+  seg('pxDenoise','n', v => denoise = v);
   seg('pxMode', 'm', v => mode = v);
 
   // forcing the project palette and harvesting one from the image are
@@ -5387,6 +5599,143 @@ function showColorPicker(startHex, onPick){
   requestAnimationFrame(()=>{ sizeCanvases(); sync(); });
 }
 
+/* Parse a palette out of pasted text or a downloaded file. Handles the formats
+   pixel artists actually pass around: a bare list of hex codes (what Lospec's
+   "copy hex" gives), GIMP .gpl ("R G B  name" rows under a GIMP header), and
+   JASC-PAL .pal ("R G B" rows). Anything that looks like a 6-digit hex or an
+   "r g b" triple is picked up; junk lines are ignored. */
+function parsePaletteText(text){
+  if(!text) return [];
+  const out = [], seen = new Set();
+  const push = hex => {
+    hex = hex.toLowerCase();
+    if(seen.has(hex)) return;
+    seen.add(hex); out.push(hex);
+  };
+  const toHex = (r,g,b) => '#' + [r,g,b].map(v =>
+    Math.max(0,Math.min(255,v|0)).toString(16).padStart(2,'0')).join('');
+  const isGpl = /^GIMP Palette/i.test(text.trim());
+  for(let raw of text.split(/\r?\n/)){
+    const line = raw.trim();
+    if(!line || line[0] === '#' && isGpl) continue;      // .gpl comment
+    if(/^(GIMP Palette|Name:|Columns:|JASC-PAL|0100|\d+)$/i.test(line) && isGpl) continue;
+    // hex tokens anywhere on the line (#abc or #aabbcc, with or without #)
+    let m = line.match(/#?[0-9a-fA-F]{6}\b/g);
+    if(m && !/^\s*\d+\s+\d+\s+\d+/.test(line)){
+      for(const h of m) push('#' + h.replace('#',''));
+      continue;
+    }
+    // "r g b" or "r,g,b" triples (gpl / pal / plain)
+    const t = line.match(/(\d{1,3})[\s,]+(\d{1,3})[\s,]+(\d{1,3})/);
+    if(t) push(toHex(+t[1], +t[2], +t[3]));
+  }
+  return out;
+}
+
+function importPaletteInto(colors, replace){
+  colors = colors.filter(c => /^#[0-9a-f]{6}$/.test(c));
+  if(!colors.length){ toast('ไม่พบสีในข้อมูลที่ใส่มา', 2600); return false; }
+  if(replace){
+    applyPalette(colors);
+    toast(`ใช้จานสีใหม่ ${Math.min(colors.length,64)} สี`);
+  } else {
+    const before = S.palette.length;
+    const merged = S.palette.slice();
+    for(const c of colors) if(!merged.includes(c) && merged.length < 64) merged.push(c);
+    applyPalette(merged);
+    toast(`เพิ่ม ${merged.length - before} สีใหม่`);
+  }
+  return true;
+}
+
+/* Lospec exposes any palette as JSON at lospec.com/palette-list/<slug>.json —
+   accept a full URL or a bare slug. Falls back to scraping hex from whatever
+   text comes back, so a .hex/.gpl link works too. */
+async function fetchLospecPalette(input){
+  input = input.trim();
+  let slug = input;
+  const um = input.match(/palette-list\/([a-z0-9-]+)/i);
+  if(um) slug = um[1];
+  else if(/^https?:/i.test(input)) slug = null;         // some other URL — fetch raw
+  const url = slug
+    ? `https://lospec.com/palette-list/${slug}.json`
+    : input;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('โหลดไม่ได้ (' + res.status + ')');
+  const ctype = res.headers.get('content-type') || '';
+  if(ctype.includes('json') || slug){
+    const j = await res.json();
+    if(Array.isArray(j.colors)) return j.colors.map(c => '#' + String(c).replace('#',''));
+  }
+  return parsePaletteText(await res.text());
+}
+
+function showPaletteImport(){
+  openModal(`
+    <h2>นำเข้าจานสี</h2>
+    <p class="sub">วางโค้ดสีจาก Lospec (ปุ่ม Copy hex) หรือลิงก์ Lospec หรือเปิดไฟล์ .hex / .gpl / .pal</p>
+
+    <div class="sec-lbl">วางโค้ดสี หรือ ลิงก์ Lospec</div>
+    <textarea id="piText" rows="5" placeholder="#1a1c2c&#10;#5d275d&#10;#b13e53&#10;…&#10;หรือ  lospec.com/palette-list/sweetie-16" style="width:100%;resize:vertical;font-family:ui-monospace,monospace;font-size:13px;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);box-sizing:border-box"></textarea>
+    <div id="piPreview" class="rz-preview" style="min-height:24px"></div>
+
+    <button class="big-btn" id="piMerge">เพิ่มเข้าจานเดิม</button>
+    <button class="big-btn ghost" id="piReplace">แทนที่จานทั้งหมด</button>
+
+    <div class="hr"></div>
+    <button class="sup-btn" id="piFileBtn">เปิดไฟล์จานสี (.hex / .gpl / .pal / .txt)</button>
+    <input type="file" id="piFile" accept=".hex,.gpl,.pal,.txt,text/plain" style="display:none">
+
+    <button class="big-btn ghost" id="piCancel">ยกเลิก</button>
+  `);
+
+  let parsed = [];
+  const ta = $('piText'), prev = $('piPreview');
+  const looksUrl = s => /lospec\.com|^https?:/i.test(s.trim());
+
+  function refresh(){
+    const v = ta.value;
+    if(looksUrl(v)){
+      prev.innerHTML = 'กด "เพิ่ม" หรือ "แทนที่" เพื่อโหลดจากลิงก์';
+      parsed = [];
+      return;
+    }
+    parsed = parsePaletteText(v);
+    prev.innerHTML = parsed.length
+      ? `พบ <b>${parsed.length}</b> สี <span class="strip">${parsed.slice(0,24).map(c=>`<i style="background:${c}"></i>`).join('')}</span>`
+      : (v.trim() ? '<span class="warn-inline">ยังไม่พบสีที่อ่านได้</span>' : '');
+  }
+  ta.oninput = refresh;
+
+  async function go(replace){
+    const v = ta.value.trim();
+    if(!v){ toast('ยังไม่ได้ใส่อะไร'); return; }
+    if(looksUrl(v)){
+      toast('กำลังโหลดจากลิงก์…');
+      try{
+        const colors = await fetchLospecPalette(v);
+        if(importPaletteInto(colors, replace)){ closeModal(); setTimeout(showPaletteManager, 30); }
+      }catch(err){ toast('โหลดจากลิงก์ไม่ได้: ' + err.message, 3200); }
+      return;
+    }
+    if(importPaletteInto(parsePaletteText(v), replace)){ closeModal(); setTimeout(showPaletteManager, 30); }
+  }
+  $('piMerge').onclick   = ()=> go(false);
+  $('piReplace').onclick = ()=> go(true);
+  $('piFileBtn').onclick = ()=> $('piFile').click();
+  $('piFile').onchange = e => {
+    const f = e.target.files[0];
+    if(!f) return;
+    e.target.value = '';
+    const rd = new FileReader();
+    rd.onload = ()=>{ ta.value = String(rd.result || ''); refresh(); toast('อ่านไฟล์แล้ว — เลือกเพิ่มหรือแทนที่'); };
+    rd.onerror = ()=> toast('อ่านไฟล์ไม่ได้');
+    rd.readAsText(f);
+  };
+  $('piCancel').onclick = ()=>{ closeModal(); setTimeout(showPaletteManager, 30); };
+  refresh();
+}
+
 function showPaletteManager(){
   const artColors = extractPaletteFromArt(32);
   openModal(`
@@ -5420,6 +5769,7 @@ function showPaletteManager(){
     <div id="pmPresets"></div>
 
     <div class="hr"></div>
+    <button class="sup-btn" id="pmImport" style="margin-top:0">นำเข้าจานสี (Lospec / .hex / .gpl)</button>
     <button class="sup-btn" id="pmClear" style="margin-top:0;color:var(--danger)">ล้างจานสีทั้งหมด</button>
     <button class="big-btn ghost" id="pmClose">ปิด</button>
   `);
@@ -5546,6 +5896,7 @@ function showPaletteManager(){
     applyPalette([]);
     renderGrid();
   };
+  $('pmImport').onclick = ()=>{ closeModal(); setTimeout(showPaletteImport, 30); };
   $('pmClose').onclick = closeModal;
   renderGrid();
 }
@@ -5686,6 +6037,8 @@ if(new URLSearchParams(location.search).has('admin')){
 }
 /* bump when deploying — the fastest way to tell a stale cache from a real bug */
 const BUILD_ID = '2026-07-26 remix-5';
+const APP_VERSION = '0.5';
+const APP_UPDATED = '29 ก.ค. 2026';   // bump both when shipping a visible change
 const API_GALLERY = '/api/gallery';
 const API_LIKE    = '/api/like';
 
@@ -6221,6 +6574,7 @@ $('btnSym').onclick = ()=>{
 };
 $('btnFlip').onclick = showFlipDialog;
 $('btnOutline').onclick = showOutlineDialog;
+$('btnShift').onclick = showShiftDialog;
 (function wireRefBar(){
   const cur = ()=> { const L = S.layers[S.curLayer]; return (L && L.ref && L.src) ? L : null; };
   $('rfScale').oninput = e => { const L = cur(); if(L) setRefScale(L, (+e.target.value)/100); };
@@ -6320,10 +6674,16 @@ $('btnGrid').onclick = ()=>{ S.showGrid = !S.showGrid; $('btnGrid').classList.to
 $('btnOnion').onclick = ()=>{ S.onion = !S.onion; $('btnOnion').classList.toggle('on', S.onion); bufDirty=true; renderView(); };
 $('fps').oninput = e => { S.fps = +e.target.value; $('fpsVal').textContent = S.fps + ' fps'; };
 
-const TOOL_KEYS = {b:'pencil', e:'eraser', g:'fill', i:'picker', l:'line', r:'rect', m:'select', v:'select'};
+const TOOL_KEYS = {b:'pencil', e:'eraser', g:'fill', i:'picker', l:'line', r:'rect', o:'ellipse', m:'select', v:'select'};
 document.addEventListener('keydown', e=>{
   const t = e.target;
   if(t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+  // a modal owns the keyboard while it's open — otherwise pressing a tool key or
+  // undo behind an open dialog quietly edits the art you can't see. Escape closes it.
+  if($('modal').classList.contains('on')){
+    if(e.key === 'Escape'){ e.preventDefault(); closeModal(); }
+    return;
+  }
   const mod = e.ctrlKey || e.metaKey;
   // e.key arrives uppercase while Shift is held, which broke Ctrl+Shift+Z
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
