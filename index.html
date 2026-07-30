@@ -201,7 +201,23 @@ body.solo-frame #btnAddFrameHead{display:flex}
 #fps{flex:1;-webkit-appearance:none;height:3px;border-radius:2px;background:var(--line);outline:none}
 #fps::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent-2);cursor:pointer}
 #fps::-moz-range-thumb{width:16px;height:16px;border:none;border-radius:50%;background:var(--accent-2)}
-#fpsVal{font-size:11px;color:var(--text);font-variant-numeric:tabular-nums;min-width:38px;text-align:right}
+#fpsVal{font-size:11px;color:var(--text);font-variant-numeric:tabular-nums;min-width:44px;text-align:right;
+  padding:2px 0;border-bottom:1px dotted var(--dim)}
+/* a frame holding its own time says so, or the timing modal is the only clue */
+.frame .fd{
+  position:absolute;top:0;right:0;font-size:8px;line-height:1.25;padding:1px 3px;font-weight:600;
+  background:rgba(124,92,255,.92);color:#fff;border-bottom-left-radius:5px
+}
+.fd-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)}
+.fd-row .fd-n{width:26px;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+.fd-row input{
+  flex:1 1 auto;min-width:0;height:38px;border-radius:9px;border:1px solid var(--line);
+  background:var(--panel-2);color:var(--text);font:inherit;text-align:right;padding:0 9px
+}
+.fd-row input.dim{color:var(--dim)}
+.fd-row .fd-rst{font-size:11px;color:var(--accent-2);padding:0 4px}
+.fd-row .fd-rst:disabled{color:var(--line)}
+.fd-list{max-height:44vh;overflow-y:auto;margin:2px 0 10px}
 #frames{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding-bottom:2px;scrollbar-width:none}
 #frames::-webkit-scrollbar{display:none}
 .frame{
@@ -354,6 +370,26 @@ body.solo-frame #btnAddFrameHead{display:flex}
 .exp-opt .tx b{display:block;font-size:13px;font-weight:600;margin-bottom:2px}
 .exp-opt .tx span{font-size:11px;color:var(--dim);line-height:1.4}
 #expStatus{font-size:12px;color:var(--accent-2);text-align:center;margin-top:10px;min-height:16px}
+
+/* ---------- SHORTCUTS / GUIDE ---------- */
+.sc-list{max-height:52vh;overflow-y:auto;margin-bottom:12px;-webkit-overflow-scrolling:touch}
+.sc-row{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line)}
+.sc-row .sc-tx{flex:1 1 auto;min-width:0}
+.sc-row .sc-tx b{display:block;font-size:13px;font-weight:600}
+.sc-row .sc-tx span{display:block;font-size:10.5px;color:var(--dim);line-height:1.4;margin-top:1px}
+.kchip{
+  flex:0 0 auto;min-width:44px;height:36px;padding:0 11px;border-radius:9px;
+  background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+  font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.3px;
+}
+.kchip:active{background:var(--line)}
+.kchip.empty{color:var(--dim);font-weight:500}
+.kchip.listen{background:var(--accent);color:#fff;border-color:var(--accent)}
+.kclr{flex:0 0 auto;width:28px;height:36px;border-radius:9px;color:var(--danger);font-size:18px;line-height:1}
+.kclr:active{background:var(--line)}
+.sc-fixed{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  font-size:11.5px;padding:7px 2px;border-bottom:1px solid var(--line);color:var(--dim)}
+.sc-fixed b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
 
 /* ---------- SAVE / LOAD ---------- */
 .proj{
@@ -701,7 +737,7 @@ body.solo-frame #btnAddFrameHead{display:flex}
   </button>
   <span id="logoWrap"><i class="logo-mark" id="logoIc"></i><span id="logo">wadpixel</span></span>
   <div class="spacer"></div>
-  <button class="tb-btn" id="btnOnion" title="Onion skin">
+  <button class="tb-btn" id="btnOnion" title="Onion skin · แตะซ้ำเพื่อตั้งค่า">
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="9" cy="12" r="6" opacity=".45"/><circle cx="15" cy="12" r="6"/></svg>
   </button>
   <button class="tb-btn" id="btnPlay" title="เล่น">
@@ -755,7 +791,7 @@ body.solo-frame #btnAddFrameHead{display:flex}
     <span class="lbl">Frames</span>
     <div id="fpsWrap">
       <input type="range" id="fps" min="1" max="24" value="8">
-      <span id="fpsVal">8 fps</span>
+      <button id="fpsVal" title="แตะเพื่อตั้งเวลาต่อเฟรม">8 fps</button>
     </div>
     <button class="tb-btn" id="btnAddFrameHead" style="height:26px;font-size:11px;padding:0 8px">+ เฟรม</button>
     <button class="tb-btn" id="btnTags" style="height:26px;font-size:11px;padding:0 8px">Tags</button>
@@ -766,7 +802,7 @@ body.solo-frame #btnAddFrameHead{display:flex}
 </div>
 
 <div id="tools">
-  <button class="tool" data-tool="select" title="เลือก / ย้าย"><svg viewBox="0 0 24 24"><path d="M3 3h4M3 3v4M21 3h-4M21 3v4M3 21h4M3 21v-4M21 21h-4M21 21v-4" stroke-dasharray="0"/><rect x="3" y="3" width="18" height="18" rx="1" stroke-dasharray="3 3" opacity=".55"/></svg></button>
+  <button class="tool" data-tool="select" title="เลือก / ย้าย · แตะซ้ำเพื่อเลือกวิธี"><svg viewBox="0 0 24 24"><path d="M3 3h4M3 3v4M21 3h-4M21 3v4M3 21h4M3 21v-4M21 21h-4M21 21v-4" stroke-dasharray="0"/><rect x="3" y="3" width="18" height="18" rx="1" stroke-dasharray="3 3" opacity=".55"/></svg><span class="sym-tag" id="selectTag"></span></button>
   <button class="tool on" data-tool="pencil" title="ดินสอ · แตะซ้ำเพื่อตั้งขนาด"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span class="sym-tag" id="pencilTag"></span></button>
   <button class="tool" data-tool="eraser" title="ยางลบ · แตะซ้ำเพื่อตั้งขนาด/โหมด"><svg viewBox="0 0 24 24"><path d="M20 20H8.5L3 14.5a1.5 1.5 0 0 1 0-2.1l8.4-8.4a1.5 1.5 0 0 1 2.1 0l6.5 6.5a1.5 1.5 0 0 1 0 2.1L13 20"/><path d="M8 20 17 11"/></svg><span class="sym-tag" id="eraserTag"></span></button>
   <button class="tool fill" data-tool="fill" title="ถังสี · แตะซ้ำเพื่อเลือกโหมด"><svg viewBox="0 0 24 24"><path d="M11.3 2 9.9 3.4l2 2L3.5 13.8a2 2 0 0 0 0 2.8l4.9 4.9a2 2 0 0 0 2.8 0l8.4-8.4a2 2 0 0 0 0-2.8L11.3 2Zm.3 5.5 5.4 5.4H6.2l5.4-5.4Z"/><path d="M20.5 15.5s1.9 2.2 1.9 3.4a1.9 1.9 0 1 1-3.8 0c0-1.2 1.9-3.4 1.9-3.4Z"/></svg><span class="sym-tag" id="fillTag"></span></button>
@@ -827,12 +863,14 @@ const S = {
   W:64, H:64,
   layers:[],           // {name, visible, opacity, frames:[Uint8ClampedArray RGBA]}
   frameCount:1,
+  durs:[],             // per-frame hold in ms; null = follow S.fps
   curLayer:0,
   curFrame:0,
   fps:8,
   playing:false,
   tool:'pencil',
   brush:1,             // pencil/eraser nib size in pixels (square)
+  perfect:true,        // 1px freehand: drop the corner pixel of every L turn
   dither:false,        // pencil: lay a 2-colour checkerboard instead of a solid nib
   color2:'#ffffff',    // the second colour used when dither is on
   lockAlpha:false,     // paint only where pixels already exist
@@ -843,12 +881,19 @@ const S = {
   color:'#2b2d42',
   showGrid:true,
   onion:false,
+  onionBack:1,     // how many ghost frames behind the playhead
+  onionFwd:1,      // and how many ahead of it
+  onionTint:false, // draw the ghosts as flat red/blue silhouettes
   sym:0,           // mirror drawing: 0 off, 1 ↔, 2 ↕, 3 both
   tileMode:false,
   tags:[],
   palette:[],      // per-project colour set — filled from DEFAULT_PALETTE at boot
   recent:[],       // most-recently-used colours, newest first
-  sel:null,        // {x,y,w,h} marquee
+  sel:null,        // {x,y,w,h} marquee - the bounding box of the selection
+  selMask:null,    // Uint8Array(w*h) aligned to sel/floatRect, 1 = inside. null = the whole box
+  selMode:'rect',  // how the select tool picks: 'rect' marquee | 'wand' by colour
+  wandTol:32,      // wand colour tolerance, 0 = exact match only
+  wandContig:true, // wand: just the patch you tapped, or every matching pixel
   float:null,      // Uint8ClampedArray lifted pixels
   floatRect:null,  // where the float currently sits
   clip:null,       // clipboard {data,w,h}
@@ -920,6 +965,11 @@ let bufDirty = true;
 /* Scratch canvas for a single layer's ImageData */
 let scratch = document.createElement('canvas');
 let sctx = scratch.getContext('2d', {willReadFrequently:true});
+
+/* Onion ghosts are flattened here first so a tint hits the whole frame at once
+   instead of once per layer. Sized lazily - the canvas size changes. */
+let ghost = document.createElement('canvas');
+let gctx = ghost.getContext('2d');
 
 /* ══════════════ HELPERS ══════════════ */
 const $ = id => document.getElementById(id);
@@ -1068,10 +1118,11 @@ function initProject(w, h){
   // a fresh canvas is NOT the project that was open a moment ago
   stopPlayback();
   curProjectId = null; curProjectName = null;
-  S.sel = null; S.float = null; S.floatRect = null; S.selDrag = null;
+  S.sel = null; S.selMask = null; S.float = null; S.floatRect = null; S.selDrag = null;
   S.W = w; S.H = h;
   S.layers = [{ name:'Layer 1', visible:true, opacity:1, frames:[newFrameData()] }];
   S.frameCount = 1; S.curLayer = 0; S.curFrame = 0;
+  S.durs = [null];
   S.tags = [];
   S.palette = DEFAULT_PALETTE.slice();
   S.recent = [];
@@ -1084,6 +1135,7 @@ function initProject(w, h){
   fitToScreen();
   renderAll();
   updateUndoBtns();
+  syncFpsLabel();
   dirtySinceSave = false;
 }
 
@@ -1217,6 +1269,69 @@ function stampDither(data, x, y, rgba){
 /* The pencil's active plotter — swaps to the dither weave when the mode is on. */
 function pencilPlot(data, x, y, rgba){
   return S.dither ? stampDither(data, x, y, rgba) : stampPixel(data, x, y, rgba);
+}
+
+/* -- PIXEL PERFECT ---------------------------------------------------
+   A 1px freehand stroke that turns a corner leaves an L: three pixels where
+   two read as a clean diagonal. Fix: watch the last three pixels laid down and
+   when they form an L, put the middle one back the way it was. Only a solid 1px
+   nib has a corner worth dropping - a wide or dithered nib is chunky on
+   purpose. */
+let ppPts = null, ppBefore = null;
+function ppActive(){
+  if(!S.perfect || (S.brush|0) !== 1 || S.dither) return false;
+  return S.tool === 'pencil' || (S.tool === 'eraser' && S.eraseMode === 'brush');
+}
+/* The stroke already snapshotted the layer for undo, so the original pixel is
+   one lookup away - no second buffer to keep in sync. */
+function ppSnapshot(){
+  const top = S.undoStack[S.undoStack.length-1];
+  return (top && top.data && top.l === S.curLayer && top.f === S.curFrame) ? top.data : null;
+}
+function ppBegin(x, y){
+  ppBefore = ppSnapshot();
+  ppPts = ppBefore ? [{x, y}] : null;   // no snapshot, no way to undo a corner
+}
+function ppEnd(){ ppPts = null; ppBefore = null; }
+function ppRestore(data, x, y){
+  for(const q of symPts(x, y)){
+    let qx = q.x, qy = q.y;
+    if(S.tileMode){ qx = ((qx % S.W) + S.W) % S.W; qy = ((qy % S.H) + S.H) % S.H; }
+    else if(qx < 0 || qy < 0 || qx >= S.W || qy >= S.H) continue;
+    const i = (qy*S.W + qx)*4;
+    data[i]=ppBefore[i]; data[i+1]=ppBefore[i+1]; data[i+2]=ppBefore[i+2]; data[i+3]=ppBefore[i+3];
+  }
+}
+function ppPlot(data, x, y, rgba, plot){
+  symSetPixel(data, x, y, rgba, plot);
+  ppPts.push({x, y});
+  const n = ppPts.length;
+  if(n >= 3){
+    const a = ppPts[n-3], b = ppPts[n-2], c = ppPts[n-1];
+    // a and c sit diagonally and b is the corner cell between them: b is spare
+    if(Math.abs(a.x-c.x) === 1 && Math.abs(a.y-c.y) === 1 &&
+       ((b.x === a.x && b.y === c.y) || (b.y === a.y && b.x === c.x))){
+      ppRestore(data, b.x, b.y);
+      ppPts.splice(n-2, 1);            // the path carries on as a -> c
+    }
+  }
+  if(ppPts.length > 8) ppPts.splice(0, ppPts.length - 8);   // only the tail matters
+}
+/* Every pixel between two pointer samples, so the corner filter sees the whole
+   path instead of only the points the browser happened to report. */
+function linePts(x0, y0, x1, y1){
+  const pts = [];
+  const dx = Math.abs(x1-x0), sx = x0<x1?1:-1;
+  const dy = -Math.abs(y1-y0), sy = y0<y1?1:-1;
+  let err = dx+dy;
+  while(true){
+    pts.push({x:x0, y:y0});
+    if(x0===x1 && y0===y1) break;
+    const e2 = 2*err;
+    if(e2 >= dy){ err += dy; x0 += sx; }
+    if(e2 <= dx){ err += dx; y0 += sy; }
+  }
+  return pts;
 }
 function drawLine(data, x0,y0,x1,y1, rgba, plot = setPixel){
   const dx = Math.abs(x1-x0), sx = x0<x1?1:-1;
@@ -1499,12 +1614,30 @@ function updateUndoBtns(){
 }
 
 /* ══════════════ COMPOSITE ══════════════ */
-function compositeFrame(ctx, frameIdx, alphaMul=1){
+function compositeFrame(ctx, frameIdx, alphaMul=1, tint=null){
+  if(tint){
+    // flatten into the ghost canvas, then repaint every opaque pixel in the
+    // tint colour — a flat silhouette reads faster than a washed-out copy
+    if(ghost.width !== S.W || ghost.height !== S.H){ ghost.width = S.W; ghost.height = S.H; }
+    gctx.clearRect(0, 0, S.W, S.H);
+    drawFrameLayers(gctx, frameIdx, 1, true);
+    gctx.globalCompositeOperation = 'source-in';
+    gctx.fillStyle = tint;
+    gctx.fillRect(0, 0, S.W, S.H);
+    gctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = alphaMul;
+    ctx.drawImage(ghost, 0, 0);
+    ctx.globalAlpha = 1;
+    return;
+  }
+  drawFrameLayers(ctx, frameIdx, alphaMul, alphaMul !== 1);
+}
+function drawFrameLayers(ctx, frameIdx, alphaMul, skipRef){
   for(const layer of S.layers){
     if(!layer.visible) continue;
     // the guide already sits under the current frame — ghosting it again for
     // onion skin just muddies it
-    if(layer.ref && alphaMul !== 1) continue;
+    if(layer.ref && skipRef) continue;
     const data = frameFor(layer, frameIdx);
     if(!data) continue;
     const imgData = new ImageData(new Uint8ClampedArray(data), S.W, S.H);
@@ -1522,6 +1655,13 @@ function onionBounds(){
   if(!t) return [0, S.frameCount-1];
   return [Math.max(0, t.from), Math.min(S.frameCount-1, t.to)];
 }
+/* Ghost opacity per step away from the playhead. Step 1 keeps the values the
+   one-frame onion always used, so nothing shifts for anyone who leaves the
+   setting alone. */
+const ONION_A_BACK = [0.30, 0.17, 0.10];
+const ONION_A_FWD  = [0.16, 0.10, 0.06];
+const ONION_C_BACK = '#ff5d73';
+const ONION_C_FWD  = '#41a6f6';
 function rebuildBuffer(){
   bctx.clearRect(0,0,S.W,S.H);
   if(S.onion && !S.playing && S.frameCount > 1){
@@ -1529,9 +1669,16 @@ function rebuildBuffer(){
     // loop put the whole timeline on screen at once.
     const [lo, hi] = onionBounds();
     // past reads heavier than future, so the two stay tellable apart where
-    // they overlap
-    if(S.curFrame - 1 >= lo) compositeFrame(bctx, S.curFrame - 1, 0.30);
-    if(S.curFrame + 1 <= hi) compositeFrame(bctx, S.curFrame + 1, 0.16);
+    // they overlap, and each further step fades again. Drawn far -> near so the
+    // nearest ghost ends up on top.
+    for(let k = Math.min(3, S.onionBack|0); k >= 1; k--){
+      const f = S.curFrame - k;
+      if(f >= lo) compositeFrame(bctx, f, ONION_A_BACK[k-1], S.onionTint ? ONION_C_BACK : null);
+    }
+    for(let k = Math.min(3, S.onionFwd|0); k >= 1; k--){
+      const f = S.curFrame + k;
+      if(f <= hi) compositeFrame(bctx, f, ONION_A_FWD[k-1], S.onionTint ? ONION_C_FWD : null);
+    }
   }
   compositeFrame(bctx, S.curFrame, 1);
   bufDirty = false;
@@ -1708,6 +1855,7 @@ function cancelStroke(){
   gestureLifted = false;
   strokePushedUndo = false;
   drawing = false; shapeStart = null; shapeBackup = null; lastPx = null;
+  ppEnd();
   bufDirty = true;
 }
 let pinchStart = null, pressTimer = null, movedFar = false, gestureLocked = false;
@@ -1768,7 +1916,21 @@ view.addEventListener('pointerdown', e => {
     clearTimeout(pressTimer);
     const inside = (r,pt)=> r && pt.x>=r.x && pt.y>=r.y && pt.x<r.x+r.w && pt.y<r.y+r.h;
     const active = S.float ? S.floatRect : S.sel;
-    if(inside(active, p)){
+    /* A tap on the shape means "move this" whichever mode is on, so a wand pick
+       is still draggable on a touchscreen. A hole in the mask is not the shape. */
+    const onShape = inside(active, p) &&
+      (!S.selMask || S.selMask.length !== active.w*active.h ||
+       !!S.selMask[(p.y-active.y)*active.w + (p.x-active.x)]);
+    if(S.selMode === 'wand' && !onShape){
+      // a wand pick is a tap, not a drag: nothing left to track after this
+      commitFloat();
+      if(wandSelect(p.x, p.y)) markDirty();
+      else toast('แตะนอกผ้าใบ');
+      updateSelBar();
+      drawing = false;
+      return;
+    }
+    if(onShape){
       // drag the selection (lifting it on first move)
       S.selDrag = {mode:'move', ox:p.x, oy:p.y, rx:active.x, ry:active.y, moved:false};
     } else {
@@ -1776,6 +1938,7 @@ view.addEventListener('pointerdown', e => {
       commitFloat();
       S.selDrag = {mode:'draw', ox:p.x, oy:p.y};
       S.sel = {x:p.x, y:p.y, w:1, h:1};
+      S.selMask = null;      // dragging a box replaces any wand shape
       markDirty();
     }
     drawing = true;
@@ -1835,6 +1998,7 @@ view.addEventListener('pointerdown', e => {
   } else {
     const rgba = S.tool === 'eraser' ? [0,0,0,0] : hexToRgba(S.color);
     const plot = (S.tool === 'pencil') ? pencilPlot : stampPixel;
+    if(ppActive()) ppBegin(p.x, p.y);
     symSetPixel(data, p.x, p.y, rgba, plot);
     lastPx = p;
     markDirty();
@@ -1916,7 +2080,13 @@ view.addEventListener('pointermove', e => {
     if(lastPx && (lastPx.x !== p.x || lastPx.y !== p.y)){
       const rgba = S.tool === 'eraser' ? [0,0,0,0] : hexToRgba(S.color);
       const plot = (S.tool === 'pencil') ? pencilPlot : stampPixel;
-      symDrawLine(data, lastPx.x, lastPx.y, p.x, p.y, rgba, plot);
+      if(ppPts){
+        // hand the interpolated pixels to the corner filter one at a time
+        const pts = linePts(lastPx.x, lastPx.y, p.x, p.y);
+        for(let i=1;i<pts.length;i++) ppPlot(data, pts[i].x, pts[i].y, rgba, plot);
+      } else {
+        symDrawLine(data, lastPx.x, lastPx.y, p.x, p.y, rgba, plot);
+      }
       lastPx = p;
       markDirty();
     }
@@ -1952,6 +2122,7 @@ function endPointer(e){
     }
     if(drawing){
       drawing = false; lastPx = null; shapeStart = null; shapeBackup = null;
+      ppEnd();
       refreshThumbs();
       if(S.tool !== 'eraser' && S.tool !== 'picker') commitRecent();
     }
@@ -2013,6 +2184,11 @@ function renderFrames(){
     const n = document.createElement('span');
     n.className = 'n'; n.textContent = i+1;
     d.appendChild(c); d.appendChild(n);
+    if(S.durs && S.durs[i]){
+      const fd = document.createElement('span');
+      fd.className = 'fd'; fd.textContent = S.durs[i];
+      d.appendChild(fd);
+    }
     d.onclick = ()=>{ commitFloat(); S.curFrame = i; bufDirty = true; renderView(); renderFrames(); renderLayers(); };
     d.addEventListener('pointerdown', ev => startFrameHold(ev, d, i));
     wrap.appendChild(d);
@@ -2059,7 +2235,9 @@ function addFrame(){
   // a reference layer holds one buffer shared by every frame — the guide
   // must stay visible wherever the playhead goes, and it is never written to
   for(const l of S.layers) l.frames.push(l.ref ? l.frames[0] : newFrameData());
+  if(Array.isArray(S.durs)) S.durs.push(null);   // a new frame follows the slider
   S.frameCount++;
+  syncDurs();
   S.curFrame = S.frameCount - 1;
   bufDirty = true; renderAll(); markProjectDirty();
 }
@@ -2068,7 +2246,10 @@ function dupFrame(){
   for(const l of S.layers){
     l.frames.splice(src+1, 0, l.ref ? l.frames[src] : new Uint8ClampedArray(l.frames[src]));
   }
+  // a copied frame keeps the hold time of the frame it came from
+  if(Array.isArray(S.durs)) S.durs.splice(src+1, 0, S.durs[src] == null ? null : S.durs[src]);
   S.frameCount++;
+  syncDurs();
   S.curFrame = src+1;
   bufDirty = true; renderAll(); markProjectDirty();
   toast('คัดลอกเฟรมแล้ว');
@@ -2077,7 +2258,9 @@ function delFrame(){
   if(S.frameCount <= 1){ toast('ต้องมีอย่างน้อย 1 เฟรม'); return; }
   const saved = saveRestorePoint('ก่อนลบเฟรม '+(S.curFrame+1));
   for(const l of S.layers) l.frames.splice(S.curFrame, 1);
+  if(Array.isArray(S.durs)) S.durs.splice(S.curFrame, 1);
   S.frameCount--;
+  syncDurs();
   if(S.curFrame >= S.frameCount) S.curFrame = S.frameCount-1;
   S.tags = S.tags
     .map(t=>({...t, from:Math.min(t.from,S.frameCount-1), to:Math.min(t.to,S.frameCount-1)}))
@@ -2106,6 +2289,10 @@ function moveFrame(from, to){
   for(const l of S.layers){
     const [f] = l.frames.splice(from, 1);
     l.frames.splice(to, 0, f);
+  }
+  if(Array.isArray(S.durs)){
+    const [d] = S.durs.splice(from, 1);   // the hold time travels with its frame
+    S.durs.splice(to, 0, d == null ? null : d);
   }
   /* Undo entries address a frame by INDEX, not identity. Left alone they would
      replay old pixels onto whichever frame later occupies that slot, so the
@@ -2337,6 +2524,37 @@ function setPlayIcon(){
 }
 /* Every path that swaps the project out must call this, or the tick keeps
    firing against a timeline that no longer exists. */
+/* -- TIMING ----------------------------------------------------------
+   S.fps is the baseline for the whole clip; S.durs[i] overrides it for one
+   frame, which is how a pose gets held without slowing the rest of the loop.
+   A null entry means "follow the slider", so dragging fps still works. */
+function syncDurs(){
+  if(!Array.isArray(S.durs)) S.durs = [];
+  S.durs.length = S.frameCount;
+  for(let i=0;i<S.frameCount;i++){
+    const d = S.durs[i];
+    S.durs[i] = (typeof d === 'number' && d > 0) ? Math.round(d) : null;
+  }
+}
+function frameDur(i){
+  const d = S.durs && S.durs[i];
+  return (typeof d === 'number' && d > 0) ? d : Math.round(1000/S.fps);
+}
+function hasCustomDurs(){
+  return Array.isArray(S.durs) && S.durs.some(d => typeof d === 'number' && d > 0);
+}
+function loopMs(){
+  let t = 0;
+  for(let i=0;i<S.frameCount;i++) t += frameDur(i);
+  return t;
+}
+function syncFpsLabel(){
+  const el = $('fpsVal');
+  if(!el) return;
+  const custom = hasCustomDurs();
+  el.textContent = S.fps + (custom ? ' fps*' : ' fps');
+  el.title = custom ? 'บางเฟรมตั้งเวลาเองไว้ · แตะเพื่อดู' : 'แตะเพื่อตั้งเวลาต่อเฟรม';
+}
 function stopPlayback(){
   clearTimeout(playTimer);
   playTimer = null;
@@ -2356,9 +2574,9 @@ function togglePlay(){
   const tick = ()=>{
     S.curFrame = (S.curFrame + 1) % S.frameCount;
     bufDirty = true; renderView(); renderFrames();
-    playTimer = setTimeout(tick, 1000/S.fps);
+    playTimer = setTimeout(tick, frameDur(S.curFrame));
   };
-  playTimer = setTimeout(tick, 1000/S.fps);
+  playTimer = setTimeout(tick, frameDur(S.curFrame));
 }
 
 /* ══════════════ COLOR ══════════════ */
@@ -2530,7 +2748,7 @@ function extractPaletteFromArt(maxColors){
 
 /* ══════════════ TOOLS ══════════════ */
 function selectTool(t){
-  if(S.tool === 'select' && t !== 'select'){ commitFloat(); S.sel = null; markDirty(); }
+  if(S.tool === 'select' && t !== 'select'){ commitFloat(); S.sel = null; S.selMask = null; markDirty(); }
   S.tool = t;
   updateSelBar();
   document.querySelectorAll('.tool[data-tool]').forEach(b=>b.classList.toggle('on', b.dataset.tool===t));
@@ -2546,8 +2764,8 @@ document.querySelectorAll('.tool[data-tool]').forEach(b=>{
 });
 
 const BRUSH_SIZES = [1,2,3,4,6,8];
-const OPT_TOOLS = ['pencil','eraser','line','rect','ellipse','fill'];
-const TOOL_TITLE = {pencil:'ดินสอ', eraser:'ยางลบ', line:'เส้นตรง', rect:'สี่เหลี่ยม', ellipse:'วงรี / วงกลม', fill:'ถังสี'};
+const OPT_TOOLS = ['pencil','eraser','line','rect','ellipse','fill','select'];
+const TOOL_TITLE = {pencil:'ดินสอ', eraser:'ยางลบ', line:'เส้นตรง', rect:'สี่เหลี่ยม', ellipse:'วงรี / วงกลม', fill:'ถังสี', select:'เลือกพื้นที่'};
 function updateToolTags(){
   const n = S.brush|0, tag = n > 1 ? String(n) : '';
   const set = (id, v) => { const el = $(id); if(el) el.textContent = v; };
@@ -2557,6 +2775,7 @@ function updateToolTags(){
   set('rectTag',   S.shapeFill ? '■' : tag);
   set('ellipseTag', S.shapeFill ? '●' : tag);
   set('fillTag',   S.fillMode === 'replace' ? '◈' : '');
+  set('selectTag', S.selMode === 'wand' ? '◈' : '');
 }
 function stepBrush(dir){
   const i = BRUSH_SIZES.indexOf(S.brush);
@@ -2574,10 +2793,12 @@ function showBrushOpts(){
   const isEllipse = tool === 'ellipse';
   const isShape  = isRect || isEllipse;
   const isPencil = tool === 'pencil';
-  const hasNib   = !isFill;
+  const isSelect = tool === 'select';
+  const hasNib   = !isFill && !isSelect;
   openModal(`
     <h2>${TOOL_TITLE[tool] || 'เครื่องมือ'}</h2>
-    <p class="sub">แตะเครื่องมือเดิมซ้ำเพื่อเปิดหน้านี้${hasNib ? ' · คีย์บอร์ดกด [ ] เปลี่ยนขนาดได้เลย' : ''}</p>
+    ${TOOL_INFO[tool] ? `<p class="sub" style="color:var(--text);margin-bottom:6px">${esc(TOOL_INFO[tool].desc)}</p>` : ''}
+    <p class="sub">แตะเครื่องมือเดิมซ้ำเพื่อเปิดหน้านี้${hasNib ? ' · คีย์บอร์ดกด [ ] เปลี่ยนขนาดได้เลย' : ''}${keyMap[tool] ? ' · คีย์ลัด <b style="color:var(--text)">' + esc(keyLabel(keyMap[tool])) + '</b>' : ''}</p>
 
     ${hasNib ? `
     <div class="px-stage" style="min-height:0;padding:12px"><canvas id="brPrev"></canvas></div>
@@ -2605,7 +2826,14 @@ function showBrushOpts(){
         <button id="brColor2" style="width:44px;height:44px;border-radius:10px;border:2px solid var(--line);background:${esc(S.color2)};flex:0 0 auto"></button>
         <span class="sub" style="margin:0">สีหลักสลับกับสีนี้เป็นตาราง · แตะเพื่อเปลี่ยน</span>
       </div>
-    </div>` : ''}
+    </div>
+
+    <div class="sec-lbl">พิกเซลเพอร์เฟกต์</div>
+    <div class="seg" id="brPerfect">
+      <button data-p="1"${S.perfect?' class="on"':''}>ตัดมุมซ้ำ</button>
+      <button data-p="0"${!S.perfect?' class="on"':''}>ปิด</button>
+    </div>
+    <p class="sub" style="font-size:10.5px;margin-top:-8px">ลากเส้นเลี้ยวโค้งด้วยนิ้วแล้วมักเหลือพิกเซลมุมเกินมา 1 จุด ตัวนี้ตัดออกให้ทันที · ใช้กับหัวขนาด 1 สีเดียวเท่านั้น</p>` : ''}
     ${isFill ? `
     <div class="sec-lbl">วิธีเท</div>
     <div class="seg" id="brFillMode">
@@ -2619,6 +2847,24 @@ function showBrushOpts(){
         <button data-s="all"${S.fillScope==='all'?' class="on"':''}>ทุกเฟรมในเลเยอร์</button>
       </div>
       <p class="sub" style="font-size:10.5px;margin-top:-8px">เทียบสีแบบตรงเป๊ะ · แตะได้เฉพาะจุดที่มีสีอยู่ กันเผลอถมพื้นโปร่งทั้งผืน</p>
+    </div>` : ''}
+    ${isSelect ? `
+    <div class="sec-lbl">วิธีเลือก</div>
+    <div class="seg" id="brSelMode">
+      <button data-m="rect"${S.selMode==='rect'?' class="on"':''}>ลากกรอบ</button>
+      <button data-m="wand"${S.selMode==='wand'?' class="on"':''}>แตะเลือกด้วยสี</button>
+    </div>
+    <div id="brWandWrap"${S.selMode==='wand'?'':' style="display:none"'}>
+      <div class="sec-lbl">ความคลาดสี</div>
+      <div class="seg" id="brWandTol">
+        ${WAND_TOLS.map(n => `<button data-n="${n}"${S.wandTol===n?' class="on"':''}>${n===0?'เป๊ะ':n}</button>`).join('')}
+      </div>
+      <div class="sec-lbl">ขอบเขต</div>
+      <div class="seg" id="brWandContig">
+        <button data-c="1"${S.wandContig?' class="on"':''}>หย่อมที่แตะ</button>
+        <button data-c="0"${!S.wandContig?' class="on"':''}>ทุกจุดที่สีตรงกัน</button>
+      </div>
+      <p class="sub" style="font-size:10.5px;margin-top:-8px">อ่านสีจากเลเยอร์ที่เลือกอยู่ · คัดลอก/ย้าย/ลบ ทำตามรูปที่เลือก ไม่ใช่กรอบสี่เหลี่ยม · แตะที่โปร่งใสก็เลือกพื้นหลังได้</p>
     </div>` : ''}
     ${isEraser ? `
     <div class="sec-lbl">วิธีลบ</div>
@@ -2676,6 +2922,18 @@ function showBrushOpts(){
       if(w) w.style.display = v === 'replace' ? '' : 'none';
     });
     pick('brFillScope', 's', v => S.fillScope = v);
+  }
+  if(isPencil) pick('brPerfect', 'p', v => S.perfect = v === '1');
+  if(isSelect){
+    pick('brSelMode', 'm', v => {
+      S.selMode = v;
+      const w = $('brWandWrap');
+      if(w) w.style.display = v === 'wand' ? '' : 'none';
+      if(v === 'rect') S.selMask = null;   // leaving the wand drops its shape
+      markDirty();
+    });
+    pick('brWandTol', 'n', v => S.wandTol = +v);
+    pick('brWandContig', 'c', v => S.wandContig = v === '1');
   }
   if(isEraser){
     pick('brMode', 'm', v => {
@@ -2832,11 +3090,11 @@ async function exportGif(){
     ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,c.width,c.height);
     ctx.drawImage(f, 0, 0, c.width, c.height);
-    gif.addFrame(c, {delay: 1000/S.fps});
+    gif.addFrame(c, {delay: frameDur(i)});
   }
   gif.on('progress', p => expStatus('เข้ารหัส ' + Math.round(p*100) + '%'));
   gif.on('finished', blob => {
-    download(blob, `animation_${S.fps}fps.gif`);
+    download(blob, hasCustomDurs() ? 'animation.gif' : `animation_${S.fps}fps.gif`);
     expStatus('เสร็จ · GIF ' + (S.W*scale) + '×' + (S.H*scale));
   });
   gif.render();
@@ -2917,6 +3175,8 @@ function serialize(name){
     name: name || 'ไม่มีชื่อ',
     w: S.W, h: S.H,
     fps: S.fps,
+    // only written when a frame actually overrides the slider
+    durs: hasCustomDurs() ? S.durs.slice(0, S.frameCount) : undefined,
     frameCount: S.frameCount,
     tags: S.tags,
     tileMode: S.tileMode,
@@ -2941,10 +3201,11 @@ function deserialize(obj){
   // a float or marquee left over from the previous project would be stamped
   // into this one on the next commit, at the wrong size
   stopPlayback();
-  S.sel = null; S.float = null; S.floatRect = null; S.selDrag = null;
+  S.sel = null; S.selMask = null; S.float = null; S.floatRect = null; S.selDrag = null;
   const px = obj.w * obj.h;
   S.W = obj.w; S.H = obj.h;
   S.fps = obj.fps || 8;
+  S.durs = Array.isArray(obj.durs) ? obj.durs.slice() : [];
   S.tags = Array.isArray(obj.tags) ? obj.tags : [];
   S.tileMode = !!obj.tileMode;
   setSym(obj.sym || 0);
@@ -2952,6 +3213,7 @@ function deserialize(obj){
   S.recent = Array.isArray(obj.recent) ? obj.recent.slice(0,MAX_RECENT) : [];
   S.frameCount = obj.frameCount || ((obj.layers.find(L=>!L.r)||obj.layers[0]).f.length) || 1;
   if(!(S.frameCount > 0)) S.frameCount = 1;
+  syncDurs();
   S.layers = obj.layers.map((L,i) => ({
     name: L.n || ('Layer '+(i+1)),
     visible: L.v !== false,
@@ -2982,7 +3244,7 @@ function deserialize(obj){
   S.undoStack = []; S.redoStack = [];
   buf.width = S.W; buf.height = S.H;
   scratch.width = S.W; scratch.height = S.H;
-  $('fps').value = S.fps; $('fpsVal').textContent = S.fps + ' fps';
+  $('fps').value = S.fps; syncFpsLabel();
   $('btnTile').classList.toggle('on', S.tileMode);
   buildPalette();
   renderRecent();
@@ -3495,7 +3757,6 @@ function buildPhaserAtlas(imageName){
 /* ---- Aseprite-compatible JSON Array (widely supported interchange) ---- */
 function buildAsepriteAtlas(imageName){
   const {cols, rows, w, h} = sheetLayout();
-  const dur = Math.round(1000/S.fps);
   const frames = [];
   for(let i=0;i<S.frameCount;i++){
     const r = frameRect(i, cols);
@@ -3506,7 +3767,7 @@ function buildAsepriteAtlas(imageName){
       trimmed: false,
       spriteSourceSize: {x:0, y:0, w:S.W, h:S.H},
       sourceSize: {w:S.W, h:S.H},
-      duration: dur
+      duration: frameDur(i)
     });
   }
   return {
@@ -3547,7 +3808,10 @@ function buildGodotTres(imageName){
              +  `region = Rect2(${r.x}, ${r.y}, ${r.w}, ${r.h})\n\n`;
         loadSteps++;
       }
-      frameLines.push(`{\n"duration": 1.0,\n"texture": SubResource("${id}")\n}`);
+      // Godot reads duration as a multiplier on the animation speed
+      const mul = Math.round((frameDur(i)/1000) * S.fps * 1000) / 1000;
+      const dur = Number.isInteger(mul) ? mul.toFixed(1) : String(mul);
+      frameLines.push(`{\n"duration": ${dur},\n"texture": SubResource("${id}")\n}`);
     }
     return `{\n"frames": [${frameLines.join(', ')}],\n"loop": true,\n"name": &"${t.name}",\n"speed": ${S.fps}.0\n}`;
   });
@@ -3568,6 +3832,7 @@ function buildGodotTres(imageName){
 function clearSelection(){
   if(S.float) commitFloat();
   S.sel = null;
+  S.selMask = null;
   S.selDrag = null;
   markDirty();
 }
@@ -3581,11 +3846,90 @@ function clampRectToCanvas(r){
   if(x1<=x0 || y1<=y0) return null;
   return {x:x0, y:y0, w:x1-x0, h:y1-y0};
 }
+/* What the selection actually covers: its box clipped to the canvas, plus the
+   mask that shapes it. A wand mask is indexed off the untrimmed box, so trimming
+   the box has to re-index the mask or every masked op lands a row off. */
+function selRegion(){
+  const base = S.float ? S.floatRect : S.sel;
+  if(!base) return null;
+  const r = clampRectToCanvas(base);
+  if(!r) return null;
+  let mask = S.selMask || null;
+  if(mask && mask.length !== base.w*base.h) mask = null;   // stale, treat as a plain box
+  if(mask && (r.x !== base.x || r.y !== base.y || r.w !== base.w || r.h !== base.h)){
+    const m2 = new Uint8Array(r.w*r.h);
+    for(let y=0;y<r.h;y++)
+      for(let x=0;x<r.w;x++) m2[y*r.w+x] = mask[(r.y-base.y+y)*base.w + (r.x-base.x+x)];
+    mask = m2;
+  }
+  return {r, mask};
+}
+
+/* -- WAND ------------------------------------------------------------
+   Tap a colour, get every pixel like it. Transparency only ever matches
+   transparency: alpha carries more meaning than the dead RGB behind it. */
+const WAND_TOLS = [0, 16, 32, 64, 96];
+function wandDiff(data, i, ref){
+  const da = Math.abs(data[i+3] - ref[3]);
+  if(ref[3] === 0 || data[i+3] === 0) return da;
+  return Math.max(Math.abs(data[i]-ref[0]), Math.abs(data[i+1]-ref[1]),
+                  Math.abs(data[i+2]-ref[2]), da);
+}
+function wandSelect(px, py){
+  if(px < 0 || py < 0 || px >= S.W || py >= S.H) return false;
+  const data = curData();
+  const i0 = (py*S.W + px)*4;
+  const ref = [data[i0], data[i0+1], data[i0+2], data[i0+3]];
+  const tol = S.wandTol|0;
+  const hit = new Uint8Array(S.W*S.H);
+  if(S.wandContig){
+    // mark on push, never on pop: a pixel can be reached from four sides and
+    // re-walking them turns a flat fill into minutes of work
+    const stack = [py*S.W + px];
+    hit[py*S.W + px] = 1;
+    while(stack.length){
+      const k = stack.pop(), x = k % S.W, y = (k - x) / S.W;
+      const step = (nx, ny) => {
+        if(nx < 0 || ny < 0 || nx >= S.W || ny >= S.H) return;
+        const kk = ny*S.W + nx;
+        if(hit[kk]) return;
+        if(wandDiff(data, kk*4, ref) <= tol){ hit[kk] = 1; stack.push(kk); }
+      };
+      step(x-1, y); step(x+1, y); step(x, y-1); step(x, y+1);
+    }
+  } else {
+    for(let k=0;k<hit.length;k++) if(wandDiff(data, k*4, ref) <= tol) hit[k] = 1;
+  }
+  let x0 = S.W, y0 = S.H, x1 = -1, y1 = -1;
+  for(let y=0;y<S.H;y++)
+    for(let x=0;x<S.W;x++) if(hit[y*S.W+x]){
+      if(x < x0) x0 = x;
+      if(x > x1) x1 = x;
+      if(y < y0) y0 = y;
+      if(y > y1) y1 = y;
+    }
+  if(x1 < 0) return false;
+  const w = x1-x0+1, h = y1-y0+1;
+  const mask = new Uint8Array(w*h);
+  let solid = true;
+  for(let y=0;y<h;y++)
+    for(let x=0;x<w;x++){
+      const v = hit[(y0+y)*S.W + x0+x];
+      mask[y*w+x] = v;
+      if(!v) solid = false;
+    }
+  S.sel = {x:x0, y:y0, w, h};
+  S.selMask = solid ? null : mask;   // a full box needs no mask
+  S.float = null; S.floatRect = null;
+  return true;
+}
+
 /* Copy the selected region out of the current layer into a standalone buffer */
-function extractRegion(data, r){
+function extractRegion(data, r, mask){
   const out = new Uint8ClampedArray(r.w*r.h*4);
   for(let y=0;y<r.h;y++){
     for(let x=0;x<r.w;x++){
+      if(mask && !mask[y*r.w+x]) continue;   // outside the shape stays transparent
       const sx=r.x+x, sy=r.y+y;
       if(sx<0||sy<0||sx>=S.W||sy>=S.H) continue;
       const si=(sy*S.W+sx)*4, di=(y*r.w+x)*4;
@@ -3594,9 +3938,10 @@ function extractRegion(data, r){
   }
   return out;
 }
-function eraseRegion(data, r){
+function eraseRegion(data, r, mask){
   for(let y=0;y<r.h;y++){
     for(let x=0;x<r.w;x++){
+      if(mask && !mask[y*r.w+x]) continue;   // only what the shape covers
       const sx=r.x+x, sy=r.y+y;
       if(sx<0||sy<0||sx>=S.W||sy>=S.H) continue;
       const i=(sy*S.W+sx)*4;
@@ -3623,13 +3968,14 @@ function stampRegion(data, buffer, r){
 function liftSelection(){
   if(!S.sel || S.float) return;
   if(blockIfRef()) return;
-  const r = clampRectToCanvas(S.sel);
-  if(!r) return;
+  const reg = selRegion();
+  if(!reg) return;
   pushUndo();
   const data = curData();
-  S.float = extractRegion(data, r);
-  S.floatRect = {...r};
-  eraseRegion(data, r);
+  S.float = extractRegion(data, reg.r, reg.mask);
+  S.floatRect = {...reg.r};
+  S.selMask = reg.mask;      // travels with the float on the same indexing
+  eraseRegion(data, reg.r, reg.mask);
   markDirty();
 }
 /* Put the floating pixels back down at their current position */
@@ -3653,28 +3999,31 @@ function deleteSelection(){
   if(S.float){
     // discard the lifted pixels entirely
     S.float = null; S.floatRect = null;
-    S.sel = null;
+    S.sel = null; S.selMask = null;
     markDirty(); refreshThumbs();
     toast('ลบแล้ว');
     return;
   }
   if(!S.sel) return;
   if(blockIfRef()) return;
-  const r = clampRectToCanvas(S.sel);
-  if(!r) return;
+  const reg = selRegion();
+  if(!reg) return;
   pushUndo();
-  eraseRegion(curData(), r);
+  eraseRegion(curData(), reg.r, reg.mask);
   markDirty(); refreshThumbs();
   toast('ลบแล้ว');
 }
 function copySelection(){
-  const r = S.float ? S.floatRect : (S.sel && clampRectToCanvas(S.sel));
-  if(!r){ toast('ยังไม่ได้เลือกพื้นที่'); return; }
-  S.clip = {
-    data: S.float ? new Uint8ClampedArray(S.float) : extractRegion(curData(), r),
-    w: r.w, h: r.h
-  };
-  toast(`คัดลอก ${r.w}×${r.h} แล้ว`);
+  if(S.float){
+    // the lift already punched the mask's holes into these pixels
+    S.clip = {data: new Uint8ClampedArray(S.float), w: S.floatRect.w, h: S.floatRect.h};
+    toast(`คัดลอก ${S.floatRect.w}×${S.floatRect.h} แล้ว`);
+    return;
+  }
+  const reg = selRegion();
+  if(!reg){ toast('ยังไม่ได้เลือกพื้นที่'); return; }
+  S.clip = {data: extractRegion(curData(), reg.r, reg.mask), w: reg.r.w, h: reg.r.h};
+  toast(`คัดลอก ${reg.r.w}×${reg.r.h} แล้ว`);
 }
 function cutSelection(){
   copySelection();
@@ -3692,6 +4041,7 @@ function pasteClip(){
   S.float = new Uint8ClampedArray(S.clip.data);
   S.floatRect = {x:cx, y:cy, w:S.clip.w, h:S.clip.h};
   S.sel = {...S.floatRect};
+  S.selMask = null;      // the pasted alpha already carries its own shape
   selectTool('select');
   markDirty();
   toast('วางแล้ว — ลากเพื่อย้าย');
@@ -3699,6 +4049,7 @@ function pasteClip(){
 function selectAll(){
   commitFloat();
   S.sel = {x:0, y:0, w:S.W, h:S.H};
+  S.selMask = null;
   selectTool('select');
   markDirty();
 }
@@ -3723,7 +4074,20 @@ function transformSelection(kind){
       out[di]=src[si]; out[di+1]=src[si+1]; out[di+2]=src[si+2]; out[di+3]=src[si+3];
     }
   }
-  if(S.float) S.float = out;
+  if(S.float){
+    S.float = out;
+    // the mask has to turn with the pixels or later ops cut the wrong shape
+    if(S.selMask && S.selMask.length === w*h){
+      const m = new Uint8Array(w*h);
+      for(let y=0;y<h;y++)
+        for(let x=0;x<w;x++){
+          const nx = kind === 'flipH' ? w-1-x : x;
+          const ny = kind === 'flipV' ? h-1-y : y;
+          m[ny*w+nx] = S.selMask[y*w+x];
+        }
+      S.selMask = m;
+    }
+  }
   else curData().set(out);
   markDirty(); refreshThumbs();
   toast(kind === 'flipH' ? 'พลิกแนวนอน' : 'พลิกแนวตั้ง');
@@ -4114,21 +4478,72 @@ function showFlipDialog(){
 }
 
 /* marching-ants style marquee overlay */
+/* Marching ants trace the real shape, not its bounding box. Rebuilding the path
+   15 times a second for a big wand mask is wasted work, so it's cached until the
+   mask or the view moves. */
+let selPathCache = null;
+/* A shape can be fragmented enough (a tight wand pick on a dithered image) that
+   tracing it costs hundreds of segments per row. Past this budget the ants fall
+   back to the bounding box - the operations still honour every masked pixel,
+   only the outline gets simpler, which beats a locked-up canvas while panning. */
+const SEL_MAX_SEG = 2500;
+const selSegCount = new WeakMap();
+function maskSegments(r, mask){
+  let n = selSegCount.get(mask);
+  if(n !== undefined) return n;
+  const at = (x, y) => (x<0 || y<0 || x>=r.w || y>=r.h) ? 0 : mask[y*r.w+x];
+  n = 0;
+  for(let y=0;y<r.h;y++)
+    for(let x=0;x<r.w;x++){
+      if(!at(x, y)) continue;
+      if(!at(x, y-1)) n++;
+      if(!at(x, y+1)) n++;
+      if(!at(x-1, y)) n++;
+      if(!at(x+1, y)) n++;
+    }
+  selSegCount.set(mask, n);
+  return n;
+}
+function selOutlinePath(r, mask, z, ox, oy){
+  const c = selPathCache;
+  if(c && c.mask === mask && c.z === z && c.ox === ox && c.oy === oy &&
+     c.x === r.x && c.y === r.y && c.w === r.w && c.h === r.h) return c.path;
+  if(mask && maskSegments(r, mask) > SEL_MAX_SEG) mask = null;
+  const path = new Path2D();
+  if(!mask) path.rect(ox + r.x*z, oy + r.y*z, r.w*z, r.h*z);
+  else {
+    const at = (x, y) => (x<0 || y<0 || x>=r.w || y>=r.h) ? 0 : mask[y*r.w+x];
+    for(let y=0;y<r.h;y++){
+      for(let x=0;x<r.w;x++){
+        if(!at(x, y)) continue;
+        const px = ox + (r.x+x)*z, py = oy + (r.y+y)*z;
+        // one segment per edge that faces outside the mask
+        if(!at(x, y-1)){ path.moveTo(px, py);     path.lineTo(px+z, py); }
+        if(!at(x, y+1)){ path.moveTo(px, py+z);   path.lineTo(px+z, py+z); }
+        if(!at(x-1, y)){ path.moveTo(px, py);     path.lineTo(px, py+z); }
+        if(!at(x+1, y)){ path.moveTo(px+z, py);   path.lineTo(px+z, py+z); }
+      }
+    }
+  }
+  selPathCache = {mask, z, ox, oy, x:r.x, y:r.y, w:r.w, h:r.h, path};
+  return path;
+}
 function drawSelectionOverlay(z, ox, oy){
   const r = S.float ? S.floatRect : S.sel;
   // drives antsLoop — true while something is selected, false the instant it clears
   selNeedsAnim = !!r;
   if(!r) return;
-  const x = ox + r.x*z, y = oy + r.y*z, w = r.w*z, h = r.h*z;
+  const mask = (S.selMask && S.selMask.length === r.w*r.h) ? S.selMask : null;
+  const path = selOutlinePath(r, mask, z, ox, oy);
   vctx.save();
+  vctx.lineWidth = 2;
   vctx.setLineDash([6, 5]);
   vctx.lineDashOffset = -(Date.now()/55) % 11;
-  vctx.strokeStyle = '#ffffff'; vctx.lineWidth = 2;
-  vctx.strokeRect(x, y, w, h);
-  vctx.setLineDash([6, 5]);
+  vctx.strokeStyle = '#ffffff';
+  vctx.stroke(path);
   vctx.lineDashOffset = (-(Date.now()/55) % 11) + 5.5;
-  vctx.strokeStyle = '#000000'; vctx.lineWidth = 2;
-  vctx.strokeRect(x, y, w, h);
+  vctx.strokeStyle = '#000000';
+  vctx.stroke(path);
   vctx.restore();
 }
 
@@ -4184,12 +4599,13 @@ function placeImage(img, mode, fit, opts){
     S.W = sw; S.H = sh;
     S.layers = [{name:'Layer 1', visible:true, opacity:1, frames:[new Uint8ClampedArray(src)]}];
     S.frameCount = 1; S.curLayer = 0; S.curFrame = 0;
-    S.tags = []; S.sel = null; S.float = null; S.floatRect = null;
+    S.durs = [null];
+    S.tags = []; S.sel = null; S.selMask = null; S.float = null; S.floatRect = null;
     S.undoStack = []; S.redoStack = [];
     buf.width = sw; buf.height = sh;
     scratch.width = sw; scratch.height = sh;
     bufDirty = true;
-    fitToScreen(); renderAll(); updateUndoBtns();
+    fitToScreen(); renderAll(); updateUndoBtns(); syncFpsLabel();
     dirtySinceSave = false;   // freshly created — nothing edited yet, so don't nag to save
     return {w:sw, h:sh};
   }
@@ -4298,7 +4714,7 @@ function hideRestoreBar(){
 }
 
 function openModal(html){ $('modalCard').innerHTML = html; $('modal').classList.add('on'); }
-function closeModal(){ $('modal').classList.remove('on'); }
+function closeModal(){ shortcutCapture = null; shortcutRefresh = null; $('modal').classList.remove('on'); }
 $('modal').addEventListener('pointerdown', e=>{ if(e.target.id==='modal') closeModal(); });
 
 /* Home screen — the hub for starting or reopening work.
@@ -4348,6 +4764,7 @@ function showHome(){
     <div id="hmList"></div>
 
     ${hasAutosave() ? '<button class="sup-btn" id="hmRestore" style="margin-top:4px">กู้งานล่าสุดที่ค้างไว้</button>' : ''}
+    <button class="sup-btn" id="hmGuide"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1 .8-1 1.7"/><line x1="12" y1="17" x2="12" y2="17"/></svg> คู่มือเครื่องมือ & คีย์ลัด</button>
     <button class="sup-btn" id="hmGallery"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> แกลเลอรีชุมชน</button>
     <button class="sup-btn" id="hmSupport"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.7 1.1-1a5.5 5.5 0 0 0 0-7.9Z"/></svg> สนับสนุนผู้พัฒนา</button>
     ${hasWork ? '<button class="big-btn ghost" id="hmClose">ปิด</button>' : ''}
@@ -4392,6 +4809,7 @@ function showHome(){
     if(restoreAutosave()){ closeModal(); toast('กู้งานล่าสุดแล้ว'); }
     else toast('กู้ไม่สำเร็จ');
   };
+  if($('hmGuide')) $('hmGuide').onclick = showShortcuts;
   if($('hmGallery')) $('hmGallery').onclick = ()=>{ closeModal(); setTimeout(()=>showGallery('new'), 30); };
   $('hmSupport').onclick = showSupport;
 
@@ -4772,6 +5190,122 @@ function showResize(){
   update();
 }
 
+/* Per-frame hold times. The slider stays the baseline and a row only overrides
+   it when you type a number, so most projects never need to open this. */
+/* Onion settings live behind a second tap on the lit button, the same
+   "tap again for options" the drawing tools use. */
+function showOnionOpts(){
+  const steps = (id, cur) => `<div class="seg" id="${id}">${
+    [0,1,2,3].map(n => `<button data-n="${n}"${cur===n?' class="on"':''}>${n}</button>`).join('')}</div>`;
+  openModal(`
+    <h2>Onion skin</h2>
+    <p class="sub">เงาเฟรมข้างเคียงใต้ภาพที่วาดอยู่ · เงาไม่ถูกส่งออกและไม่ถูกวาดทับ</p>
+
+    <div class="sec-lbl">ย้อนหลัง (เฟรมก่อนหน้า)</div>
+    ${steps('onBack', Math.min(3, S.onionBack|0))}
+    <div class="sec-lbl">ข้างหน้า (เฟรมถัดไป)</div>
+    ${steps('onFwd', Math.min(3, S.onionFwd|0))}
+
+    <div class="sec-lbl">รูปแบบเงา</div>
+    <div class="seg" id="onTint">
+      <button data-t="0"${!S.onionTint?' class="on"':''}>สีจริงจางๆ</button>
+      <button data-t="1"${S.onionTint?' class="on"':''}>เงาแดง/น้ำเงิน</button>
+    </div>
+    <p class="sub" style="font-size:10.5px;margin-top:-8px">แดง = เฟรมก่อนหน้า · น้ำเงิน = เฟรมถัดไป · เงายิ่งไกลยิ่งจาง และไม่ข้าม tag ที่เฟรมนี้อยู่</p>
+
+    <button class="big-btn ghost" id="onOff">ปิด onion skin</button>
+    <button class="big-btn" id="onDone">เสร็จ</button>
+  `);
+  const wire = (id, attr, set) => document.querySelectorAll('#'+id+' button').forEach(b=>{
+    b.onclick = ()=>{
+      set(b.dataset[attr]);
+      document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.toggle('on', x===b));
+      bufDirty = true; renderView();
+    };
+  });
+  wire('onBack', 'n', v => S.onionBack = +v);
+  wire('onFwd',  'n', v => S.onionFwd  = +v);
+  wire('onTint', 't', v => S.onionTint = v === '1');
+  $('onOff').onclick = ()=>{
+    S.onion = false;
+    $('btnOnion').classList.remove('on');
+    bufDirty = true; renderView();
+    closeModal();
+  };
+  $('onDone').onclick = closeModal;
+}
+function showFrameDurs(){
+  syncDurs();
+  const base = Math.round(1000/S.fps);
+  const rows = [];
+  for(let i=0;i<S.frameCount;i++){
+    const d = S.durs[i];
+    rows.push(`<div class="fd-row">
+      <span class="fd-n">${i+1}</span>
+      <input type="number" inputmode="numeric" min="10" max="10000" step="10"
+             data-i="${i}" value="${d || base}"${d ? '' : ' class="dim"'}>
+      <span class="fd-n" style="width:18px">ms</span>
+      <button class="fd-rst" data-i="${i}"${d ? '' : ' disabled'}>ตามหลัก</button>
+    </div>`);
+  }
+  openModal(`
+    <h2>เวลาต่อเฟรม</h2>
+    <p class="sub">ค่าหลักตอนนี้ ${S.fps} fps = ${base} ms · ใส่ตัวเลขให้เฟรมไหน เฟรมนั้นจะยึดค่าตัวเองแทน</p>
+    <div class="fd-list">${rows.join('')}</div>
+    <div class="seg" id="fdBulk">
+      <button data-k="clear">คืนค่าหลักทั้งหมด</button>
+      <button data-k="spread">ใช้ค่าเฟรมนี้ทุกเฟรม</button>
+    </div>
+    <p class="sub" style="font-size:10.5px">ทั้งลูป <b id="fdTotal">${loopMs()} ms</b> · ใช้กับการเล่นในแอป, GIF และ atlas ของ Aseprite/Godot</p>
+    <button class="big-btn" id="fdDone">เสร็จ</button>
+  `);
+
+  const refreshRow = i => {
+    const inp = document.querySelector('.fd-row input[data-i="'+i+'"]');
+    const rst = document.querySelector('.fd-rst[data-i="'+i+'"]');
+    if(inp){
+      inp.value = S.durs[i] || Math.round(1000/S.fps);
+      inp.classList.toggle('dim', !S.durs[i]);
+    }
+    if(rst) rst.disabled = !S.durs[i];
+  };
+  const commit = ()=>{
+    const t = $('fdTotal');
+    if(t) t.textContent = loopMs() + ' ms';
+    syncFpsLabel(); renderFrames(); markProjectDirty();
+  };
+  document.querySelectorAll('.fd-row input').forEach(inp=>{
+    inp.oninput = ()=>{
+      const i = +inp.dataset.i;
+      const v = Math.round(+inp.value);
+      // out-of-range typing falls back to the slider rather than freezing playback
+      S.durs[i] = (v >= 10 && v <= 10000) ? v : null;
+      inp.classList.toggle('dim', !S.durs[i]);
+      const rst = document.querySelector('.fd-rst[data-i="'+i+'"]');
+      if(rst) rst.disabled = !S.durs[i];
+      commit();
+    };
+  });
+  document.querySelectorAll('.fd-rst').forEach(b=>{
+    b.onclick = ()=>{
+      const i = +b.dataset.i;
+      S.durs[i] = null;
+      refreshRow(i); commit();
+    };
+  });
+  document.querySelectorAll('#fdBulk button').forEach(b=>{
+    b.onclick = ()=>{
+      if(b.dataset.k === 'clear') S.durs = S.durs.map(()=>null);
+      else {
+        const v = frameDur(S.curFrame);
+        S.durs = S.durs.map(()=>v);
+      }
+      for(let i=0;i<S.frameCount;i++) refreshRow(i);
+      commit();
+    };
+  });
+  $('fdDone').onclick = closeModal;
+}
 function showTags(){
   let draft = S.tags.length
     ? S.tags.map(t=>({...t}))
@@ -5960,7 +6494,7 @@ function showExport(){
     </button>
     <button class="exp-opt" id="eGif">
       <span class="ic">GIF</span>
-      <span class="tx"><b>ภาพเคลื่อนไหว</b><span>เล่นวนที่ ${S.fps} fps ตามที่ตั้งไว้</span></span>
+      <span class="tx"><b>ภาพเคลื่อนไหว</b><span>${hasCustomDurs() ? 'ใช้เวลาต่อเฟรมที่ตั้งไว้ · ทั้งลูป ' + loopMs() + ' ms' : 'เล่นวนที่ ' + S.fps + ' fps ตามที่ตั้งไว้'}</span></span>
     </button>
 
     <div class="hr"></div>
@@ -6036,9 +6570,9 @@ if(new URLSearchParams(location.search).has('admin')){
   try{ sessionStorage.setItem('wp_admin', '1'); }catch{}
 }
 /* bump when deploying — the fastest way to tell a stale cache from a real bug */
-const BUILD_ID = '2026-07-26 remix-5';
-const APP_VERSION = '0.5';
-const APP_UPDATED = '29 ก.ค. 2026';   // bump both when shipping a visible change
+const BUILD_ID = '2026-07-30 shortcuts-guide';
+const APP_VERSION = '0.7';
+const APP_UPDATED = '30 ก.ค. 2026';   // bump both when shipping a visible change
 const API_GALLERY = '/api/gallery';
 const API_LIKE    = '/api/like';
 
@@ -6108,7 +6642,7 @@ function gifDataURL(onProgress){
       ctx.imageSmoothingEnabled = false;
       ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, c.width, c.height);
       ctx.drawImage(flattenFrame(i), 0, 0, c.width, c.height);
-      gif.addFrame(c, {delay: 1000/S.fps});
+      gif.addFrame(c, {delay: frameDur(i)});
     }
     if(onProgress) gif.on('progress', p => onProgress(Math.round(p*100)));
     gif.on('finished', blob => {
@@ -6156,7 +6690,7 @@ function showShare(){
     <div class="sec-lbl">รูปแบบที่จะแชร์</div>
     <div class="sh-pick">
       <button data-k="sheet">Sprite sheet<small>คนอื่นเปิดไปแก้ต่อได้</small></button>
-      <button data-k="gif" ${S.frameCount < 2 ? 'disabled style="opacity:.35;pointer-events:none"' : ''}>GIF<small>${S.frameCount < 2 ? 'ต้องมี 2 เฟรมขึ้นไป' : 'เล่นวนที่ ' + S.fps + ' fps'}</small></button>
+      <button data-k="gif" ${S.frameCount < 2 ? 'disabled style="opacity:.35;pointer-events:none"' : ''}>GIF<small>${S.frameCount < 2 ? 'ต้องมี 2 เฟรมขึ้นไป' : (hasCustomDurs() ? 'ใช้เวลาต่อเฟรมที่ตั้งไว้' : 'เล่นวนที่ ' + S.fps + ' fps')}</small></button>
     </div>
 
     <div id="shPreview"></div>
@@ -6671,16 +7205,181 @@ $('btnTile').onclick = ()=>{
   toast(S.tileMode ? 'โหมดต่อลาย: วาดข้ามขอบได้' : 'ปิดโหมดต่อลาย');
 };
 $('btnGrid').onclick = ()=>{ S.showGrid = !S.showGrid; $('btnGrid').classList.toggle('on', S.showGrid); renderView(); };
-$('btnOnion').onclick = ()=>{ S.onion = !S.onion; $('btnOnion').classList.toggle('on', S.onion); bufDirty=true; renderView(); };
-$('fps').oninput = e => { S.fps = +e.target.value; $('fpsVal').textContent = S.fps + ' fps'; };
+$('btnOnion').onclick = ()=>{
+  // first tap lights it up, tapping the lit button opens its settings
+  if(!S.onion){
+    S.onion = true;
+    $('btnOnion').classList.add('on');
+    bufDirty = true; renderView();
+    return;
+  }
+  showOnionOpts();
+};
+$('fps').oninput = e => { S.fps = +e.target.value; syncFpsLabel(); };
+$('fpsVal').onclick = ()=>{
+  if(S.frameCount < 2){ toast('มีเฟรมเดียว ยังไม่ต้องตั้งเวลา'); return; }
+  showFrameDurs();
+};
 
-const TOOL_KEYS = {b:'pencil', e:'eraser', g:'fill', i:'picker', l:'line', r:'rect', o:'ellipse', m:'select', v:'select'};
+/* ══════════════ KEYBOARD SHORTCUTS ══════════════
+   Every rebindable action lives in one table so the guide, the persistence and
+   the keydown handler all read from the same place. The Ctrl/Cmd combos below
+   stay fixed - they match the OS and rebinding them just fights the browser. */
+const TOOL_INFO = {
+  select:{name:'เลือกพื้นที่', desc:'ลากกรอบหรือแตะเลือกตามสี (wand) เพื่อย้าย คัดลอก หรือลบ · แตะซ้ำเลือกวิธี'},
+  pencil:{name:'ดินสอ', desc:'วาดทีละพิกเซล · ตั้งขนาดหัว ดิเธอร์ และพิกเซลเพอร์เฟกต์ได้'},
+  eraser:{name:'ยางลบ', desc:'ลบพิกเซล · โหมดสีแตะลบทั้งหย่อมสีเดียวกันที่ต่อกัน'},
+  fill:{name:'ถังสี', desc:'เทสีพื้นที่ต่อเนื่อง · โหมดแทนที่เปลี่ยนทุกจุดที่เป็นสีเดียวกัน'},
+  picker:{name:'ดูดสี', desc:'แตะดูดสีจากภาพมาเป็นสีปัจจุบัน · หรือกดค้างบนผ้าใบตอนใช้เครื่องมืออื่น'},
+  line:{name:'เส้นตรง', desc:'ลากเส้นตรงจากจุดเริ่มถึงจุดที่ปล่อยนิ้ว · ตั้งขนาดหัวได้'},
+  rect:{name:'สี่เหลี่ยม', desc:'วาดสี่เหลี่ยม เลือกเฉพาะขอบหรือทึบทั้งก้อน'},
+  ellipse:{name:'วงรี / วงกลม', desc:'วาดวงรีหรือวงกลม เลือกเฉพาะขอบหรือทึบ'},
+};
+const TOOL_ORDER = ['select','pencil','eraser','fill','picker','line','rect','ellipse'];
+const TOOL_DEF_KEYS = {select:'m', pencil:'b', eraser:'e', fill:'g', picker:'i', line:'l', rect:'r', ellipse:'o'};
+
+function toggleOnion(){
+  S.onion = !S.onion;
+  $('btnOnion').classList.toggle('on', S.onion);
+  bufDirty = true; renderView();
+  toast(S.onion ? 'เปิด onion skin' : 'ปิด onion skin');
+}
+
+/* Toggle buttons already own their logic in their onclick - reuse it rather
+   than duplicating the toast and class juggling. */
+const clickBtn = id => { const b = $(id); if(b && b.onclick) b.onclick(); };
+
+const ACTIONS = [
+  ...TOOL_ORDER.map(id => ({
+    id, kind:'tool', label:TOOL_INFO[id].name, desc:TOOL_INFO[id].desc,
+    def:TOOL_DEF_KEYS[id], run:()=>selectTool(id)
+  })),
+  {id:'brushDown',  kind:'cmd', def:'[',     label:'หัวแปรงเล็กลง',        desc:'ลดขนาดหัวดินสอ/ยางลบ',        run:()=>stepBrush(-1)},
+  {id:'brushUp',    kind:'cmd', def:']',     label:'หัวแปรงใหญ่ขึ้น',       desc:'เพิ่มขนาดหัวดินสอ/ยางลบ',      run:()=>stepBrush(1)},
+  {id:'lock',       kind:'cmd', def:'k',     label:'ล็อกพื้นที่โปร่งใส',     desc:'วาดทับเฉพาะจุดที่มีสีอยู่แล้ว',  run:()=>clickBtn('btnLock')},
+  {id:'shadeDark',  kind:'cmd', def:',',     label:'สีเข้มลงหนึ่งขั้น',      desc:'ปรับสีปัจจุบันให้เข้มขึ้น',      run:()=>stepShade(-1)},
+  {id:'shadeLight', kind:'cmd', def:'.',     label:'สีอ่อนขึ้นหนึ่งขั้น',    desc:'ปรับสีปัจจุบันให้อ่อนลง',        run:()=>stepShade(1)},
+  {id:'play',       kind:'cmd', def:'Space', label:'เล่น / หยุดภาพเคลื่อนไหว', desc:'เล่นวนตามเวลาเฟรมที่ตั้งไว้',   run:()=>togglePlay()},
+  {id:'sym',        kind:'cmd', def:'y',     label:'สลับโหมดวาดสมมาตร',      desc:'ปิด · ซ้าย-ขวา · บน-ล่าง · สี่ทิศ', run:()=>clickBtn('btnSym')},
+  {id:'grid',       kind:'cmd', def:'d',     label:'เปิด/ปิดเส้นกริด',       desc:'',                              run:()=>clickBtn('btnGrid')},
+  {id:'onion',      kind:'cmd', def:'n',     label:'เปิด/ปิด onion skin',    desc:'เงาเฟรมข้างเคียงเพื่อวาดต่อเนื่อง', run:()=>toggleOnion()},
+  {id:'tile',       kind:'cmd', def:'t',     label:'เปิด/ปิดโหมดต่อลาย',     desc:'วาดข้ามขอบแล้ววนไปอีกด้าน',    run:()=>clickBtn('btnTile')},
+  {id:'flip',       kind:'cmd', def:'h',     label:'พลิก / หมุนภาพ',         desc:'เปิดหน้าต่างพลิกและหมุน',       run:()=>showFlipDialog()},
+  {id:'addFrame',   kind:'cmd', def:'f',     label:'เพิ่มเฟรมใหม่',          desc:'',                              run:()=>addFrame()},
+  {id:'dupFrame',   kind:'cmd', def:'',      label:'คัดลอกเฟรมนี้',          desc:'ยังไม่ตั้งคีย์ไว้',              run:()=>dupFrame()},
+];
+const ACTION_BY_ID = Object.fromEntries(ACTIONS.map(a => [a.id, a]));
+
+const KEYS_STORE = 'pxloom:keys';
+let userKeys = {};          // actionId -> token override ('' = deliberately unbound)
+let keyMap = {};            // actionId -> resolved token
+let keyRev = {};            // token -> actionId (unique)
+
+function loadKeys(){ userKeys = lsGet(KEYS_STORE, {}) || {}; }
+function saveKeys(){ lsSet(KEYS_STORE, userKeys); }
+function rebuildKeys(){
+  keyMap = {}; keyRev = {};
+  for(const a of ACTIONS){
+    const tok = (a.id in userKeys) ? userKeys[a.id] : a.def;
+    keyMap[a.id] = tok || '';
+    if(tok) keyRev[tok] = a.id;   // uniqueness is kept by assignKey below
+  }
+}
+/* Two actions can't share a key, so claiming one frees whoever held it. */
+function assignKey(id, tok){
+  if(!tok) return;
+  for(const other of ACTIONS) if(other.id !== id && keyMap[other.id] === tok) userKeys[other.id] = '';
+  userKeys[id] = tok;
+  saveKeys(); rebuildKeys();
+}
+function clearKey(id){ userKeys[id] = ''; saveKeys(); rebuildKeys(); }
+function resetAllKeys(){ userKeys = {}; saveKeys(); rebuildKeys(); }
+function keyLabel(tok){ return !tok ? '—' : (tok === 'Space' ? 'Space' : (tok.length === 1 ? tok.toUpperCase() : tok)); }
+
+let shortcutCapture = null;   // actionId currently listening for a key
+let shortcutRefresh = null;   // re-render the open guide after a rebind
+
+function shortcutRow(a){
+  const tok = keyMap[a.id] || '';
+  return `<div class="sc-row" data-id="${a.id}">
+    <div class="sc-tx"><b>${esc(a.label)}</b>${a.desc ? `<span>${esc(a.desc)}</span>` : ''}</div>
+    <button class="kchip${tok ? '' : ' empty'}" data-act="bind">${esc(keyLabel(tok))}</button>
+    ${tok ? '<button class="kclr" data-act="clear" title="ล้างคีย์">×</button>' : ''}
+  </div>`;
+}
+
+/* The guide doubles as tool help: on a touch device with no keyboard the key
+   chips are just reference, but every tool still gets a plain-language line. */
+function showShortcuts(){
+  const mac = /mac|iphone|ipad|ipod/i.test((navigator.platform || '') + ' ' + (navigator.userAgent || ''));
+  const modk = mac ? '⌘' : 'Ctrl';
+  const fixed = [
+    ['เลิกทำ', modk + '+Z'],
+    ['ทำซ้ำ', modk + '+Shift+Z · ' + modk + '+Y'],
+    ['บันทึก', modk + '+S'],
+    ['เลือกทั้งหมด', modk + '+A'],
+    ['คัดลอก · ตัด · วาง', modk + '+C / X / V'],
+    ['ยกเลิก · ปิดหน้าต่าง', 'Esc'],
+    ['ลบพื้นที่ที่เลือก', 'Del'],
+    ['ขยับพื้นที่ที่เลือก', 'ปุ่มลูกศร'],
+  ];
+  openModal(`
+    <h2>คู่มือ & คีย์ลัด</h2>
+    <p class="sub">คำอธิบายเครื่องมือแต่ละตัว · แตะปุ่มคีย์ทางขวาเพื่อเปลี่ยน (ต้องต่อคีย์บอร์ด)</p>
+    <div class="sc-list">
+      <div class="sec-lbl">เครื่องมือวาด</div>
+      <div id="scTools"></div>
+      <div class="sec-lbl" style="margin-top:16px">คำสั่งลัด</div>
+      <div id="scCmds"></div>
+      <div class="sec-lbl" style="margin-top:16px">คีย์ลัดตายตัว (แก้ไม่ได้)</div>
+      ${fixed.map(([n, k]) => `<div class="sc-fixed"><span>${n}</span><b>${esc(k)}</b></div>`).join('')}
+    </div>
+    <button class="sup-btn" id="scReset">คืนค่าคีย์เริ่มต้นทั้งหมด</button>
+    <button class="big-btn" id="scDone">เสร็จ</button>
+  `);
+
+  const wireRows = ()=>{
+    document.querySelectorAll('#modalCard .sc-row').forEach(row=>{
+      const id = row.dataset.id;
+      const bind = row.querySelector('[data-act="bind"]');
+      bind.onclick = ()=>{
+        shortcutCapture = id;
+        render();
+        const chip = document.querySelector('#modalCard .sc-row[data-id="' + id + '"] .kchip');
+        if(chip){ chip.classList.add('listen'); chip.textContent = 'กดปุ่ม…'; }
+      };
+      const clr = row.querySelector('[data-act="clear"]');
+      if(clr) clr.onclick = ()=>{ clearKey(id); render(); };
+    });
+  };
+  const render = ()=>{
+    const tools = $('scTools'), cmds = $('scCmds');
+    if(!tools || !cmds) return;
+    tools.innerHTML = ACTIONS.filter(a => a.kind === 'tool').map(shortcutRow).join('');
+    cmds.innerHTML  = ACTIONS.filter(a => a.kind === 'cmd').map(shortcutRow).join('');
+    wireRows();
+  };
+  shortcutRefresh = render;
+  render();
+  $('scReset').onclick = ()=>{ resetAllKeys(); render(); toast('คืนค่าคีย์ลัดเริ่มต้นแล้ว'); };
+  $('scDone').onclick = closeModal;
+}
 document.addEventListener('keydown', e=>{
   const t = e.target;
   if(t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
   // a modal owns the keyboard while it's open — otherwise pressing a tool key or
   // undo behind an open dialog quietly edits the art you can't see. Escape closes it.
   if($('modal').classList.contains('on')){
+    // the shortcuts guide can be listening for a key to bind to an action
+    if(shortcutCapture){
+      e.preventDefault();
+      const key = e.key;
+      if(key === 'Escape'){ shortcutCapture = null; if(shortcutRefresh) shortcutRefresh(); }
+      else if(key === 'Backspace' || key === 'Delete'){ const id = shortcutCapture; shortcutCapture = null; clearKey(id); if(shortcutRefresh) shortcutRefresh(); }
+      else if(key === ' ' || key.length === 1){ const id = shortcutCapture; shortcutCapture = null; assignKey(id, key === ' ' ? 'Space' : key.toLowerCase()); if(shortcutRefresh) shortcutRefresh(); }
+      // a bare modifier press just keeps waiting
+      return;
+    }
     if(e.key === 'Escape'){ e.preventDefault(); closeModal(); }
     return;
   }
@@ -6705,12 +7404,10 @@ document.addEventListener('keydown', e=>{
     const arrows = {ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,-1], ArrowDown:[0,1]};
     if(arrows[k]){ e.preventDefault(); nudgeFloat(...arrows[k]); return; }
   }
-  if(k==='[' || k===']'){ e.preventDefault(); stepBrush(k===']' ? 1 : -1); return; }
-  if(k==='k'){ e.preventDefault(); $('btnLock').click(); return; }
-  if(k===','){ e.preventDefault(); stepShade(-1); return; }
-  if(k==='.'){ e.preventDefault(); stepShade(1); return; }
-  if(TOOL_KEYS[k]){ selectTool(TOOL_KEYS[k]); return; }
-  if(k===' '){ e.preventDefault(); togglePlay(); }
+  // everything else is resolved through the rebindable table
+  const token = (e.key === ' ') ? 'Space' : k;
+  const act = ACTION_BY_ID[keyRev[token]];
+  if(act){ e.preventDefault(); act.run(); return; }
 });
 
 /* drag & drop an image or project file straight onto the canvas */
@@ -6775,6 +7472,7 @@ $('btnGrid').classList.add('on');
 buildPalette();
 renderRecent();
 updateToolTags();
+loadKeys(); rebuildKeys();
 resizeView();
 initProject(64, 64);
 showHome();
