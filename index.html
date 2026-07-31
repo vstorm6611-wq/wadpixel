@@ -619,9 +619,9 @@ body.solo-frame #btnAddFrameHead{display:flex}
 /* ---------- SELECTION BAR ---------- */
 #selBar{
   position:absolute;left:50%;transform:translateX(-50%) translateY(-80px);
-  top:10px;z-index:16;display:flex;align-items:center;gap:2px;
+  top:8px;z-index:16;display:flex;align-items:center;gap:2px;
   background:rgba(23,25,35,.94);border:1px solid var(--line);border-radius:12px;
-  padding:5px;backdrop-filter:blur(10px);box-shadow:0 6px 20px rgba(0,0,0,.45);
+  padding:4px;backdrop-filter:blur(10px);box-shadow:0 6px 20px rgba(0,0,0,.45);
   transition:transform .22s cubic-bezier(.3,.8,.4,1);max-width:calc(100vw - 20px);
   overflow-x:auto;scrollbar-width:none;
 }
@@ -629,17 +629,17 @@ body.solo-frame #btnAddFrameHead{display:flex}
 #selBar.on{transform:translateX(-50%) translateY(0)}
 #selBar.pushed{transform:translateX(-50%) translateY(56px)}
 #selBar button{
-  flex:0 0 auto;min-width:46px;height:44px;border-radius:9px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-  transition:background .12s,transform .08s;padding:0 4px;
+  flex:0 0 auto;min-width:32px;height:38px;border-radius:8px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  transition:background .12s,transform .08s;padding:0 3px;
 }
 #selBar button:active{transform:scale(.9);background:var(--line)}
-#selBar button svg{width:17px;height:17px;stroke:var(--text);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-#selBar button span{font-size:8.5px;color:var(--dim);letter-spacing:.2px;white-space:nowrap}
+#selBar button svg{width:15px;height:15px;stroke:var(--text);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+#selBar button span{font-size:8px;color:var(--dim);letter-spacing:.2px;white-space:nowrap}
 #selBar button[data-a="del"] svg{stroke:var(--danger)}
 #selBar button[data-a="done"] svg{stroke:var(--accent-2)}
 #selBar button[disabled]{opacity:.3;pointer-events:none}
-#selBar .sb-div{flex:0 0 auto;width:1px;height:24px;background:var(--line);margin:0 3px}
+#selBar .sb-div{flex:0 0 auto;width:1px;height:22px;background:var(--line);margin:0 2px}
 
 /* ---------- RESTORE BAR ---------- */
 #restoreBar{
@@ -724,6 +724,72 @@ body.solo-frame #btnAddFrameHead{display:flex}
   opacity:1;visibility:visible;
   transition:transform .22s cubic-bezier(.3,.8,.4,1), opacity .2s ease, visibility 0s;
 }
+
+/* ---------- COMMAND TRAY ----------
+   17 buttons in one hidden-scroll row meant ~10 of them were off screen with
+   no hint they existed. The row now holds only the tools you draw with; the
+   one-shot commands live here, with the labels an icon alone never gave. */
+#trayScrim{position:fixed;inset:0;background:rgba(5,6,10,.55);z-index:44;opacity:0;pointer-events:none;transition:opacity .18s}
+#trayScrim.on{opacity:1;pointer-events:auto}
+#cmdTray{
+  position:fixed;left:0;right:0;bottom:0;z-index:45;
+  background:var(--panel);border-top:1px solid var(--line);
+  border-radius:16px 16px 0 0;padding:10px 10px calc(12px + env(safe-area-inset-bottom));
+  transform:translateY(110%);transition:transform .22s cubic-bezier(.3,.8,.4,1);
+  box-shadow:0 -10px 30px rgba(0,0,0,.5);
+}
+#cmdTray.on{transform:translateY(0)}
+#cmdTray .th{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+#cmdTray .th b{font-size:13px}
+#cmdTray .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+#cmdTray .tool{
+  width:auto;height:66px;flex-direction:column;gap:5px;border-radius:12px;
+}
+#cmdTray .tool .cl{font-size:9.5px;line-height:1.15;color:var(--dim);text-align:center;padding:0 2px}
+#cmdTray .tool.on .cl{color:#fff}
+#cmdTray .tool .sym-tag{right:5px;bottom:auto;top:5px}
+#btnMore{position:relative}
+#moreDot{
+  position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;
+  background:var(--accent-2);display:none;
+}
+#moreDot.on{display:block}
+
+/* ---------- STAGE ZOOM / PAN CONTROLS ----------
+   Zoom was pinch-only, which fights a one-finger drawing gesture on a phone. */
+#zoomCtl{
+  position:absolute;right:8px;bottom:8px;z-index:15;display:flex;flex-direction:column;gap:5px;
+  transition:transform .2s cubic-bezier(.3,.8,.4,1);
+}
+body.ref-on #zoomCtl{transform:translateY(-84px)}
+#zoomCtl button{
+  width:38px;height:38px;border-radius:11px;background:rgba(23,25,35,.9);
+  border:1px solid var(--line);backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;
+  color:var(--text);transition:background .12s,transform .08s;
+}
+#zoomCtl button:active{transform:scale(.9);background:var(--line)}
+#zoomCtl button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+#zoomCtl svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- TOUCH LENS ----------
+   At fit zoom a fingertip covers ~3 pixels, so the pixel you are placing is
+   the one thing you cannot see. The lens shows it, magnified, clear of the hand. */
+#lens{
+  position:absolute;left:0;top:0;width:88px;height:88px;z-index:17;pointer-events:none;
+  border-radius:50%;overflow:hidden;border:2px solid rgba(124,92,255,.9);
+  box-shadow:0 6px 18px rgba(0,0,0,.55);background:#fff;
+  display:none;
+}
+#lens.on{display:block}
+#lens canvas{width:100%;height:100%;image-rendering:pixelated;display:block}
+
+/* filmstrip folds away — 52px thumbnails are dead weight while you draw */
+#tlLbl{flex:0 0 auto;display:flex;align-items:center;gap:4px;background:none;padding:2px 2px 2px 0}
+#tlLbl .cv{font-size:9px;color:var(--dim);transition:transform .15s}
+body.tl-min #frames{display:none}
+body.tl-min #tlHead{margin-bottom:0}
+body.tl-min #tlLbl .cv{transform:rotate(-90deg)}
 </style>
 </head>
 <body>
@@ -781,6 +847,26 @@ body.solo-frame #btnAddFrameHead{display:flex}
       <button class="rf-step" id="rfFlipV" title="พลิกแนวตั้ง">↕</button>
     </div>
   </div>
+  <div id="lens"><canvas id="lensCv"></canvas></div>
+  <div id="zoomCtl">
+    <button id="zcPan" title="โหมดเลื่อนภาพ (ลากนิ้วเดียว)"><svg viewBox="0 0 24 24"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11"/><path d="M12 11V4.5a1.5 1.5 0 0 1 3 0V11"/><path d="M15 11V6.5a1.5 1.5 0 0 1 3 0V13a7 7 0 0 1-7 7h-1a6 6 0 0 1-6-6v-3.5a1.5 1.5 0 0 1 3 0V13"/></svg></button>
+    <button id="zcIn" title="ซูมเข้า">+</button>
+    <button id="zcOut" title="ซูมออก">−</button>
+    <button id="zcFit" title="พอดีจอ"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+  </div>
+  <div id="selBar">
+    <button data-a="cut" title="ตัด"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.1" y2="15.9"/><line x1="14.5" y1="14.5" x2="20" y2="20"/><line x1="8.1" y1="8.1" x2="12" y2="12"/></svg><span>ตัด</span></button>
+    <button data-a="copy" title="คัดลอก"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>คัดลอก</span></button>
+    <button data-a="paste" title="วาง"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg><span>วาง</span></button>
+    <div class="sb-div"></div>
+    <button data-a="fillsel" title="เทสีในพื้นที่ที่เลือก"><svg viewBox="0 0 24 24"><path d="M11.3 2 9.9 3.4l2 2L3.5 13.8a2 2 0 0 0 0 2.8l4.9 4.9a2 2 0 0 0 2.8 0l8.4-8.4a2 2 0 0 0 0-2.8L11.3 2Z"/><path d="M20.5 15.5s1.9 2.2 1.9 3.4a1.9 1.9 0 1 1-3.8 0c0-1.2 1.9-3.4 1.9-3.4Z"/></svg><span>เทสี</span></button>
+    <div class="sb-div"></div>
+    <button data-a="flipH" title="พลิกแนวนอน"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M8 8L4 12l4 4"/><path d="M16 8l4 4-4 4"/></svg><span>พลิก↔</span></button>
+    <button data-a="flipV" title="พลิกแนวตั้ง"><svg viewBox="0 0 24 24"><path d="M3 12h18"/><path d="M8 8l4-4 4 4"/><path d="M8 16l4 4 4-4"/></svg><span>พลิก↕</span></button>
+    <div class="sb-div"></div>
+    <button data-a="del" title="ลบ"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg><span>ลบ</span></button>
+    <button data-a="done" title="เสร็จ"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span>เสร็จ</span></button>
+  </div>
   <div id="toast"></div>
 </div>
 
@@ -788,7 +874,7 @@ body.solo-frame #btnAddFrameHead{display:flex}
 
 <div id="timeline">
   <div id="tlHead">
-    <span class="lbl">Frames</span>
+    <button class="lbl" id="tlLbl"><span class="cv">▾</span><span id="tlCount">Frames</span></button>
     <div id="fpsWrap">
       <input type="range" id="fps" min="1" max="24" value="8">
       <button id="fpsVal" title="แตะเพื่อตั้งเวลาต่อเฟรม">8 fps</button>
@@ -807,22 +893,32 @@ body.solo-frame #btnAddFrameHead{display:flex}
   <button class="tool" data-tool="eraser" title="ยางลบ · แตะซ้ำเพื่อตั้งขนาด/โหมด"><svg viewBox="0 0 24 24"><path d="M20 20H8.5L3 14.5a1.5 1.5 0 0 1 0-2.1l8.4-8.4a1.5 1.5 0 0 1 2.1 0l6.5 6.5a1.5 1.5 0 0 1 0 2.1L13 20"/><path d="M8 20 17 11"/></svg><span class="sym-tag" id="eraserTag"></span></button>
   <button class="tool fill" data-tool="fill" title="ถังสี · แตะซ้ำเพื่อเลือกโหมด"><svg viewBox="0 0 24 24"><path d="M11.3 2 9.9 3.4l2 2L3.5 13.8a2 2 0 0 0 0 2.8l4.9 4.9a2 2 0 0 0 2.8 0l8.4-8.4a2 2 0 0 0 0-2.8L11.3 2Zm.3 5.5 5.4 5.4H6.2l5.4-5.4Z"/><path d="M20.5 15.5s1.9 2.2 1.9 3.4a1.9 1.9 0 1 1-3.8 0c0-1.2 1.9-3.4 1.9-3.4Z"/></svg><span class="sym-tag" id="fillTag"></span></button>
   <button class="tool" data-tool="picker" title="ดูดสี"><svg viewBox="0 0 24 24"><path d="m2 22 1-4 10-10"/><path d="m13.5 8.5 2 2"/><path d="M18.4 2.6a2.1 2.1 0 0 1 3 3l-2.4 2.4 1 1a1 1 0 0 1 0 1.4l-1 1a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4l1-1a1 1 0 0 1 1.4 0l1 1 2.4-2.4Z"/></svg></button>
-  <div class="divider"></div>
+  <button class="tool" id="btnShape" title="รูปทรง · แตะซ้ำเพื่อเลือกเส้น/สี่เหลี่ยม/วงรี/สามเหลี่ยม/ข้าวหลามตัด"><span id="shapeIc"><svg viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4"/><circle cx="4" cy="20" r="2"/><circle cx="20" cy="4" r="2"/></svg></span><span class="sym-tag" id="shapeTag"></span></button>
+  <button class="tool" id="btnMore" title="คำสั่งอื่น ๆ"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span id="moreDot"></span></button>
+</div>
+
+<div id="trayScrim"></div>
+<div id="cmdTray">
+  <div class="th"><b>คำสั่งและมุมมอง</b><button class="tb-btn" id="btnTrayClose" style="height:30px;padding:0 10px;font-size:11px">ปิด</button></div>
+  <div class="grid">
+    <button class="tool" id="btnFit" title="พอดีจอ"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg><span class="cl">พอดีจอ</span></button>
+    <button class="tool" id="btnTile" title="โหมดต่อลาย (seamless)"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg><span class="cl">ต่อลาย</span></button>
+    <button class="tool" id="btnResize" title="ปรับขนาดผืนผ้าใบ"><svg viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/><rect x="3" y="3" width="7" height="7" rx="1"/></svg><span class="cl">ขนาดผ้าใบ</span></button>
+    <button class="tool" id="btnLock" title="ล็อกพื้นที่โปร่งใส — วาดทับเฉพาะจุดที่มีสีอยู่แล้ว"><svg viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg><span class="cl">ล็อกโปร่งใส</span></button>
+    <button class="tool" id="btnSym" title="วาดสมมาตร"><svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22" stroke-dasharray="3 3"/><path d="M9 6 4 12l5 6"/><path d="M15 6l5 6-5 6"/></svg><span class="sym-tag" id="symTag"></span><span class="cl">สมมาตร</span></button>
+    <button class="tool" id="btnFlip" title="พลิก / หมุนภาพ"><svg viewBox="0 0 24 24"><path d="M12 3v18" stroke-dasharray="3 3"/><path d="M8 7H3l5 10V7Z"/><path d="M16 7h5l-5 10V7Z"/></svg><span class="cl">พลิก / หมุน</span></button>
+    <button class="tool" id="btnOutline" title="เส้นขอบอัตโนมัติ"><svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1"/><rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="3 3" opacity=".55"/></svg><span class="cl">เส้นขอบ</span></button>
+    <button class="tool" id="btnShift" title="เลื่อนภาพทั้งเฟรม"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/><path d="M5 12l3-3M5 12l3 3"/><path d="M19 12l-3-3M19 12l-3 3"/><path d="M12 5l-3 3M12 5l3 3"/><path d="M12 19l-3-3M12 19l3-3"/></svg><span class="cl">เลื่อนภาพ</span></button>
+    <button class="tool" id="btnGrid" title="เส้นกริด"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1.5"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg><span class="cl">เส้นกริด</span></button>
+    <button class="tool" id="btnPrec" title="ความแม่นในการวาด"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg><span class="cl">ความแม่น</span></button>
+  </div>
+</div>
+
+<div id="shapeHold" style="display:none">
   <button class="tool" data-tool="line" title="เส้นตรง · แตะซ้ำเพื่อตั้งขนาด"><svg viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4"/><circle cx="4" cy="20" r="2"/><circle cx="20" cy="4" r="2"/></svg><span class="sym-tag" id="lineTag"></span></button>
   <button class="tool" data-tool="rect" title="สี่เหลี่ยม · แตะซ้ำเพื่อตั้งขนาด/ทึบ"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/></svg><span class="sym-tag" id="rectTag"></span></button>
   <button class="tool" data-tool="ellipse" title="วงรี / วงกลม · แตะซ้ำเพื่อตั้งขนาด/ทึบ"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="9" ry="7"/></svg><span class="sym-tag" id="ellipseTag"></span></button>
-  <div class="divider"></div>
-  <button class="tool" id="btnFit" title="พอดีจอ"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
-  <button class="tool" id="btnTile" title="โหมดต่อลาย (seamless)"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg></button>
-  <button class="tool" id="btnResize" title="ปรับขนาดผืนผ้าใบ"><svg viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/><rect x="3" y="3" width="7" height="7" rx="1"/></svg></button>
-  <button class="tool" id="btnLock" title="ล็อกพื้นที่โปร่งใส — วาดทับเฉพาะจุดที่มีสีอยู่แล้ว"><svg viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg></button>
-  <button class="tool" id="btnSym" title="วาดสมมาตร"><svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22" stroke-dasharray="3 3"/><path d="M9 6 4 12l5 6"/><path d="M15 6l5 6-5 6"/></svg><span class="sym-tag" id="symTag"></span></button>
-  <button class="tool" id="btnFlip" title="พลิก / หมุนภาพ"><svg viewBox="0 0 24 24"><path d="M12 3v18" stroke-dasharray="3 3"/><path d="M8 7H3l5 10V7Z"/><path d="M16 7h5l-5 10V7Z"/></svg></button>
-  <button class="tool" id="btnOutline" title="เส้นขอบอัตโนมัติ"><svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1"/><rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="3 3" opacity=".55"/></svg></button>
-  <button class="tool" id="btnShift" title="เลื่อนภาพทั้งเฟรม"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/><path d="M5 12l3-3M5 12l3 3"/><path d="M19 12l-3-3M19 12l-3 3"/><path d="M12 5l-3 3M12 5l3 3"/><path d="M12 19l-3-3M12 19l3-3"/></svg></button>
-  <button class="tool" id="btnGrid" title="เส้นกริด"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1.5"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg></button>
 </div>
-
 <div id="recentBar"></div>
 <div id="palette"></div>
 
@@ -842,17 +938,6 @@ body.solo-frame #btnAddFrameHead{display:flex}
 </aside>
 
 <div id="modal"><div class="card" id="modalCard"></div></div>
-<div id="selBar">
-  <button data-a="cut" title="ตัด"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.1" y2="15.9"/><line x1="14.5" y1="14.5" x2="20" y2="20"/><line x1="8.1" y1="8.1" x2="12" y2="12"/></svg><span>ตัด</span></button>
-  <button data-a="copy" title="คัดลอก"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>คัดลอก</span></button>
-  <button data-a="paste" title="วาง"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg><span>วาง</span></button>
-  <div class="sb-div"></div>
-  <button data-a="flipH" title="พลิกแนวนอน"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M8 8L4 12l4 4"/><path d="M16 8l4 4-4 4"/></svg><span>พลิก↔</span></button>
-  <button data-a="flipV" title="พลิกแนวตั้ง"><svg viewBox="0 0 24 24"><path d="M3 12h18"/><path d="M8 8l4-4 4 4"/><path d="M8 16l4 4 4-4"/></svg><span>พลิก↕</span></button>
-  <div class="sb-div"></div>
-  <button data-a="del" title="ลบ"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg><span>ลบ</span></button>
-  <button data-a="done" title="เสร็จ"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span>เสร็จ</span></button>
-</div>
 
 
 <script>
@@ -869,7 +954,8 @@ const S = {
   fps:8,
   playing:false,
   tool:'pencil',
-  brush:1,             // pencil/eraser nib size in pixels (square)
+  brush:1,             // pencil/eraser nib size in pixels
+  nib:'square',        // nib shape: square | circle | diamond | hline | vline
   perfect:true,        // 1px freehand: drop the corner pixel of every L turn
   dither:false,        // pencil: lay a 2-colour checkerboard instead of a solid nib
   color2:'#ffffff',    // the second colour used when dither is on
@@ -898,10 +984,23 @@ const S = {
   floatRect:null,  // where the float currently sits
   clip:null,       // clipboard {data,w,h}
   zoom:8, panX:0, panY:0,
+  shape:'line',        // which shape the grouped shape button holds
+  panMode:false,       // one-finger drag pans instead of drawing
+  cursorOn:true,       // outline the pixel the tool is about to hit
+  lens:false,          // magnifier while a finger is down — opt-in
+  penOff:0,            // lift the touch point this many screen px, so the hand
+                       // stops covering the target (0 = draw under the finger)
   undoStack:[], redoStack:[],
   dirtyThumbs:new Set(),
 };
 const MAX_UNDO = 40;
+/* A wide edit (rotate/flip/outline/shift over many layers or frames) used to
+   throw the whole undo stack away and leave a restore point instead, so undo
+   was untrustworthy exactly where it matters most. It now records every cell
+   it is about to touch. Snapshots of a big project are heavy, so the stack is
+   capped by bytes as well as by count: 48MB keeps all 40 steps for sprite-size
+   work and still holds 16 wide edits on a 128x128 12-frame project. */
+const MAX_UNDO_BYTES = 48 * 1024 * 1024;
 var selNeedsAnim = false;   // hoisted: drawSelectionOverlay sets this during early renders
 const DEFAULT_PALETTE = ['#000000','#ffffff'];
 
@@ -1234,17 +1333,48 @@ function getPixel(data, x, y){
   const i = (y*S.W + x)*4;
   return [data[i],data[i+1],data[i+2],data[i+3]];
 }
-/* Square nib, not round: a circular mask at 2-3px reads as a lopsided blob,
-   and squares are what every pixel editor uses at these sizes. Even sizes are
-   biased up-left of the cursor, which is the usual convention. */
+/* Nib shapes. Square stays the default: a circular mask at 2-3px reads as a
+   lopsided blob, and squares are what every pixel editor starts with. Even
+   sizes are biased up-left of the cursor, which is the usual convention.
+   Round nibs use the box's own centre, so the mask stays symmetric; an odd
+   size shrinks the radius slightly, otherwise a 3px circle is just a square.
+   Below 6px a circle and a diamond describe the same handful of cells — that
+   is the honest answer at that size, not a bug. */
+const NIBS = ['square','circle','diamond','hline','vline'];
+const NIB_SYM  = {square:'■', circle:'●', diamond:'◆', hline:'▬', vline:'▮'};
+const NIB_NAME = {square:'สี่เหลี่ยม', circle:'วงกลม', diamond:'ข้าวหลามตัด', hline:'เส้นแนวนอน', vline:'เส้นแนวตั้ง'};
+const nibCache = new Map();
+function nibOffsets(n, nib){
+  n = Math.max(1, n|0);
+  if(n === 1) return [[0,0]];
+  const key = nib + ':' + n;
+  const hit = nibCache.get(key);
+  if(hit) return hit;
+  const h = (n-1) >> 1, c = (n-1)/2;
+  const rr = (n % 2) ? (n-1)/2 + 0.35 : n/2;
+  const out = [];
+  for(let dy=-h; dy<n-h; dy++){
+    for(let dx=-h; dx<n-h; dx++){
+      const x = Math.abs(dx + h - c), y = Math.abs(dy + h - c);
+      let keep = true;
+      if(nib === 'circle')  keep = x*x + y*y <= rr*rr;
+      else if(nib === 'diamond') keep = x + y <= n/2;
+      else if(nib === 'hline') keep = dy === 0;
+      else if(nib === 'vline') keep = dx === 0;
+      if(keep) out.push([dx, dy]);
+    }
+  }
+  const mask = out.length ? out : [[0,0]];
+  nibCache.set(key, mask);
+  return mask;
+}
+function curNib(){ return nibOffsets(S.brush|0, S.nib); }
 function stampPixel(data, x, y, rgba){
   const n = S.brush|0;
   if(n <= 1) return setPixel(data, x, y, rgba);
-  const h = (n-1) >> 1;
   let changed = false;
-  for(let dy=-h; dy<n-h; dy++)
-    for(let dx=-h; dx<n-h; dx++)
-      if(setPixel(data, x+dx, y+dy, rgba)) changed = true;
+  for(const [dx,dy] of curNib())
+    if(setPixel(data, x+dx, y+dy, rgba)) changed = true;
   return changed;
 }
 /* Dither nib: two colours in a checkerboard keyed to the canvas grid, not the
@@ -1259,11 +1389,9 @@ function stampDither(data, x, y, rgba){
     return setPixel(data, px, py, c);
   };
   if(n <= 1) return put(x, y);
-  const h = (n-1) >> 1;
   let changed = false;
-  for(let dy=-h; dy<n-h; dy++)
-    for(let dx=-h; dx<n-h; dx++)
-      if(put(x+dx, y+dy)) changed = true;
+  for(const [dx,dy] of curNib())
+    if(put(x+dx, y+dy)) changed = true;
   return changed;
 }
 /* The pencil's active plotter — swaps to the dither weave when the mode is on. */
@@ -1489,6 +1617,73 @@ function symDrawEllipse(data, x0,y0,x1,y1, rgba, plot = setPixel, filled = false
   if(S.sym === 2 || S.sym === 3) drawEllipse(data, x0,symY(y0),x1,symY(y1), rgba, plot, filled);
   if(S.sym === 3) drawEllipse(data, symX(x0),symY(y0),symX(x1),symY(y1), rgba, plot, filled);
 }
+/* Triangle & diamond share one polygon routine: the outline walks the edges
+   with the same Bresenham line the other shapes use, and the fill is a scanline
+   that also re-draws those edges — so a filled shape and an outline of the same
+   box border on exactly the same pixels, with no gaps at a flat top or side. */
+function fillPoly(data, pts, rgba){
+  let changed = false, ymin = Infinity, ymax = -Infinity;
+  for(const [,y] of pts){ ymin = Math.min(ymin,y); ymax = Math.max(ymax,y); }
+  for(let y=Math.round(ymin);y<=Math.round(ymax);y++){
+    const xs = [];
+    for(let i=0;i<pts.length;i++){
+      const [x1,y1] = pts[i], [x2,y2] = pts[(i+1)%pts.length];
+      if((y1<=y && y2>y) || (y2<=y && y1>y)) xs.push(x1 + (y-y1)/(y2-y1)*(x2-x1));
+    }
+    xs.sort((a,b)=>a-b);
+    for(let k=0;k+1<xs.length;k+=2)
+      for(let x=Math.round(xs[k]);x<=Math.round(xs[k+1]);x++) if(setPixel(data,x,y,rgba)) changed = true;
+  }
+  return changed;
+}
+function drawPoly(data, pts, rgba, plot = setPixel, filled = false){
+  let changed = false;
+  if(filled) changed = fillPoly(data, pts, rgba);
+  for(let i=0;i<pts.length;i++){
+    const [x1,y1] = pts[i], [x2,y2] = pts[(i+1)%pts.length];
+    if(drawLine(data, Math.round(x1),Math.round(y1), Math.round(x2),Math.round(y2), rgba, filled?setPixel:plot)) changed = true;
+  }
+  return changed;
+}
+function triPts(x0,y0,x1,y1){
+  const [ax,bx] = x0<x1?[x0,x1]:[x1,x0], [ay,by] = y0<y1?[y0,y1]:[y1,y0];
+  return [[Math.round((ax+bx)/2), ay], [ax, by], [bx, by]];   // apex up
+}
+function diaPts(x0,y0,x1,y1){
+  const [ax,bx] = x0<x1?[x0,x1]:[x1,x0], [ay,by] = y0<y1?[y0,y1]:[y1,y0];
+  const mx = (ax+bx)/2, my = (ay+by)/2;
+  return [[mx, ay], [bx, my], [mx, by], [ax, my]];            // rhombus on the box
+}
+function drawTriangle(data, x0,y0,x1,y1, rgba, plot = setPixel, filled = false){
+  return drawPoly(data, triPts(x0,y0,x1,y1), rgba, plot, filled);
+}
+function drawDiamond(data, x0,y0,x1,y1, rgba, plot = setPixel, filled = false){
+  return drawPoly(data, diaPts(x0,y0,x1,y1), rgba, plot, filled);
+}
+function symDrawShape(fn, data, x0,y0,x1,y1, rgba, plot = setPixel, filled = false){
+  fn(data, x0,y0,x1,y1, rgba, plot, filled);
+  if(S.sym === 1 || S.sym === 3) fn(data, symX(x0),y0,symX(x1),y1, rgba, plot, filled);
+  if(S.sym === 2 || S.sym === 3) fn(data, x0,symY(y0),x1,symY(y1), rgba, plot, filled);
+  if(S.sym === 3) fn(data, symX(x0),symY(y0),symX(x1),symY(y1), rgba, plot, filled);
+}
+function symDrawTriangle(data, x0,y0,x1,y1, rgba, plot = setPixel, filled = false){
+  symDrawShape(drawTriangle, data, x0,y0,x1,y1, rgba, plot, filled);
+}
+function symDrawDiamond(data, x0,y0,x1,y1, rgba, plot = setPixel, filled = false){
+  symDrawShape(drawDiamond, data, x0,y0,x1,y1, rgba, plot, filled);
+}
+/* All shape tools draw through here, so adding a shape is one map entry, not a
+   branch at every call site. Line ignores fill; the rest honour S.shapeFill. */
+function drawShapeTool(tool, data, x0,y0,x1,y1, rgba){
+  const f = S.shapeFill;
+  switch(tool){
+    case 'line':    return symDrawLine(data, x0,y0,x1,y1, rgba, stampPixel);
+    case 'rect':    return symDrawRect(data, x0,y0,x1,y1, rgba, stampPixel, f);
+    case 'ellipse': return symDrawEllipse(data, x0,y0,x1,y1, rgba, stampPixel, f);
+    case 'triangle':return symDrawTriangle(data, x0,y0,x1,y1, rgba, stampPixel, f);
+    case 'diamond': return symDrawDiamond(data, x0,y0,x1,y1, rgba, stampPixel, f);
+  }
+}
 function symFloodFill(data, x, y, rgba){
   // the mirrored seed may already be inside the region the first fill
   // covered — floodFill is a no-op there, which is the wanted result
@@ -1533,7 +1728,7 @@ function pushUndo(){
     l:S.curLayer, f:S.curFrame,
     data:new Uint8ClampedArray(curData())
   });
-  if(S.undoStack.length > MAX_UNDO) S.undoStack.shift();
+  trimUndo();
   S.redoStack = [];
   updateUndoBtns();
 }
@@ -1557,7 +1752,7 @@ function swapUndoForFrames(li){
     seq: ++undoSeq, kind:'frames', l:li,
     snaps: L.frames.map((f,i)=>({f:i, data:new Uint8ClampedArray(f)}))
   });
-  if(S.undoStack.length > MAX_UNDO) S.undoStack.shift();
+  trimUndo();
   S.redoStack = [];
   updateUndoBtns();
 }
@@ -1569,11 +1764,63 @@ function applyFrameSnaps(st, intoStack){
   intoStack.push({kind:'frames', l:st.l, snaps:back});
   bufDirty = true; renderAll(); updateUndoBtns(); markProjectDirty();
 }
+function entryBytes(e){
+  if(e.data) return e.data.length;
+  if(e.snaps) return e.snaps.reduce((n,x)=>n + (x.data ? x.data.length : 0), 0);
+  return 0;
+}
+function trimUndo(){
+  while(S.undoStack.length > MAX_UNDO) S.undoStack.shift();
+  let total = 0;
+  for(const e of S.undoStack) total += entryBytes(e);
+  // never drop the only entry: one undo must always be available
+  while(S.undoStack.length > 1 && total > MAX_UNDO_BYTES) total -= entryBytes(S.undoStack.shift());
+}
+/* Which layer+frame cells a scope covers, matching what the transforms edit:
+   cell = here, layer = every frame of this layer, frame = every layer of this
+   frame, all = everything. Reference layers are never pixel-edited. */
+function scopeCells(scope){
+  const idx = (scope === 'cell' || scope === 'layer') ? [S.curLayer] : S.layers.map((_,i)=>i);
+  const out = [];
+  for(const l of idx){
+    const L = S.layers[l];
+    if(!L || L.ref) continue;
+    if(scope === 'cell' || scope === 'frame') out.push({l, f:S.curFrame});
+    else for(let f=0; f<L.frames.length; f++) out.push({l, f});
+  }
+  return out;
+}
+function pushCells(cells){
+  const snaps = [];
+  for(const c of cells){
+    const L = S.layers[c.l];
+    if(!L || L.ref || !L.frames[c.f]) continue;
+    snaps.push({l:c.l, f:c.f, data:new Uint8ClampedArray(L.frames[c.f])});
+  }
+  if(!snaps.length) return false;
+  S.undoStack.push({seq: ++undoSeq, kind:'cells', snaps});
+  trimUndo();
+  S.redoStack = [];
+  updateUndoBtns();
+  return true;
+}
+function applyCellSnaps(st, intoStack){
+  const back = [];
+  for(const sn of st.snaps){
+    const L = S.layers[sn.l];
+    if(!L || !L.frames[sn.f] || L.frames[sn.f].length !== sn.data.length) continue;
+    back.push({l:sn.l, f:sn.f, data:new Uint8ClampedArray(L.frames[sn.f])});
+    L.frames[sn.f].set(sn.data);
+  }
+  intoStack.push({kind:'cells', snaps:back});
+  bufDirty = true; renderAll(); updateUndoBtns(); markProjectDirty(); refreshThumbs();
+}
 function undo(){
   if(!S.undoStack.length) return;
   // a lifted selection would get stamped back on top of the restored pixels
   if(S.float){ S.float = null; S.floatRect = null; S.sel = null; }
   const st = S.undoStack.pop();
+  if(st.kind === 'cells'){ applyCellSnaps(st, S.redoStack); return; }
   if(st.kind === 'frames'){ applyFrameSnaps(st, S.redoStack); return; }
   if(st.kind === 'addlayer'){
     const L = S.layers.splice(st.index, 1)[0];
@@ -1593,6 +1840,7 @@ function redo(){
   if(!S.redoStack.length) return;
   if(S.float){ S.float = null; S.floatRect = null; S.sel = null; }
   const st = S.redoStack.pop();
+  if(st.kind === 'cells'){ applyCellSnaps(st, S.undoStack); return; }
   if(st.kind === 'frames'){ applyFrameSnaps(st, S.undoStack); return; }
   if(st.kind === 'addlayer'){
     S.layers.splice(st.index, 0, st.layer);
@@ -1789,7 +2037,20 @@ function renderView(){
 
   drawSelectionOverlay(z, ox, oy);
 
+  // aim outline: double-stroked so it stays visible on any artwork colour
+  if(S.cursorOn && curPx && !S.panMode){
+    const {n, h} = nibBox();
+    const bx = ox + (curPx.x - h) * z, by = oy + (curPx.y - h) * z, bs = n * z;
+    vctx.save();
+    vctx.lineWidth = 3; vctx.strokeStyle = 'rgba(0,0,0,.85)';
+    vctx.strokeRect(bx-1.5, by-1.5, bs+3, bs+3);
+    vctx.lineWidth = 1.5; vctx.strokeStyle = '#ffffff';
+    vctx.strokeRect(bx-.75, by-.75, bs+1.5, bs+1.5);
+    vctx.restore();
+  }
+
   $('zoomVal').textContent = Math.round(S.zoom*100/1) + '%';
+  drawLens();            // fed here so the magnifier can never show a stale buffer
   renderMinimap();
 }
 function renderMinimap(){
@@ -1859,17 +2120,93 @@ function cancelStroke(){
   bufDirty = true;
 }
 let pinchStart = null, pressTimer = null, movedFar = false, gestureLocked = false;
+let panDrag = null;   // live one-finger view drag (pan mode)
 
+/* A fingertip is about 9mm wide: at a fit-to-screen zoom it covers roughly
+   three pixels, so the pixel being placed is the one thing the user cannot
+   see. penOff lifts the sampled point clear of the hand; the cursor outline
+   and the lens then show exactly where it lands. Mouse and stylus are precise
+   already and never get the offset. */
+let touchIn = false;
+/* The pen offset is a drawing aid — it lifts the painted pixel clear of the
+   fingertip. Tools that PICK a point (the wand/marquee, the eyedropper, moving
+   a reference layer) must read the true pixel under the finger, or a wand tap
+   lands a few pixels above the target and grabs empty canvas instead. So the
+   offset applies only while a paint tool is active. */
+const OFFSET_TOOLS = ['pencil','eraser','line','rect','ellipse','fill'];
+function inputDY(){
+  return (touchIn && S.penOff && !S.panMode && OFFSET_TOOLS.includes(S.tool)) ? -S.penOff : 0;
+}
 function toPixel(clientX, clientY){
   const r = view.getBoundingClientRect();
   return {
     x: Math.floor((clientX - r.left - S.panX) / S.zoom),
-    y: Math.floor((clientY - r.top - S.panY) / S.zoom)
+    y: Math.floor((clientY - r.top - S.panY + inputDY()) / S.zoom)
   };
+}
+let curPx = null;      // pixel the tool is aimed at, or null when nothing is aimed
+let lensAt = null;     // screen point the lens hangs off, null = no lens
+function nibBox(){
+  const n = ['pencil','eraser','line'].includes(S.tool) ? (S.brush|0) : 1;
+  const h = n <= 1 ? 0 : (n-1) >> 1;
+  return {n: Math.max(1, n), h};
+}
+function setAim(cx, cy, withLens){
+  const p = toPixel(cx, cy);
+  const moved = !curPx || curPx.x !== p.x || curPx.y !== p.y;
+  curPx = p;
+  lensAt = (withLens && S.lens) ? {x:cx, y:cy} : null;
+  // mid-stroke the drawing path is already scheduling a frame; adding one here
+  // would blit the whole viewport twice per move on a big canvas
+  if(drawing){ positionLens(); return; }
+  if(moved) renderView();
+  else { positionLens(); drawLens(); }
+}
+function clearAim(){
+  curPx = null; lensAt = null;
+  $('lens').classList.remove('on');
+  renderView();
+}
+function positionLens(){
+  const el = $('lens');
+  if(!lensAt){ el.classList.remove('on'); return; }
+  const r = $('stage').getBoundingClientRect();
+  const SZ = 92;                       // 88 + border
+  let lx = lensAt.x - r.left - SZ/2;
+  let ly = lensAt.y - r.top - SZ - 26; // sit above the finger…
+  if(ly < 4) ly = lensAt.y - r.top + 30;   // …unless there is no room up there
+  lx = Math.max(4, Math.min(r.width - SZ - 4, lx));
+  ly = Math.max(4, Math.min(r.height - SZ - 4, ly));
+  el.style.transform = `translate(${Math.round(lx)}px,${Math.round(ly)}px)`;
+  el.classList.add('on');
+}
+const LENS_PX = 9;                     // pixels across the magnifier
+function drawLens(){
+  if(!lensAt || !curPx){ $('lens').classList.remove('on'); return; }
+  const cv = $('lensCv'), SZ = 88;
+  if(cv.width !== SZ){ cv.width = SZ; cv.height = SZ; }
+  const c = cv.getContext('2d');
+  const z = SZ / LENS_PX, half = (LENS_PX - 1) / 2;
+  c.setTransform(1,0,0,1,0,0);
+  c.imageSmoothingEnabled = false;
+  c.fillStyle = '#20222e'; c.fillRect(0,0,SZ,SZ);
+  const ox = -(curPx.x - half) * z, oy = -(curPx.y - half) * z;
+  c.fillStyle = '#ffffff'; c.fillRect(ox, oy, S.W*z, S.H*z);
+  // whole buffer, translated so the wanted crop lands on the lens — correct at
+  // the canvas edges, where a negative source rect would slide the crop instead
+  c.drawImage(buf, 0, 0, S.W, S.H, ox, oy, S.W*z, S.H*z);
+  const {n, h} = nibBox();
+  const bx = (half - h) * z, by = (half - h) * z, bs = n * z;
+  c.lineWidth = 2; c.strokeStyle = 'rgba(0,0,0,.9)';
+  c.strokeRect(bx+1, by+1, bs-2, bs-2);
+  c.lineWidth = 1; c.strokeStyle = 'rgba(255,255,255,.95)';
+  c.strokeRect(bx+2.5, by+2.5, bs-5, bs-5);
+  positionLens();
 }
 
 view.addEventListener('pointerdown', e => {
   view.setPointerCapture(e.pointerId);
+  touchIn = e.pointerType === 'touch';
   pointers.set(e.pointerId, {x:e.clientX, y:e.clientY, sx:e.clientX, sy:e.clientY});
   movedFar = false;
   if(pointers.size === 1){
@@ -1896,6 +2233,15 @@ view.addEventListener('pointerdown', e => {
   if(pointers.size > 2) return;
   if(gestureLocked) return;
 
+  setAim(e.clientX, e.clientY, true);
+
+  // pan mode: one finger drags the view instead of painting
+  if(S.panMode){
+    panDrag = {x:e.clientX, y:e.clientY, px:S.panX, py:S.panY};
+    drawing = false;
+    return;
+  }
+
   const p = toPixel(e.clientX, e.clientY);
 
   // long-press = eyedropper shortcut
@@ -1921,8 +2267,18 @@ view.addEventListener('pointerdown', e => {
     const onShape = inside(active, p) &&
       (!S.selMask || S.selMask.length !== active.w*active.h ||
        !!S.selMask[(p.y-active.y)*active.w + (p.x-active.x)]);
-    if(S.selMode === 'wand' && !onShape){
-      // a wand pick is a tap, not a drag: nothing left to track after this
+    if(S.selMode === 'wand'){
+      /* Wand behaviour on touch: a tap reselects by colour wherever it lands —
+         including inside the current selection, so you can jump straight from
+         one colour patch to another. Pressing ON the current shape and then
+         dragging still moves it (the move is armed here and only lifts once the
+         finger actually travels — see the move handler). A tap that never moves
+         falls through to a fresh wand pick on pointerup. */
+      if(onShape){
+        S.selDrag = {mode:'move', ox:p.x, oy:p.y, rx:active.x, ry:active.y, moved:false, wandTap:true};
+        drawing = true;
+        return;
+      }
       commitFloat();
       if(wandSelect(p.x, p.y)) markDirty();
       else toast('แตะนอกผ้าใบ');
@@ -1984,7 +2340,7 @@ view.addEventListener('pointerdown', e => {
     drawing = false;
     commitRecent();
     markDirty();
-  } else if(S.tool === 'line' || S.tool === 'rect' || S.tool === 'ellipse'){
+  } else if(SHAPE_TOOLS.includes(S.tool)){
     shapeStart = p;
     shapeBackup = new Uint8ClampedArray(data);
   } else if(S.tool === 'eraser' && S.eraseMode === 'color'){
@@ -2007,7 +2363,11 @@ view.addEventListener('pointerdown', e => {
 
 view.addEventListener('pointermove', e => {
   const rec = pointers.get(e.pointerId);
-  if(!rec) return;
+  if(!rec){
+    // no button down: a mouse still gets an aim outline, a finger has left
+    if(e.pointerType === 'mouse' && S.cursorOn) setAim(e.clientX, e.clientY, false);
+    return;
+  }
   rec.x = e.clientX; rec.y = e.clientY;
   if(Math.hypot(e.clientX-rec.sx, e.clientY-rec.sy) > 8){ movedFar = true; clearTimeout(pressTimer); }
 
@@ -2029,6 +2389,16 @@ view.addEventListener('pointermove', e => {
     return;
   }
 
+  if(panDrag){
+    S.panX = panDrag.px + (e.clientX - panDrag.x);
+    S.panY = panDrag.py + (e.clientY - panDrag.y);
+    clampPan();
+    setAim(e.clientX, e.clientY, true);
+    renderView();
+    return;
+  }
+
+  if(pointers.size === 1) setAim(e.clientX, e.clientY, true);
   if(!drawing || gestureLocked) return;
   const p = toPixel(e.clientX, e.clientY);
 
@@ -2069,12 +2439,10 @@ view.addEventListener('pointermove', e => {
 
   const data = curData();
 
-  if(S.tool === 'line' || S.tool === 'rect' || S.tool === 'ellipse'){
+  if(SHAPE_TOOLS.includes(S.tool)){
     data.set(shapeBackup);
     const rgba = hexToRgba(S.color);
-    if(S.tool === 'line') symDrawLine(data, shapeStart.x, shapeStart.y, p.x, p.y, rgba, stampPixel);
-    else if(S.tool === 'rect') symDrawRect(data, shapeStart.x, shapeStart.y, p.x, p.y, rgba, stampPixel, S.shapeFill);
-    else symDrawEllipse(data, shapeStart.x, shapeStart.y, p.x, p.y, rgba, stampPixel, S.shapeFill);
+    drawShapeTool(S.tool, data, shapeStart.x, shapeStart.y, p.x, p.y, rgba);
     markDirty();
   } else {
     if(lastPx && (lastPx.x !== p.x || lastPx.y !== p.y)){
@@ -2099,6 +2467,9 @@ function endPointer(e){
   pointers.delete(e.pointerId);
   if(pointers.size < 2){ pinchStart = null; }
   if(pointers.size === 0){
+    panDrag = null;
+    // the outline is a live aim, not a leftover mark — a lifted finger clears it
+    if(touchIn) clearAim(); else { lensAt = null; $('lens').classList.remove('on'); }
     gestureLocked = false;
     strokePushedUndo = false;
     gestureLifted = false;
@@ -2108,6 +2479,12 @@ function endPointer(e){
         // a tap with no drag clears the selection instead of leaving a 1px marquee
         if(!r || (r.w<=1 && r.h<=1)) S.sel = null;
         else S.sel = r;
+      } else if(S.selDrag.wandTap && !S.selDrag.moved){
+        // pressed on the current selection in wand mode but never dragged →
+        // treat it as a fresh wand pick at that point, not a no-op
+        const px = S.selDrag.ox, py = S.selDrag.oy;
+        commitFloat();
+        if(wandSelect(px, py)) markDirty();
       }
       S.selDrag = null;
       drawing = false;
@@ -2173,6 +2550,7 @@ function renderAll(){
 
 /* ══════════════ FRAMES UI ══════════════ */
 function renderFrames(){
+  updateTlLbl();
   const wrap = $('frames');
   wrap.innerHTML = '';
   for(let i=0;i<S.frameCount;i++){
@@ -2480,6 +2858,7 @@ function updateRefBar(){
   const L = S.layers[S.curLayer];
   const on = !!(L && L.ref && L.src);
   bar.classList.toggle('on', on);
+  document.body.classList.toggle('ref-on', on);
   if(!on) return;
   $('rfName').textContent = L.name;
   $('rfScale').value = Math.round(Math.max(REF_MIN, Math.min(REF_MAX, L.xf.s))*100);
@@ -2747,17 +3126,58 @@ function extractPaletteFromArt(maxColors){
 }
 
 /* ══════════════ TOOLS ══════════════ */
+const SHAPE_TOOLS = ['line','rect','ellipse','triangle','diamond'];
 function selectTool(t){
   if(S.tool === 'select' && t !== 'select'){ commitFloat(); S.sel = null; S.selMask = null; markDirty(); }
   S.tool = t;
+  if(SHAPE_TOOLS.includes(t)) S.shape = t;
   updateSelBar();
   document.querySelectorAll('.tool[data-tool]').forEach(b=>b.classList.toggle('on', b.dataset.tool===t));
+  updateShapeBtn();
+  renderView();          // the aim outline follows the nib size of the new tool
+}
+const SHAPE_IC = {
+  line:'<svg viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4"/><circle cx="4" cy="20" r="2"/><circle cx="20" cy="4" r="2"/></svg>',
+  rect:'<svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/></svg>',
+  ellipse:'<svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="9" ry="7"/></svg>',
+  triangle:'<svg viewBox="0 0 24 24"><path d="M12 3.5 21 20H3z"/></svg>',
+  diamond:'<svg viewBox="0 0 24 24"><path d="M12 3 21 12 12 21 3 12z"/></svg>',
+};
+const SHAPE_NAME = {line:'เส้นตรง', rect:'สี่เหลี่ยม', ellipse:'วงรี / วงกลม', triangle:'สามเหลี่ยม', diamond:'ข้าวหลามตัด'};
+/* One button holds the three shapes: the bar has room for the tools you draw
+   with, and a second tap opens the picker. */
+function updateShapeBtn(){
+  const ic = $('shapeIc'); if(!ic) return;
+  ic.innerHTML = SHAPE_IC[S.shape] || SHAPE_IC.line;
+  $('btnShape').classList.toggle('on', SHAPE_TOOLS.includes(S.tool));
+  const n = S.brush|0;
+  const num = n > 1 ? ((S.nib !== 'square') ? NIB_SYM[S.nib] : String(n)) : '';
+  const FILLGLYPH = {rect:'■', ellipse:'●', triangle:'▲', diamond:'◆'};
+  $('shapeTag').textContent = S.shape === 'line' ? num
+    : (S.shapeFill ? (FILLGLYPH[S.shape] || '■') : num);
+}
+function showShapePick(){
+  openModal(`
+    <h2>รูปทรง</h2>
+    <p class="sub">เลือกรูปทรงที่ปุ่มนี้จะถือไว้</p>
+    ${SHAPE_TOOLS.map(t=>`
+      <button class="exp-opt" data-sh="${t}">
+        <span class="ic" style="background:${t===S.shape?'var(--accent)':'var(--panel)'};border:1px solid var(--line)">${SHAPE_IC[t]}</span>
+        <span class="tx"><b>${SHAPE_NAME[t]}</b><span>${t===S.shape?'กำลังใช้':'แตะเพื่อเปลี่ยน'}</span></span>
+      </button>`).join('')}
+    <button class="big-btn ghost" id="shOpts">ตั้งค่ารูปทรง (ขนาดหัว / ทึบ)</button>
+    <button class="big-btn ghost" id="shClose">ปิด</button>
+  `);
+  $('modalCard').querySelectorAll('[data-sh]').forEach(b=>{
+    b.onclick = ()=>{ closeModal(); selectTool(b.dataset.sh); };
+  });
+  $('shOpts').onclick = ()=>{ closeModal(); setTimeout(()=>{ if(!SHAPE_TOOLS.includes(S.tool)) selectTool(S.shape); showBrushOpts(); }, 30); };
+  $('shClose').onclick = closeModal;
 }
 document.querySelectorAll('.tool[data-tool]').forEach(b=>{
   b.onclick = ()=>{
     const t = b.dataset.tool;
-    // tapping the tool you're already holding opens its options — the usual
-    // shortcut in drawing apps, and the tool bar has no room for more buttons
+    // re-tapping the tool you're already holding opens its options
     if(t === S.tool && OPT_TOOLS.includes(t)) return showBrushOpts();
     selectTool(t);
   };
@@ -2769,13 +3189,15 @@ const TOOL_TITLE = {pencil:'ดินสอ', eraser:'ยางลบ', line:'�
 function updateToolTags(){
   const n = S.brush|0, tag = n > 1 ? String(n) : '';
   const set = (id, v) => { const el = $(id); if(el) el.textContent = v; };
-  set('pencilTag', S.dither ? '▚' : tag);
-  set('eraserTag', S.eraseMode === 'color' ? '◈' : tag);
-  set('lineTag',   tag);
+  const nibTag = (S.nib !== 'square' && n > 1) ? NIB_SYM[S.nib] : tag;
+  set('pencilTag', S.dither ? '▚' : nibTag);
+  set('eraserTag', S.eraseMode === 'color' ? '◈' : nibTag);
+  set('lineTag',   nibTag);
   set('rectTag',   S.shapeFill ? '■' : tag);
   set('ellipseTag', S.shapeFill ? '●' : tag);
   set('fillTag',   S.fillMode === 'replace' ? '◈' : '');
   set('selectTag', S.selMode === 'wand' ? '◈' : '');
+  updateShapeBtn();
 }
 function stepBrush(dir){
   const i = BRUSH_SIZES.indexOf(S.brush);
@@ -2791,7 +3213,9 @@ function showBrushOpts(){
   const isFill   = tool === 'fill';
   const isRect   = tool === 'rect';
   const isEllipse = tool === 'ellipse';
-  const isShape  = isRect || isEllipse;
+  const isTriangle = tool === 'triangle';
+  const isDiamond  = tool === 'diamond';
+  const isShape  = isRect || isEllipse || isTriangle || isDiamond;
   const isPencil = tool === 'pencil';
   const isSelect = tool === 'select';
   const hasNib   = !isFill && !isSelect;
@@ -2806,7 +3230,13 @@ function showBrushOpts(){
     <div class="sec-lbl">ขนาดหัว (พิกเซล)</div>
     <div class="seg" id="brSize">
       ${BRUSH_SIZES.map(n => `<button data-n="${n}"${S.brush===n?' class="on"':''}>${n}</button>`).join('')}
-    </div>` : ''}
+    </div>
+
+    <div class="sec-lbl">รูปหัว</div>
+    <div class="seg" id="brNib">
+      ${NIBS.map(k => `<button data-k="${k}" title="${NIB_NAME[k]}"${S.nib===k?' class="on"':''} style="font-size:15px">${NIB_SYM[k]}</button>`).join('')}
+    </div>
+    <p class="sub" id="brNibName" style="margin-top:-9px;font-size:11px"></p>` : ''}
     ${isShape ? `
     <div class="sec-lbl">รูปทรง</div>
     <div class="seg" id="brShape">
@@ -2885,26 +3315,34 @@ function showBrushOpts(){
     const G = 15, c = 7;
     cv.width = G; cv.height = G;
     ctx.clearRect(0,0,G,G);
+    /* Backdrop drawn at cell resolution instead of leaving the panel's own
+       14px checker to show through: that checker is nearly the same size as a
+       small nib, so a 1-3px tip disappeared into it. This one is per-cell and
+       low-contrast, so the nib always reads on top at the original scale. */
+    for(let y=0; y<G; y++)
+      for(let x=0; x<G; x++){
+        ctx.fillStyle = ((x+y) & 1) ? '#20222e' : '#191b24';
+        ctx.fillRect(x, y, 1, 1);
+      }
     ctx.fillStyle = isEraser ? '#ff5d73' : S.color;
     if(isShape && S.shapeFill){
-      if(isEllipse){
-        ctx.beginPath();
-        ctx.ellipse(7.5, 7.5, 5, 4, 0, 0, Math.PI*2);
-        ctx.fill();
-      } else {
-        ctx.fillRect(3, 4, 9, 7);            // solid rect ignores the nib
-      }
+      ctx.beginPath();
+      if(isEllipse){ ctx.ellipse(7.5, 7.5, 5, 4, 0, 0, Math.PI*2); }
+      else if(isTriangle){ ctx.moveTo(7.5,2); ctx.lineTo(13,13); ctx.lineTo(2,13); ctx.closePath(); }
+      else if(isDiamond){ ctx.moveTo(7.5,2); ctx.lineTo(13,7.5); ctx.lineTo(7.5,13); ctx.lineTo(2,7.5); ctx.closePath(); }
+      else { ctx.rect(3, 4, 9, 7); }         // solid rect ignores the nib
+      ctx.fill();
       return;
     }
-    const n = S.brush|0, h = (n-1) >> 1;
     const weave = isPencil && S.dither;
-    for(let dy=-h; dy<n-h; dy++)
-      for(let dx=-h; dx<n-h; dx++){
-        // preview keyed to the same absolute-parity grid the tool paints on
-        ctx.fillStyle = weave && (((c+dx)+(c+dy)) & 1)
-          ? S.color2 : (isEraser ? '#ff5d73' : S.color);
-        ctx.fillRect(c+dx, c+dy, 1, 1);
-      }
+    for(const [dx,dy] of nibOffsets(S.brush|0, S.nib)){
+      // preview keyed to the same absolute-parity grid the tool paints on
+      ctx.fillStyle = weave && (((c+dx)+(c+dy)) & 1)
+        ? S.color2 : (isEraser ? '#ff5d73' : S.color);
+      ctx.fillRect(c+dx, c+dy, 1, 1);
+    }
+    const nm = $('brNibName');
+    if(nm) nm.textContent = NIB_NAME[S.nib] + ' · ' + nibOffsets(S.brush|0, S.nib).length + ' พิกเซล';
   }
   const pick = (wrap, attr, set) => document.querySelectorAll('#'+wrap+' button').forEach(b=>{
     b.onclick = ()=>{
@@ -2914,6 +3352,7 @@ function showBrushOpts(){
     };
   });
   pick('brSize', 'n', v => S.brush = +v);
+  if(hasNib) pick('brNib', 'k', v => S.nib = v);
   if(isShape) pick('brShape', 'f', v => S.shapeFill = v === '1');
   if(isFill){
     pick('brFillMode', 'm', v => {
@@ -4013,6 +4452,32 @@ function deleteSelection(){
   markDirty(); refreshThumbs();
   toast('ลบแล้ว');
 }
+/* Paint the current colour into every selected pixel. Honours lockAlpha the
+   same way the brush does, and respects the wand's mask so only the picked
+   shape is filled, not its bounding box. */
+function fillSelection(){
+  if(blockIfRef()) return;
+  commitFloat();
+  const reg = selRegion();
+  if(!reg){ toast('ยังไม่ได้เลือกพื้นที่'); return; }
+  pushUndo();
+  const data = curData();
+  const rgba = hexToRgba(S.color);
+  let touched = 0;
+  for(let y=0;y<reg.r.h;y++)
+    for(let x=0;x<reg.r.w;x++){
+      if(reg.mask && !reg.mask[y*reg.r.w+x]) continue;
+      const sx=reg.r.x+x, sy=reg.r.y+y;
+      if(sx<0||sy<0||sx>=S.W||sy>=S.H) continue;
+      const i=(sy*S.W+sx)*4;
+      if(S.lockAlpha && data[i+3]===0) continue;   // only where pixels already are
+      data[i]=rgba[0]; data[i+1]=rgba[1]; data[i+2]=rgba[2]; data[i+3]=rgba[3];
+      touched++;
+    }
+  if(!touched){ S.undoStack.pop(); updateUndoBtns(); toast('ไม่มีพื้นที่ให้เท'); return; }
+  bufDirty = true; renderAll(); markProjectDirty(); refreshThumbs();
+  toast('เทสีในพื้นที่ที่เลือกแล้ว');
+}
 function copySelection(){
   if(S.float){
     // the lift already punched the mask's holes into these pixels
@@ -4156,8 +4621,7 @@ function doRotate(turn, scope){
   }
 
   const wide = scope !== 'cell';
-  let saved = null;
-  if(wide) saved = saveRestorePoint('ก่อน' + TURN_LABEL[turn]);
+  if(wide) pushCells(scopeCells(scope));
   else if(!S.layers[S.curLayer].ref) pushUndo();
 
   const targets = (scope === 'cell' || scope === 'layer') ? [S.layers[S.curLayer]] : S.layers;
@@ -4175,18 +4639,14 @@ function doRotate(turn, scope){
   bufDirty = true;
   renderAll();
   markProjectDirty();
-  if(wide){ S.undoStack = []; S.redoStack = []; updateUndoBtns(); }
-  if(wide && saved) showRestoreBar(saved);
   toast(`${TURN_LABEL[turn]} · ${FLIP_SCOPE_LABEL[scope]}` + (skippedRef ? ' (ภาพอ้างอิงไม่หมุนตาม)' : ''));
 }
 function doFlip(kind, scope){
   commitFloat();
   S.sel = null;
   const wide = scope !== 'cell';
-  let saved = null;
-  // one cell is a normal undoable edit; anything wider is a restore point,
-  // same as resize — the undo stack only tracks a single layer+frame
-  if(wide) saved = saveRestorePoint('ก่อนพลิก' + (kind === 'flipH' ? 'แนวนอน' : 'แนวตั้ง'));
+  // every cell the flip is about to touch, so undo is a real undo
+  if(wide) pushCells(scopeCells(scope));
   else if(!S.layers[S.curLayer].ref) pushUndo();
 
   const targets = (scope === 'cell' || scope === 'layer')
@@ -4202,9 +4662,7 @@ function doFlip(kind, scope){
     }
   }
 
-  if(wide){ S.undoStack = []; S.redoStack = []; updateUndoBtns(); }
   bufDirty = true; renderAll(); markProjectDirty();
-  if(wide && saved) showRestoreBar(saved);
   toast(`พลิก${kind === 'flipH' ? 'แนวนอน' : 'แนวตั้ง'} · ${FLIP_SCOPE_LABEL[scope]}`);
 }
 /* ══════════════ AUTO OUTLINE ══════════════ */
@@ -4241,8 +4699,8 @@ function applyOutline(scope, hex, diag){
   let touched = false, skippedRef = false;
   // scope 'layer' is a single layer+frame edit the undo stack can hold; 'frame'
   // spans every layer, so it uses a restore point and clears undo — same as flip
-  let saved = null, pushed = false;
-  if(wide) saved = saveRestorePoint('ก่อนใส่เส้นขอบ');
+  let pushed = false;
+  if(wide) pushed = pushCells(scopeCells('frame'));
   else if(!S.layers[S.curLayer].ref){ pushUndo(); pushed = true; }
   for(const L of targets){
     if(L.ref){ skippedRef = true; continue; }
@@ -4250,13 +4708,11 @@ function applyOutline(scope, hex, diag){
     touched = true;
   }
   if(!touched){
-    if(pushed) S.undoStack.pop();   // undo the snapshot we just pushed for nothing
+    if(pushed){ S.undoStack.pop(); updateUndoBtns(); }   // snapshot pushed for nothing
     toast('เลเยอร์นี้เป็นภาพอ้างอิง วาดเส้นขอบไม่ได้');
     return;
   }
-  if(wide){ S.undoStack = []; S.redoStack = []; updateUndoBtns(); }
   bufDirty = true; renderAll(); markProjectDirty(); refreshThumbs();
-  if(wide && saved) showRestoreBar(saved);
   toast('ใส่เส้นขอบแล้ว' + (skippedRef ? ' (ข้ามภาพอ้างอิง)' : ''));
 }
 function showOutlineDialog(init){
@@ -4329,8 +4785,8 @@ function doShift(dx, dy, scope, wrap){
   commitFloat();
   S.sel = null;
   const wide = scope !== 'cell';
-  let saved = null, pushed = false;
-  if(wide) saved = saveRestorePoint('ก่อนเลื่อนภาพ');
+  let pushed = false;
+  if(wide) pushed = pushCells(scopeCells(scope));
   else if(!S.layers[S.curLayer].ref){ pushUndo(); pushed = true; }
 
   const targets = (scope === 'cell' || scope === 'layer') ? [S.layers[S.curLayer]] : S.layers;
@@ -4345,13 +4801,11 @@ function doShift(dx, dy, scope, wrap){
     touched = true;
   }
   if(!touched){
-    if(pushed) S.undoStack.pop();
+    if(pushed){ S.undoStack.pop(); updateUndoBtns(); }
     toast('เลเยอร์นี้เป็นภาพอ้างอิง เลื่อนไม่ได้');
     return;
   }
   bufDirty = true; renderAll(); markProjectDirty(); refreshThumbs();
-  if(wide){ S.undoStack = []; S.redoStack = []; updateUndoBtns(); }
-  if(wide && saved) showRestoreBar(saved);
   toast('เลื่อนภาพแล้ว' + (skippedRef ? ' (ข้ามภาพอ้างอิง)' : ''));
 }
 function showShiftDialog(){
@@ -4741,6 +5195,7 @@ function showHome(){
 
     ${hasWork ? '<button class="big-btn" id="hmBack">กลับไปวาดต่อ</button>' : ''}
     ${dirty ? '<button class="big-btn ghost" id="hmSave">บันทึกงานปัจจุบัน</button>' : ''}
+
 
     <div class="hr"></div>
     <div class="sec-lbl">เริ่มงานใหม่</div>
@@ -6570,9 +7025,9 @@ if(new URLSearchParams(location.search).has('admin')){
   try{ sessionStorage.setItem('wp_admin', '1'); }catch{}
 }
 /* bump when deploying — the fastest way to tell a stale cache from a real bug */
-const BUILD_ID = '2026-07-30 shortcuts-guide';
-const APP_VERSION = '0.7';
-const APP_UPDATED = '30 ก.ค. 2026';   // bump both when shipping a visible change
+const BUILD_ID = '2026-07-30 more-shapes';
+const APP_VERSION = '0.8';
+const APP_UPDATED = '31 ก.ค. 2026';   // bump both when shipping a visible change
 const API_GALLERY = '/api/gallery';
 const API_LIKE    = '/api/like';
 
@@ -7174,7 +7629,7 @@ function updateSelBar(){
     const a = b.dataset.a;
     if(a === 'paste') b.disabled = !S.clip;
     else if(a === 'done') b.disabled = false;
-    else b.disabled = !has;
+    else b.disabled = !has;   // cut/copy/fillsel/flip/del all need a selection
   });
 }
 $('selBar').addEventListener('click', e=>{
@@ -7184,6 +7639,7 @@ $('selBar').addEventListener('click', e=>{
   if(a === 'cut') cutSelection();
   else if(a === 'copy') copySelection();
   else if(a === 'paste') pasteClip();
+  else if(a === 'fillsel') fillSelection();
   else if(a === 'flipH') transformSelection('flipH');
   else if(a === 'flipV') transformSelection('flipV');
   else if(a === 'del') deleteSelection();
@@ -7262,6 +7718,10 @@ const ACTIONS = [
   {id:'play',       kind:'cmd', def:'Space', label:'เล่น / หยุดภาพเคลื่อนไหว', desc:'เล่นวนตามเวลาเฟรมที่ตั้งไว้',   run:()=>togglePlay()},
   {id:'sym',        kind:'cmd', def:'y',     label:'สลับโหมดวาดสมมาตร',      desc:'ปิด · ซ้าย-ขวา · บน-ล่าง · สี่ทิศ', run:()=>clickBtn('btnSym')},
   {id:'grid',       kind:'cmd', def:'d',     label:'เปิด/ปิดเส้นกริด',       desc:'',                              run:()=>clickBtn('btnGrid')},
+  {id:'panmode',    kind:'cmd', def:'v',     label:'โหมดเลื่อนภาพ',          desc:'ลากนิ้ว/เมาส์เดียวเพื่อเลื่อนมุมมอง', run:()=>setPanMode(!S.panMode)},
+  {id:'zoomin',     kind:'cmd', def:'=',     label:'ซูมเข้า',                desc:'',                              run:()=>zoomBy(1.5)},
+  {id:'zoomout',    kind:'cmd', def:'-',     label:'ซูมออก',                 desc:'',                              run:()=>zoomBy(1/1.5)},
+  {id:'more',       kind:'cmd', def:'',     label:'เปิดถาดคำสั่ง',           desc:'คำสั่งและมุมมองทั้งหมด',          run:()=>openTray()},
   {id:'onion',      kind:'cmd', def:'n',     label:'เปิด/ปิด onion skin',    desc:'เงาเฟรมข้างเคียงเพื่อวาดต่อเนื่อง', run:()=>toggleOnion()},
   {id:'tile',       kind:'cmd', def:'t',     label:'เปิด/ปิดโหมดต่อลาย',     desc:'วาดข้ามขอบแล้ววนไปอีกด้าน',    run:()=>clickBtn('btnTile')},
   {id:'flip',       kind:'cmd', def:'h',     label:'พลิก / หมุนภาพ',         desc:'เปิดหน้าต่างพลิกและหมุน',       run:()=>showFlipDialog()},
@@ -7458,6 +7918,120 @@ window.addEventListener('beforeunload', e=>{
 });
 document.addEventListener('gesturestart', e=>e.preventDefault());
 
+
+/* ══════════════ COMMAND TRAY / VIEW CONTROLS / PRECISION ══════════════ */
+/* The old bar carried 17 icon-only buttons in a hidden-scroll row: on a 375px
+   phone that is 864px of content, so ten of them were off screen with nothing
+   to say they existed. Drawing tools stay in the bar; everything else lives
+   here, labelled. */
+const PREFS_STORE = 'pxloom:prefs';
+function loadPrefs(){
+  const p = lsGet(PREFS_STORE, null);
+  if(!p) return;
+  if(typeof p.cursorOn === 'boolean') S.cursorOn = p.cursorOn;
+  if(typeof p.lens === 'boolean') S.lens = p.lens;
+  if(typeof p.penOff === 'number') S.penOff = Math.max(0, Math.min(64, p.penOff));
+}
+function savePrefs(){
+  lsSet(PREFS_STORE, {cursorOn:S.cursorOn, lens:S.lens, penOff:S.penOff});
+}
+
+/* Toggles moved out of sight, so the bar says when one of them is holding a
+   non-default state. Grid is on by default and stays out of the count. */
+function updateMoreDot(){
+  const d = $('moreDot'); if(!d) return;
+  d.classList.toggle('on', !!(S.tileMode || S.lockAlpha || S.sym || S.penOff));
+}
+const TRAY_KEEP_OPEN = ['btnTile','btnLock','btnSym','btnGrid','btnFit'];
+function openTray(){
+  $('cmdTray').classList.add('on');
+  $('trayScrim').classList.add('on');
+}
+function closeTray(){
+  $('cmdTray').classList.remove('on');
+  $('trayScrim').classList.remove('on');
+}
+$('btnMore').onclick = openTray;
+$('btnTrayClose').onclick = closeTray;
+$('trayScrim').onclick = closeTray;
+$('cmdTray').querySelectorAll('.tool').forEach(b=>{
+  // a toggle stays put so its new state is visible; anything that opens a
+  // dialog gets out of the way first
+  b.addEventListener('click', ()=>{
+    if(TRAY_KEEP_OPEN.includes(b.id)) updateMoreDot();
+    else closeTray();
+  });
+});
+$('btnShape').onclick = ()=>{
+  if(SHAPE_TOOLS.includes(S.tool)) return showShapePick();
+  selectTool(S.shape);
+};
+
+/* Zoom was pinch-only, and a pinch has to unwind whatever the first finger
+   already painted. Buttons and a pan mode give a one-handed way in. */
+function zoomBy(f){
+  const vw = view.width/dpr, vh = view.height/dpr;
+  const ax = (vw/2 - S.panX)/S.zoom, ay = (vh/2 - S.panY)/S.zoom;
+  S.zoom = Math.max(0.5, Math.min(64, S.zoom * f));
+  S.panX = vw/2 - ax*S.zoom;
+  S.panY = vh/2 - ay*S.zoom;
+  clampPan(); renderView();
+}
+function setPanMode(on){
+  S.panMode = !!on;
+  $('zcPan').classList.toggle('on', S.panMode);
+  if(S.panMode){ commitFloat(); clearAim(); }
+  toast(S.panMode ? 'โหมดเลื่อนภาพ — ลากนิ้วเดียวเพื่อเลื่อน' : 'กลับมาวาดได้แล้ว');
+  renderView();
+}
+$('zcIn').onclick  = ()=>zoomBy(1.5);
+$('zcOut').onclick = ()=>zoomBy(1/1.5);
+$('zcFit').onclick = ()=>{ fitToScreen(); toast('พอดีจอ'); };
+$('zcPan').onclick = ()=>setPanMode(!S.panMode);
+
+/* Filmstrip fold: 52px thumbnails are dead weight while drawing, and the
+   bottom chrome was taking 34-42% of the screen. */
+function updateTlLbl(){
+  const el = $('tlCount'); if(!el) return;
+  el.textContent = S.frameCount > 1 ? S.frameCount + ' เฟรม' : 'Frames';
+}
+$('tlLbl').onclick = ()=>{
+  const min = document.body.classList.toggle('tl-min');
+  resizeView();
+  toast(min ? 'พับแถบเฟรมแล้ว' : 'แสดงแถบเฟรม');
+};
+
+/* Everything that decides how a tap lands, in one place. */
+const PEN_OFFS = [[0,'ไม่เยื้อง'],[22,'22 px'],[36,'36 px'],[52,'52 px']];
+function showDrawPrec(){
+  openModal(`
+    <h2>ความแม่นในการวาด</h2>
+    <p class="sub">ปลายนิ้วกว้างราว 9 มม. — ที่ซูมพอดีจอมันคลุมพิกเซลประมาณ 3 ช่อง สามอย่างนี้ทำให้เห็นว่ากำลังจะลงตรงไหน</p>
+
+    <div class="lock-row"><input type="checkbox" id="dpCur" ${S.cursorOn?'checked':''}><label for="dpCur">กรอบเล็งบนผ้าใบ — ตีกรอบช่องที่หัวแปรงจะลง</label></div>
+    <div class="lock-row"><input type="checkbox" id="dpLens" ${S.lens?'checked':''}><label for="dpLens">แว่นขยายตอนแตะ — ขยายบริเวณปลายนิ้วให้ดูเหนือมือ (ปิดไว้เป็นค่าเริ่มต้น)</label></div>
+
+    <div class="sec-lbl" style="margin-top:14px">ยกจุดวาดขึ้นจากนิ้ว</div>
+    <p class="sub" style="margin-bottom:8px">เยื้องแล้วพิกเซลจะลงเหนือปลายนิ้ว มือจึงไม่บังงาน (เมาส์กับปากกาไม่เยื้อง)</p>
+    <div class="seg" id="dpOff">
+      ${PEN_OFFS.map(([v,l])=>`<button data-v="${v}"${S.penOff===v?' class="on"':''}>${l}</button>`).join('')}
+    </div>
+    <button class="big-btn" id="dpDone">เสร็จ</button>
+  `);
+  $('dpCur').onchange = e => { S.cursorOn = e.target.checked; savePrefs(); renderView(); };
+  $('dpLens').onchange = e => { S.lens = e.target.checked; savePrefs(); if(!S.lens) clearAim(); };
+  $('dpOff').querySelectorAll('button').forEach(b=>{
+    b.onclick = ()=>{
+      S.penOff = +b.dataset.v;
+      $('dpOff').querySelectorAll('button').forEach(x=>x.classList.toggle('on', x === b));
+      savePrefs(); updateMoreDot();
+      toast(S.penOff ? 'พิกเซลจะลงเหนือนิ้ว ' + S.penOff + ' px' : 'วาดตรงใต้นิ้ว');
+    };
+  });
+  $('dpDone').onclick = closeModal;
+}
+$('btnPrec').onclick = showDrawPrec;
+
 /* ══════════════ BOOT ══════════════ */
 let lastAnts = 0;
 (function antsLoop(now){
@@ -7469,6 +8043,10 @@ let lastAnts = 0;
 })(0);
 
 $('btnGrid').classList.add('on');
+loadPrefs();
+updateShapeBtn();
+updateTlLbl();
+updateMoreDot();
 buildPalette();
 renderRecent();
 updateToolTags();
