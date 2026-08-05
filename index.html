@@ -71,17 +71,20 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
   background:linear-gradient(92deg,var(--accent-2),var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent;
   white-space:nowrap;flex:0 1 auto;overflow:hidden}
 .spacer{flex:1;min-width:0}
-@media (max-width:430px){
+/* The mode switch beside the logo made the bar one button longer, so each
+   tier now starts earlier — a 390px phone has to reach the tight settings or
+   Export falls off the end. */
+@media (max-width:470px){
   #logo{display:none}
   #topbar{gap:4px;padding:0 6px}
   .tb-btn{min-width:38px;padding:0 7px}
 }
-@media (max-width:389px){
+@media (max-width:430px){
   #topbar{gap:2px;padding:0 4px}
   .tb-btn{min-width:34px;padding:0 4px}
   #btnExport{font-size:11px;padding:0 7px}
 }
-@media (max-width:339px){
+@media (max-width:355px){
   /* last resort: let the bar scroll rather than clip the Export button */
   #topbar{overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
   #topbar::-webkit-scrollbar{display:none}
@@ -264,6 +267,9 @@ body.ref-on #toolDial{transform:translateY(-96px)}
 #dialBtn:active{transform:scale(.92)}
 body.dial-on #dialBtn{transform:scale(.9)}
 body.dial-on #dialBtn{background:var(--panel-2);border:1px solid var(--accent)}
+/* open arc = the anchor has nothing left to do but close, which the scrim
+   already does — so it becomes the way into the held tool's settings, the
+   thing that used to be reachable only by knowing about the second tap */
 #dialBtn svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #dialBtn .fill-ic svg{fill:#fff;stroke:none}
 #dialTag{right:4px;bottom:2px;color:#fff}
@@ -302,6 +308,44 @@ body.dial-on #dialArc .tool.hot{transform:translate3d(0,0,0) scale(1.16)}
 #dialArc .tool.hot{background:var(--accent);border-color:var(--accent)}
 #dialArc .tool.hot svg{stroke:#fff}
 #dialArc .tool.hot.fill svg{fill:#fff}
+/* ---------- DIAL OPTIONS BAR (touch) ----------
+   The tool's settings one tap deep instead of two: it rides out with the arc
+   and floats just above it, wrapping to as many rows as the options need. It
+   reuses the very controls the PC build shows under the top bar, so a size
+   chip means the same thing in both modes. */
+#dialOpts{
+  position:absolute;left:8px;right:8px;top:8px;z-index:20;
+  display:none;flex-wrap:wrap;justify-content:center;gap:5px;
+  padding:8px 10px;border-radius:16px;
+  background:rgba(13,14,20,.92);border:1px solid var(--line);backdrop-filter:blur(12px);
+  box-shadow:0 10px 30px rgba(0,0,0,.5);
+  opacity:0;transform:translateY(-8px) scale(.98);transform-origin:top center;
+  transition:opacity .18s,transform .18s;pointer-events:none;
+}
+body.dial-on #dialOpts.show{display:flex;opacity:1;transform:none;pointer-events:auto}
+/* the canvas furniture the bar would sit on top of — unusable while the arc
+   is out anyway, so it fades instead of being half-covered */
+body.dial-on #zoomCtl,body.dial-on #zoomTag,body.dial-on #minimap{
+  opacity:0;pointer-events:none;transition:opacity .18s;
+}
+body.dial-closing #dialOpts{opacity:0;transform:translateY(-8px) scale(.98);pointer-events:none}
+#dialOpts.low{
+  top:auto;bottom:8px;right:auto;justify-content:flex-start;
+  max-width:calc(100% - var(--arc-r, 170px) - 76px);   /* R + half a button + air */
+  transform-origin:bottom left;transform:translateY(8px) scale(.98);
+}
+body.dial-on #dialOpts.low.show{transform:none}
+body.dial-closing #dialOpts.low{transform:translateY(8px) scale(.98)}
+#dialOpts .ob-name{width:100%;min-width:0;padding:0 2px 2px;color:var(--text);font-size:11.5px;text-align:center}
+#dialOpts .ob-name span{margin-left:5px}
+#dialOpts .ob-lbl{align-self:center}
+#dialOpts .ob-div{display:none}
+#dialOpts .ob-seg{margin:0}
+#dialOpts .ob-more{
+  margin:0;width:100%;height:32px;justify-content:center;
+  background:var(--panel-2);color:var(--accent);
+}
+body.pc #dialOpts{display:none!important}
 #dialScrim{
   position:absolute;inset:0;z-index:18;background:rgba(8,9,13,.3);
   opacity:0;pointer-events:none;transition:opacity .18s linear;
@@ -902,6 +946,145 @@ body.ref-on #shapeBar{--lift:96px}
 body.tl-min #frames{display:none}
 body.tl-min #tlHead{margin-bottom:0}
 body.tl-min #tlLbl .cv{transform:rotate(-90deg)}
+/* ---------- BRUSH SIZE RAIL ----------
+   Changing the nib was the most frequent adjustment in the app and the most
+   expensive: dial → tool → tool again → modal → size → done. It now sits on
+   the left edge, where the drawing hand is not, as one drag with no dialogs.
+   Overlaid on the canvas rather than in the layout, so it costs no width. */
+#sizeRail{
+  position:absolute;left:6px;top:50%;transform:translateY(-50%);z-index:14;
+  display:none;flex-direction:column;gap:2px;padding:4px;
+  background:rgba(13,14,20,.72);border:1px solid var(--line);border-radius:13px;
+  backdrop-filter:blur(8px);opacity:.42;transition:opacity .18s;touch-action:none;
+}
+#sizeRail.on{display:flex}
+#sizeRail.hot{opacity:1}
+#sizeRail .sr-n{
+  width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+  position:relative;pointer-events:none;
+}
+#sizeRail .sr-n i{background:var(--dim);border-radius:50%;display:block;transition:background .12s}
+#sizeRail .sr-n.on{background:var(--accent)}
+#sizeRail .sr-n.on i{background:#fff}
+body.pc #sizeRail{display:none}
+
+/* ══════════════ PC MODE ══════════════
+   Same DOM, different frame. A mouse has hover, a right button and a scroll
+   wheel, and a 1400px window has room to keep the tools, the layers and the
+   palette all on screen at once — so on a desktop the thumb-corner dial folds
+   out into a rail, the drawer docks, and the tool's own settings ride in a bar
+   under the top bar instead of behind a modal. */
+#optBar,#railL{display:none}
+body.pc{
+  display:grid;
+  grid-template-columns:60px minmax(0,1fr) 288px;
+  grid-template-rows:52px 42px minmax(0,1fr);
+  height:100%;
+}
+body.pc.side-off{grid-template-columns:60px minmax(0,1fr) 0}
+@media (max-width:1180px){
+  body.pc{grid-template-columns:56px minmax(0,1fr) 248px}
+  body.pc #palette{max-height:150px}
+}
+body.pc #topbar{grid-column:1/-1;grid-row:1}
+body.pc #optBar{
+  grid-column:1/-1;grid-row:2;display:flex;align-items:center;gap:7px;
+  padding:0 10px;background:var(--panel);border-bottom:1px solid var(--line);
+  overflow-x:auto;overflow-y:hidden;scrollbar-width:none;z-index:22;white-space:nowrap;
+}
+body.pc #optBar::-webkit-scrollbar{display:none}
+body.pc #railL{
+  display:flex;flex-direction:column;align-items:center;
+  gap:6px;padding:8px 0;background:var(--panel);border-right:1px solid var(--line);z-index:21;
+}
+/* The two stacks are wrappers that do nothing at all on a phone —
+   display:contents leaves every child a flex item of <body> exactly as
+   before, so the mobile layout is byte-for-byte the one that shipped. */
+#mainC,#sideR{display:contents}
+body.pc #mainC{
+  display:flex;flex-direction:column;min-width:0;min-height:0;
+  grid-column:2;grid-row:3;
+}
+body.pc #sideR{
+  display:flex;flex-direction:column;min-height:0;
+  grid-column:3;grid-row:3;border-left:1px solid var(--line);
+}
+body.pc #stage{flex:1;min-height:0}
+body.pc #drawer{
+  position:static;width:auto;max-width:none;transform:none;flex:1;min-height:0;
+  border-right:none;transition:none;padding-top:0;padding-bottom:0;
+}
+body.pc #btnCloseDrawer{display:none}
+body.pc #palette{
+  flex-wrap:wrap;align-content:flex-start;
+  overflow-x:hidden;overflow-y:auto;max-height:200px;
+}
+body.pc.side-off #sideR{display:none}
+body.pc #chromeGrab,body.pc #scrim,body.pc #dialBtn,body.pc #dialScrim,body.pc #lens{display:none}
+body.pc.chrome-hidden #timeline,body.pc.chrome-hidden #recentBar,body.pc.chrome-hidden #palette{display:flex}
+body.pc #railL{grid-column:1;grid-row:3}
+
+/* the dial unrolled: same buttons, same handlers, stacked in the rail */
+body.pc #toolDial{
+  position:static;transform:none;display:flex;flex-direction:column;align-items:center;
+  gap:6px;flex:0 0 auto;
+}
+body.pc #dialArc{position:static;width:auto;height:auto;display:flex;flex-direction:column;gap:6px}
+body.pc #dialArc .tool{
+  position:static;opacity:1;pointer-events:auto;transform:none;
+  background:var(--panel-2);border:1px solid transparent;backdrop-filter:none;
+  transition:background .12s,border-color .12s;transition-delay:0ms;will-change:auto;
+}
+body.pc #dialArc .tool.on{background:var(--accent);border-color:var(--accent)}
+body.pc #btnMore{
+  position:static;margin-top:auto;width:44px;height:44px;border-radius:11px;
+  background:var(--panel-2);border:1px solid transparent;box-shadow:none;transform:none;
+  backdrop-filter:none;
+}
+body.pc #railL .rail-div{width:28px;height:1px;background:var(--line);flex:0 0 auto;margin:2px 0}
+
+/* The canvas corner furniture the rail replaced. #zoomCtl stays top-left:
+   syncBarStack() shifts it DOWN when the restore bar appears, and the ref bar
+   owns the bottom edge — moving it to the floor would collide with both. The
+   action bars get the full width now that no thumb buttons sit in the corners. */
+body.pc #selBar,body.pc #shapeBar{left:10px;right:10px}
+
+/* options bar bits */
+.ob-name{
+  flex:0 0 auto;font-size:12px;font-weight:600;color:var(--text);
+  padding-right:2px;min-width:64px;
+}
+.ob-name span{color:var(--dim);font-weight:500;font-size:10.5px;margin-left:4px}
+.ob-lbl{flex:0 0 auto;font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--dim);font-weight:600}
+.ob-div{flex:0 0 auto;width:1px;height:22px;background:var(--line);margin:0 2px}
+.ob-seg{display:flex;gap:3px;background:var(--panel-2);padding:3px;border-radius:9px;flex:0 0 auto;margin:0}
+.ob-seg button{
+  min-width:30px;height:26px;padding:0 8px;border-radius:7px;font-size:11.5px;font-weight:600;
+  color:var(--dim);transition:background .12s,color .12s;display:flex;align-items:center;
+  justify-content:center;gap:4px;
+}
+.ob-seg button.on{background:var(--accent);color:#fff}
+.ob-seg button svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.ob-sw{flex:0 0 auto;width:26px;height:26px;border-radius:8px;border:2px solid var(--line)}
+.ob-more{
+  flex:0 0 auto;height:28px;padding:0 10px;border-radius:8px;background:var(--panel-2);
+  color:var(--dim);font-size:11.5px;font-weight:600;margin-left:auto;
+}
+
+/* a mouse can hover — say so, and stop pretending a cursor is a fingertip */
+@media (hover:hover) and (pointer:fine){
+  .tb-btn:hover:not([disabled]){background:var(--line)}
+  .tool:hover{background:var(--line)}
+  #dialArc .tool.on:hover,.tool.on:hover{background:var(--accent)}
+  .seg button:hover,.ob-seg button:hover{color:var(--text)}
+  .seg button.on:hover,.ob-seg button.on:hover{color:#fff}
+  .ob-more:hover{background:var(--line);color:var(--text)}
+  .sw:hover{transform:scale(1.09)}
+  .frame:hover{border-color:var(--dim)}
+  #palette .sw,.tool,.tb-btn,.frame{cursor:pointer}
+}
+body.pc #view{cursor:crosshair}
+body.pc.panning #view{cursor:grab}
 </style>
 </head>
 <body>
@@ -914,6 +1097,9 @@ body.tl-min #tlLbl .cv{transform:rotate(-90deg)}
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
   </button>
   <span id="logoWrap"><i class="logo-mark" id="logoIc"></i><span id="logo">wadpixel</span></span>
+  <button class="tb-btn" id="btnUiMode" title="สลับหน้าตาแอป จอคอม / มือถือ">
+    <span id="uiModeIc"></span>
+  </button>
   <div class="spacer"></div>
   <button class="tb-btn" id="btnOnion" title="Onion skin · แตะซ้ำเพื่อตั้งค่า">
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="9" cy="12" r="6" opacity=".45"/><circle cx="15" cy="12" r="6"/></svg>
@@ -934,6 +1120,10 @@ body.tl-min #tlLbl .cv{transform:rotate(-90deg)}
   <button class="tb-btn" id="btnExport">Export</button>
 </div>
 
+<div id="optBar"></div>
+<div id="railL"></div>
+
+<div id="mainC">
 <div id="stage">
   <canvas id="view"></canvas>
   <div id="zoomTag"><b id="zoomVal">100%</b> · <span id="posVal">0,0</span></div>
@@ -987,7 +1177,9 @@ body.tl-min #tlLbl .cv{transform:rotate(-90deg)}
     <button data-a="cancel" title="ยกเลิก"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span>ยกเลิก</span></button>
     <button data-a="commit" title="ยืนยัน"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><span>ยืนยัน</span></button>
   </div>
+  <div id="sizeRail"></div>
   <div id="dialScrim"></div>
+  <div id="dialOpts"></div>
   <button class="tool" id="btnMore" title="คำสั่งอื่น ๆ"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span id="moreDot"></span></button>
   <div id="toolDial">
     <div id="dialArc">
@@ -1020,6 +1212,7 @@ body.tl-min #tlLbl .cv{transform:rotate(-90deg)}
   </div>
   <div id="frames"></div>
 </div>
+</div>
 
 
 <div id="trayScrim"></div>
@@ -1035,6 +1228,7 @@ body.tl-min #tlLbl .cv{transform:rotate(-90deg)}
     <button class="tool" id="btnOutline" title="เส้นขอบอัตโนมัติ"><svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1"/><rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="3 3" opacity=".55"/></svg><span class="cl">เส้นขอบ</span></button>
     <button class="tool" id="btnShift" title="เลื่อนภาพทั้งเฟรม"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/><path d="M5 12l3-3M5 12l3 3"/><path d="M19 12l-3-3M19 12l-3 3"/><path d="M12 5l-3 3M12 5l3 3"/><path d="M12 19l-3-3M12 19l3-3"/></svg><span class="cl">เลื่อนภาพ</span></button>
     <button class="tool" id="btnGrid" title="เส้นกริด"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1.5"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg><span class="cl">เส้นกริด</span></button>
+    <button class="tool" id="btnTips" title="ท่านิ้ว / ท่าลัดที่ซ่อนอยู่"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.8.4-1 .8-1 1.7"/><line x1="12" y1="17" x2="12" y2="17"/></svg><span class="cl">ท่าลัด</span></button>
     <button class="tool" id="btnPrec" title="ความแม่นในการวาด"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg><span class="cl">ความแม่น</span></button>
   </div>
 </div>
@@ -1044,10 +1238,7 @@ body.tl-min #tlLbl .cv{transform:rotate(-90deg)}
   <button class="tool" data-tool="rect" title="สี่เหลี่ยม · แตะซ้ำเพื่อตั้งขนาด/ทึบ"><svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/></svg><span class="sym-tag" id="rectTag"></span></button>
   <button class="tool" data-tool="ellipse" title="วงรี / วงกลม · แตะซ้ำเพื่อตั้งขนาด/ทึบ"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="9" ry="7"/></svg><span class="sym-tag" id="ellipseTag"></span></button>
 </div>
-<div id="recentBar"></div>
-<div id="palette"></div>
-
-<div id="scrim"></div>
+<div id="sideR">
 <aside id="drawer">
   <div id="drawerHead">
     <h2>Layers</h2>
@@ -1062,6 +1253,11 @@ body.tl-min #tlLbl .cv{transform:rotate(-90deg)}
     <input type="file" id="refImgInput" accept="image/*" style="display:none">
   </div>
 </aside>
+<div id="recentBar"></div>
+<div id="palette"></div>
+</div>
+
+<div id="scrim"></div>
 
 <div id="modal"><div class="card" id="modalCard"></div></div>
 
@@ -1079,6 +1275,7 @@ const S = {
   curFrame:0,
   fps:8,
   playing:false,
+  tipsSeen:false,       // the gesture card is shown once, then remembered in prefs
   tool:'pencil',
   brush:1,             // pencil/eraser nib size in pixels
   nib:'square',        // nib shape: square | circle | diamond | hline | vline
@@ -2814,6 +3011,12 @@ function cancelStroke(){
   bufDirty = true;
 }
 let pinchStart = null, pressTimer = null, movedFar = false, gestureLocked = false;
+/* Undo lives in the top bar, 740px from a resting thumb on a 6" phone, and it
+   is the command a drawing hand reaches for most. Two fingers down and up
+   without travel means undo, three means redo — the tap has to be short and
+   still so a pinch or a two-finger pan is never mistaken for one. */
+let multiTap = null;
+const MULTI_TAP_MS = 400, MULTI_TAP_SLOP = 16;
 /* The pixel the press started on, and its colour as it was BEFORE the tool
    drew anything. Both are read by the long-press eyedropper. */
 let pressPick = null, pressPx = null;
@@ -2947,7 +3150,8 @@ function drawLens(){
 }
 
 view.addEventListener('pointerdown', e => {
-  view.setPointerCapture(e.pointerId);
+  // a capture that fails must not abort the stroke before it starts
+  try{ view.setPointerCapture(e.pointerId); }catch(_){}
   // one measurement per press instead of two per move — and it re-syncs after
   // any layout change that did not go through resizeView
   invalidateRects();
@@ -2958,6 +3162,21 @@ view.addEventListener('pointerdown', e => {
     strokePushedUndo = false;
     gestureUndoSeq = undoSeq;
     gestureLifted = false;
+    multiTap = touchIn ? {t:Date.now(), max:1, moved:false} : null;
+  } else if(multiTap){
+    multiTap.max = Math.max(multiTap.max, pointers.size);
+  }
+
+  /* A mouse has more than one button and a desktop expects them: right =
+     eyedropper (the long-press has no equivalent with a cursor), middle =
+     pan. Neither may reach the paint path. */
+  if(e.pointerType === 'mouse' && e.button > 0){
+    e.preventDefault();
+    if(e.button === 2){ pointers.delete(e.pointerId); pickColorAtClient(e.clientX, e.clientY); return; }
+    panDrag = {x:e.clientX, y:e.clientY, px:S.panX, py:S.panY};
+    drawing = false;
+    document.body.classList.add('panning');
+    return;
   }
 
   if(pointers.size === 2){
@@ -3232,6 +3451,8 @@ view.addEventListener('pointermove', e => {
     if(q.x !== pressPx.x || q.y !== pressPx.y){ movedFar = true; clearTimeout(pressTimer); }
   }
   if(Math.hypot(e.clientX-rec.sx, e.clientY-rec.sy) > 8){ movedFar = true; clearTimeout(pressTimer); }
+  // any real travel disqualifies the gesture from being a tap
+  if(multiTap && Math.hypot(e.clientX-rec.sx, e.clientY-rec.sy) > MULTI_TAP_SLOP) multiTap.moved = true;
 
   if(pointers.size === 2 && pinchStart){
     const pts = [...pointers.values()];
@@ -3389,6 +3610,23 @@ function endPointer(e){
   if(pointers.size < 2){ pinchStart = null; }
   if(pointers.size === 0){
     panDrag = null;
+    // a middle-button pan borrowed the grab cursor; hand it back unless the
+    // pan *mode* is what put it there
+    document.body.classList.toggle('panning', S.panMode);
+    /* The second finger landing already cancelled whatever the first one
+       painted, so this undoes the stroke before it, which is what the user
+       is asking for. */
+    if(multiTap && !multiTap.moved && multiTap.max >= 2 &&
+       Date.now() - multiTap.t < MULTI_TAP_MS){
+      const three = multiTap.max >= 3;
+      multiTap = null;
+      buzz(10);
+      if(three){ redo(); toast('ทำซ้ำ', 900); }
+      else { undo(); toast('ย้อนกลับ', 900); }
+      clearAim();
+      return;
+    }
+    multiTap = null;
     pressPick = null; pressPx = null;
     // the outline is a live aim, not a leftover mark — a lifted finger clears it
     if(touchIn) clearAim(); else { lensAt = null; $('lens').classList.remove('on'); }
@@ -3484,6 +3722,18 @@ function endPointer(e){
 }
 view.addEventListener('pointerup', endPointer);
 view.addEventListener('pointercancel', endPointer);
+
+/* right-click sampling shares the picker tool's path so both agree on what
+   "nothing there" means */
+function pickColorAtClient(cx, cy){
+  const p = toPixel(cx, cy);
+  if(p.x < 0 || p.y < 0 || p.x >= S.W || p.y >= S.H) return;
+  const px = getPixel(curData(), p.x, p.y);
+  if(!px || px[3] === 0){ toast('จุดนี้ยังโปร่งใส'); return; }
+  const hex = '#' + [px[0],px[1],px[2]].map(v=>v.toString(16).padStart(2,'0')).join('');
+  setColor(hex); toast('ดูดสี ' + hex.toUpperCase());
+}
+view.addEventListener('contextmenu', e => e.preventDefault());
 
 /* desktop wheel zoom */
 view.addEventListener('wheel', e => {
@@ -3985,11 +4235,19 @@ function drawLayerThumb(canvas, li){
 /* Set when a layer-affecting change happened while the drawer was shut, so the
    list is rebuilt the moment it is opened rather than on every change. */
 let layersStale = false;
+/* On a phone the drawer slides in; on a desktop it is docked in the right
+   column and never carries the 'on' class — either way this asks the same
+   question: can anyone see the list right now? */
+function drawerVisible(){
+  const b = document.body;
+  if($('drawer').classList.contains('on')) return true;
+  return b.classList.contains('pc') && !b.classList.contains('side-off');
+}
 function renderLayers(){
   // The drawer is closed most of the time, and renderAll() calls this on every
   // structural change. Building rows nobody can see costs a full thumbnail
   // composite per layer; defer it to the moment the drawer opens.
-  if(!$('drawer').classList.contains('on')){ layersStale = true; return; }
+  if(!drawerVisible()){ layersStale = true; return; }
   layersStale = false;
   commitLayerNameEdit();
   const list = $('layerList');
@@ -4615,6 +4873,8 @@ function selectTool(t){
   document.querySelectorAll('.tool[data-tool]').forEach(b=>b.classList.toggle('on', b.dataset.tool===t));
   updateShapeBtn();
   closeDial();
+  renderOptBar();
+  updateSizeRail();      // fill/select/picker have no nib to size
   renderView();          // the aim outline follows the nib size of the new tool
 }
 const SHAPE_IC = {
@@ -4698,6 +4958,9 @@ function updateToolTags(){
   set('selectTag', S.selMode === 'wand' ? '◈' : S.selMode === 'lasso' ? '⟡' : '');
   updateSelectBtn();
   updateShapeBtn();          // ends with updateDialBtn(), which mirrors whatever is active
+  renderOptBar();
+  syncDialOpts();
+  updateSizeRail();
 }
 function stepBrush(dir){
   const i = BRUSH_SIZES.indexOf(S.brush);
@@ -8781,9 +9044,9 @@ if(new URLSearchParams(location.search).has('admin')){
   try{ sessionStorage.setItem('wp_admin', '1'); }catch{}
 }
 /* bump when deploying — the fastest way to tell a stale cache from a real bug */
-const BUILD_ID = '2026-08-03 undo-fixes';
-const APP_VERSION = '0.9.2';
-const APP_UPDATED = '3 ส.ค. 2026';   // bump both when shipping a visible change
+const BUILD_ID = '2026-08-05 pc-mode-ux';
+const APP_VERSION = '0.9.3';
+const APP_UPDATED = '5 ส.ค. 2026';   // bump both when shipping a visible change
 const API_GALLERY = '/api/gallery';
 const API_LIKE    = '/api/like';
 
@@ -9311,7 +9574,16 @@ function showGallery(sort){
 }
 
 /* ══════════════ WIRING ══════════════ */
-$('btnLayers').onclick = ()=>{ $('drawer').classList.add('on'); $('scrim').classList.add('on'); renderLayers(); };
+$('btnLayers').onclick = ()=>{
+  if(document.body.classList.contains('pc')){
+    // docked, not slid in — the button hides and shows the whole right column
+    const off = document.body.classList.toggle('side-off');
+    resizeView();
+    if(!off) renderLayers();
+    return;
+  }
+  $('drawer').classList.add('on'); $('scrim').classList.add('on'); renderLayers();
+};
 $('btnCloseDrawer').onclick = $('scrim').onclick = ()=>{ $('drawer').classList.remove('on'); $('scrim').classList.remove('on'); };
 $('btnSym').onclick = ()=>{
   setSym(S.sym + 1);
@@ -9578,10 +9850,12 @@ function showShortcuts(){
       <div class="sec-lbl" style="margin-top:16px">คีย์ลัดตายตัว (แก้ไม่ได้)</div>
       ${fixed.map(([n, k]) => `<div class="sc-fixed"><span>${n}</span><b>${esc(k)}</b></div>`).join('')}
     </div>
+    <button class="sup-btn" id="scGest">ท่านิ้ว / ท่าลัดที่ซ่อนอยู่</button>
     <button class="sup-btn" id="scReset">คืนค่าคีย์เริ่มต้นทั้งหมด</button>
     <button class="big-btn" id="scDone">เสร็จ</button>
   `);
 
+  $('scGest').onclick = ()=>{ closeModal(); setTimeout(showGestureTips, 30); };
   const wireRows = ()=>{
     document.querySelectorAll('#modalCard .sc-row').forEach(row=>{
       const id = row.dataset.id;
@@ -9658,10 +9932,31 @@ document.addEventListener('keydown', e=>{
       return;
     }
   }
+  /* Hold space to pan is the one desktop habit the touch build had no room
+     for. A tap still runs whatever Space is bound to, so play keeps its key. */
+  if(e.key === ' ' && document.body.classList.contains('pc')){
+    e.preventDefault();
+    if(e.repeat || spaceHold) return;
+    spaceHold = {t:Date.now(), was:S.panMode};
+    if(!S.panMode) setPanMode(true, true);
+    return;
+  }
   // everything else is resolved through the rebindable table
   const token = (e.key === ' ') ? 'Space' : k;
   const act = ACTION_BY_ID[keyRev[token]];
   if(act){ e.preventDefault(); act.run(); return; }
+});
+
+let spaceHold = null;
+document.addEventListener('keyup', e => {
+  if(e.key !== ' ' || !spaceHold) return;
+  const held = Date.now() - spaceHold.t, was = spaceHold.was;
+  spaceHold = null;
+  if(!was) setPanMode(false, true);
+  if(held < 300){                       // it was a tap after all
+    const act = ACTION_BY_ID[keyRev['Space']];
+    if(act) act.run();
+  }
 });
 
 /* drag & drop an image or project file straight onto the canvas */
@@ -9726,10 +10021,12 @@ function loadPrefs(){
   if(typeof p.lens === 'boolean') S.lens = p.lens;
   if(typeof p.penOff === 'number') S.penOff = Math.max(0, Math.min(64, p.penOff));
   if(p.cpMode === 'grid' || p.cpMode === 'hsv') S.cpMode = p.cpMode;
+  if(p.uiMode === 'pc' || p.uiMode === 'mobile' || p.uiMode === 'auto') uiMode = p.uiMode;
+  if(typeof p.tipsSeen === 'boolean') S.tipsSeen = p.tipsSeen;
 }
 function savePrefs(){
   lsSet(PREFS_STORE, {cursorOn:S.cursorOn, lens:S.lens, penOff:S.penOff,
-                      cpMode:S.cpMode});
+                      cpMode:S.cpMode, uiMode, tipsSeen:!!S.tipsSeen});
 }
 
 /* Toggles moved out of sight, so the bar says when one of them is holding a
@@ -9781,7 +10078,9 @@ function dialRadius(){
   return Math.max(96, Math.min(want, Math.round(room)));
 }
 function layoutDial(){
+  if(document.body.classList.contains('pc')) return;   // rail, not arc
   const R = dialRadius(), items = dialItems();
+  $('stage').style.setProperty('--arc-r', R + 'px');   // the options bar dodges this
   items.forEach((b, i) => {
     const th = (90 - i * DIAL_STEP) * Math.PI/180;   // 0 = left, 90 = straight up
     const half = (b.offsetWidth || 44) / 2;
@@ -9796,10 +10095,12 @@ function layoutDial(){
 }
 let dialCloseT = null;
 function openDial(){
+  if(document.body.classList.contains('pc')) return;   // the tools are always out
   layoutDial();
   clearTimeout(dialCloseT);
   document.body.classList.remove('dial-closing');
   document.body.classList.add('dial-on');
+  syncDialOpts();           // the options bar rides out with the arc
 }
 function closeDial(){
   if(!document.body.classList.contains('dial-on')) return;
@@ -9808,8 +10109,15 @@ function closeDial(){
   dialItems().forEach(b => b.classList.remove('hot'));
   clearTimeout(dialCloseT);
   dialCloseT = setTimeout(() => document.body.classList.remove('dial-closing'), 280);
+  const dop = $('dialOpts');
+  if(dop){ dop.classList.remove('show'); dop.innerHTML = ''; }   // the bar folds with the arc
 }
 function buzz(ms){ try{ navigator.vibrate && navigator.vibrate(ms); }catch(_){} }
+/* the eyedropper is the one tool with nothing to configure */
+function toolHasOpts(t){
+  t = t || S.tool;
+  return OPT_TOOLS.includes(t) || SHAPE_TOOLS.includes(t);
+}
 function updateDialBtn(){
   const ic = $('dialIc'); if(!ic) return;
   const act = document.querySelector('#dialArc .tool.on');
@@ -9901,11 +10209,12 @@ function zoomBy(f){
   S.panY = vh/2 - ay*S.zoom;
   clampPan(); renderView();
 }
-function setPanMode(on){
+function setPanMode(on, quiet){
   S.panMode = !!on;
   $('zcPan').classList.toggle('on', S.panMode);
+  document.body.classList.toggle('panning', S.panMode);
   if(S.panMode){ commitFloat(); clearAim(); }
-  toast(S.panMode ? 'โหมดเลื่อนภาพ — ลากนิ้วเดียวเพื่อเลื่อน' : 'กลับมาวาดได้แล้ว');
+  if(!quiet) toast(S.panMode ? 'โหมดเลื่อนภาพ — ลากนิ้วเดียวเพื่อเลื่อน' : 'กลับมาวาดได้แล้ว');
   renderView();
 }
 $('zcIn').onclick  = ()=>zoomBy(1.5);
@@ -9956,6 +10265,359 @@ function showDrawPrec(){
 }
 $('btnPrec').onclick = showDrawPrec;
 
+
+/* ---------- GESTURE CARD ----------
+   Three of the fastest things in the app are invisible: the long press that
+   eyedrops, the second tap that opens a tool's settings, and the press-drag
+   that picks a tool by angle. Nothing on screen hinted at any of them, so a
+   first run was a guessing game. This says them once, and stays reachable. */
+const TIPS_TOUCH = [
+  ['กดค้างบนภาพ', 'ดูดสีตรงจุดนั้น'],
+  ['เปิดวงเครื่องมือ', 'แถบตัวเลือกลอยขึ้นมา ปรับขนาด/โหมดได้เลย (แตะเครื่องมือเดิมซ้ำ = ตั้งค่าเต็ม)'],
+  ['กดปุ่มวงค้างแล้วลากตามมุม', 'เลือกเครื่องมือโดยไม่ต้องเล็งปุ่ม'],
+  ['แถบซ้ายของผ้าใบ', 'ลากเปลี่ยนขนาดหัวแปรงได้ทันที'],
+  ['แตะสองนิ้ว', 'ย้อนกลับ (สามนิ้ว = ทำซ้ำ)'],
+  ['สองนิ้วบีบ/ลาก', 'ซูมและเลื่อนภาพ'],
+];
+const TIPS_PC = [
+  ['คลิกขวาบนภาพ', 'ดูดสีตรงจุดนั้น'],
+  ['คลิกกลางลาก หรือ Space ค้าง', 'เลื่อนภาพ'],
+  ['ล้อเมาส์', 'ซูมเข้า-ออก'],
+  ['แถบใต้เมนูบน', 'ตั้งค่าเครื่องมือปัจจุบัน ไม่ต้องเปิดหน้าต่าง'],
+  ['[ และ ]', 'เปลี่ยนขนาดหัวแปรง'],
+  ['ปุ่ม Layers บนแถบบน', 'พับ/กางคอลัมน์ขวา'],
+];
+function showGestureTips(){
+  const pc = document.body.classList.contains('pc');
+  const rows = pc ? TIPS_PC : TIPS_TOUCH;
+  openModal(`
+    <h2>ท่าลัดที่ควรรู้</h2>
+    <p class="sub">${pc ? 'โหมดจอคอม' : 'ท่านิ้วบนมือถือ'} · เปิดซ้ำได้จากปุ่ม ⋯ ล่างซ้าย</p>
+    <div class="sc-list">
+      ${rows.map(([a, b]) => `<div class="sc-fixed" style="align-items:flex-start;gap:12px">
+        <span style="color:var(--text);font-weight:600;flex:0 0 46%">${esc(a)}</span>
+        <b style="font-weight:500;color:var(--dim);text-align:right">${esc(b)}</b></div>`).join('')}
+    </div>
+    <button class="big-btn" id="tipDone">เข้าใจแล้ว</button>
+  `);
+  $('tipDone').onclick = ()=>{ S.tipsSeen = true; savePrefs(); closeModal(); };
+}
+/* Shown once, on the first run that actually reaches the canvas — the home
+   screen owns the modal at boot, so this waits for it to clear. */
+function maybeShowTips(){
+  if(S.tipsSeen) return;
+  const t = setInterval(()=>{
+    // opening it from the tray first counts — don't ambush them twice
+    if(S.tipsSeen){ clearInterval(t); return; }
+    if($('modal').classList.contains('on') || pointers.size) return;
+    clearInterval(t);
+    showGestureTips();
+  }, 700);
+}
+
+/* ---------- BRUSH SIZE RAIL ---------- */
+const SR_DOT = {1:4, 2:6, 3:8, 4:10, 6:12, 8:15};
+function buildSizeRail(){
+  const el = $('sizeRail'); if(!el || el.children.length) return;
+  el.innerHTML = BRUSH_SIZES.map(n =>
+    `<div class="sr-n" data-n="${n}"><i style="width:${SR_DOT[n]||n}px;height:${SR_DOT[n]||n}px"></i></div>`).join('');
+}
+function updateSizeRail(){
+  const el = $('sizeRail'); if(!el) return;
+  buildSizeRail();
+  // the rail is for the phone build; on a desktop the options bar owns sizes
+  const show = toolUsesNib() && !document.body.classList.contains('pc');
+  el.classList.toggle('on', show);
+  if(!show) return;
+  [...el.children].forEach(c => c.classList.toggle('on', +c.dataset.n === (S.brush|0)));
+}
+/* One drag, live: the finger slides down the rail and every notch it crosses
+   is applied on the way, so the size can be judged against the canvas instead
+   of a preview in a dialog. */
+let srDrag = null;
+function srPick(clientY){
+  const el = $('sizeRail'), kids = [...el.children];
+  let best = null, bd = 1e9;
+  kids.forEach(c => {
+    const r = c.getBoundingClientRect(), d = Math.abs((r.top + r.bottom)/2 - clientY);
+    if(d < bd){ bd = d; best = c; }
+  });
+  if(!best) return;
+  const n = +best.dataset.n;
+  if(n === (S.brush|0)) return;
+  S.brush = n;
+  buzz(4);
+  updateToolTags();          // ends in updateSizeRail(), which moves the highlight
+  renderView();              // the aim outline is nib-sized
+}
+$('sizeRail').addEventListener('pointerdown', e => {
+  e.preventDefault(); e.stopPropagation();
+  srDrag = e.pointerId;
+  $('sizeRail').classList.add('hot');
+  try{ $('sizeRail').setPointerCapture(e.pointerId); }catch(_){}
+  srPick(e.clientY);
+});
+$('sizeRail').addEventListener('pointermove', e => {
+  if(srDrag !== e.pointerId) return;
+  e.preventDefault();
+  srPick(e.clientY);
+});
+const srEnd = e => {
+  if(srDrag !== e.pointerId) return;
+  srDrag = null;
+  $('sizeRail').classList.remove('hot');
+  toast('หัวแปรง ' + S.brush + ' px', 900);
+};
+$('sizeRail').addEventListener('pointerup', srEnd);
+$('sizeRail').addEventListener('pointercancel', srEnd);
+
+/* ══════════════ PC MODE ══════════════
+   A desktop window is not a big phone: it has hover, a right button, a wheel
+   and roughly three times the room. Same DOM, same handlers — the layout
+   wrappers stop being display:contents, the dial unrolls into a rail, the
+   drawer docks, and the current tool's settings sit in a bar instead of behind
+   a modal. Everything here is reversible: switching back re-parents two nodes
+   and drops one class. */
+const PC_MQ = '(min-width:1024px) and (pointer:fine)';
+const PC_ROOMY = 900;                   // below this the side column eats the canvas
+let uiMode = 'auto';                    // auto | pc | mobile, remembered in prefs
+/* A narrow window is not a reason to refuse — asking for PC mode is an explicit
+   choice, and the thing that made it unusable was the 248px layer column, not
+   the frame. Below PC_ROOMY the column folds away instead, which leaves the
+   canvas the full width minus the 56px tool rail. Only the automatic case is
+   still gated, by the media query. */
+function pcTight(){ return (window.innerWidth || 0) < PC_ROOMY; }
+// what the automatic setting would pick on this device, right now
+function autoIsPc(){
+  try{ return !!(window.matchMedia && window.matchMedia(PC_MQ).matches); }catch(_){ return false; }
+}
+function pcWanted(){
+  if(uiMode === 'mobile') return false;
+  if(uiMode === 'pc') return true;      // their call, at any width
+  return autoIsPc();
+}
+function applyUiMode(){
+  const pc = pcWanted();
+  const rail = $('railL'), stage = $('stage'), dial = $('toolDial'), more = $('btnMore');
+  document.body.classList.toggle('pc', pc);
+  if(pc){
+    document.body.classList.remove('dial-on','dial-closing','chrome-hidden');
+    if(dial.parentNode !== rail) rail.appendChild(dial);
+    if(more.parentNode !== rail) rail.appendChild(more);
+    /* layoutDial() wrote the arc geometry as inline styles; a static rail
+       button must not carry them, and inline always beats the stylesheet */
+    dialItems().forEach(b => {
+      b.style.right = ''; b.style.bottom = ''; b.style.transitionDelay = '';
+      b.style.removeProperty('--tx'); b.style.removeProperty('--ty');
+      b.classList.remove('hot');
+    });
+    $('drawer').classList.remove('on');
+    $('scrim').classList.remove('on');
+    // a tight window can't spare 248px for the layer column and a usable
+    // canvas at once — start folded; the Layers button brings it back. A roomy
+    // window unfolds it so re-entering PC wide doesn't leave it hidden.
+    document.body.classList.toggle('side-off', pcTight());
+    renderLayers();
+  } else {
+    const toastEl = $('toast');
+    if(more.parentNode !== stage) stage.insertBefore(more, toastEl);
+    if(dial.parentNode !== stage) stage.insertBefore(dial, toastEl);
+    document.body.classList.remove('side-off','panning');
+    layoutDial();
+  }
+  updateUiModeLbl();
+  renderOptBar();
+  resizeView();
+}
+/* Icons at 17px in the top bar family (home 34% ink, onion 30%): a monitor to
+   go to the PC layout, a phone to come back. The button shows the destination,
+   not the current state — the layout around it already says where you are. */
+const UI_IC_PC = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="5.4" width="17.2" height="11" rx="1.6"/><path d="M9 20h6"/></svg>';
+const UI_IC_MOBILE = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="7.4" y="3.4" width="9.2" height="17.2" rx="2.2"/><path d="M11 18.4h2"/></svg>';
+function updateUiModeLbl(){
+  const ic = $('uiModeIc'), btn = $('btnUiMode');
+  if(!ic || !btn) return;
+  const pc = document.body.classList.contains('pc');
+  ic.innerHTML = pc ? UI_IC_MOBILE : UI_IC_PC;
+  btn.title = pc ? 'สลับเป็นหน้าตาสำหรับมือถือ' : 'สลับเป็นหน้าตาสำหรับจอคอม';
+}
+$('btnTips').onclick = showGestureTips;
+$('btnUiMode').onclick = ()=>{
+  const want = document.body.classList.contains('pc') ? 'mobile' : 'pc';
+  /* Pinning is only worth it when the choice disagrees with the device. Asking
+     for the layout this device would have picked anyway stores 'auto', so the
+     same saved preference still adapts when the app is opened on a phone one
+     day and a desktop the next — instead of a phone that boots into PC mode
+     forever because of one tap. */
+  uiMode = (autoIsPc() === (want === 'pc')) ? 'auto' : want;
+  savePrefs(); applyUiMode();
+  if(uiMode === 'pc') toast(pcTight() ? 'โหมดจอคอม — พับคอลัมน์เลเยอร์ไว้ กดปุ่มเลเยอร์เพื่อกาง' : 'หน้าตาสำหรับจอคอม', 2600);
+  else toast('หน้าตาสำหรับมือถือ');
+};
+/* matchMedia only fires for the auto case; a window dragged across the floor
+   has to be caught here. Comparing first keeps this off the resize hot path. */
+window.addEventListener('resize', ()=>{
+  if(pcWanted() !== document.body.classList.contains('pc')) applyUiMode();
+});
+try{
+  window.matchMedia(PC_MQ).addEventListener('change', ()=>{ if(uiMode === 'auto') applyUiMode(); });
+}catch(_){}
+
+/* ---------- TOOL OPTIONS BAR ----------
+   The settings behind "tap the tool again" are one click away on a phone but
+   invisible on a desktop, where there is a whole row ofspace under the top
+   bar. Same values, same state — this bar writes to S directly and hands the
+   rest to updateToolTags(), which ends by redrawing it. */
+function obSeg(key, items){
+  return '<div class="ob-seg">' + items.map(it =>
+    `<button data-ob="${key}" data-v="${it.v}"${it.on ? ' class="on"' : ''}` +
+    `${it.t ? ` title="${esc(it.t)}"` : ''}>${it.h}</button>`).join('') + '</div>';
+}
+/* fill, select and the eyedropper have no nib, and a solid shape ignores it */
+function toolUsesNib(t){
+  t = t || S.tool;
+  if(t === 'fill' || t === 'select' || t === 'picker') return false;
+  return !(SHAPE_TOOLS.includes(t) && S.shapeFill);
+}
+/* The PC top bar and the touch dial bar are the same controls in a different
+   frame; buildOptControls() writes the HTML, the two callers place it. */
+function renderOptBar(){
+  const bar = $('optBar'); if(!bar) return;
+  if(!document.body.classList.contains('pc')){ if(bar.innerHTML) bar.innerHTML = ''; return; }
+  bar.innerHTML = buildOptControls();
+  wireOptControls(bar);
+}
+/* The dial bar only exists while the arc is open, and only on touch. */
+function syncDialOpts(){
+  const bar = $('dialOpts'); if(!bar) return;
+  const show = document.body.classList.contains('dial-on') &&
+               !document.body.classList.contains('pc') && toolHasOpts(S.tool);
+  bar.classList.toggle('show', show);
+  if(!show){ bar.innerHTML = ''; return; }
+  /* A tall stage has empty sky above the arc; a short one (a phone on its side)
+     does not — there the bar drops to the bottom-left, the only corner the
+     quarter-circle never reaches. */
+  const st = $('stage').getBoundingClientRect();
+  const arcTop = st.height - (dialRadius() + 48);      // sky left above the top button
+  bar.classList.toggle('low', arcTop < 150);
+  bar.innerHTML = buildOptControls();
+  wireOptControls(bar);
+}
+function buildOptControls(){
+  const t = S.tool;
+  const isShapeT = SHAPE_TOOLS.includes(t);
+  const nibOn = toolUsesNib(t);
+  const name = TOOL_TITLE[t] || SHAPE_NAME[t] || (t === 'picker' ? 'ดูดสี' : t);
+  const key = keyMap[t] ? keyLabel(keyMap[t]) : '';
+  let h = `<div class="ob-name">${esc(name)}${key ? `<span>${esc(key)}</span>` : ''}</div>`;
+
+  if(isShapeT){
+    h += obSeg('shape', SHAPE_TOOLS.map(k => ({v:k, on:S.shape === k, h:SHAPE_IC[k], t:SHAPE_NAME[k]})));
+    h += obSeg('sfill', [{v:'0', on:!S.shapeFill, h:'ขอบ'}, {v:'1', on:S.shapeFill, h:'ทึบ'}]);
+  }
+  if(t === 'select'){
+    h += obSeg('smode', ['rect','lasso','poly','wand'].map(k =>
+          ({v:k, on:S.selMode === k, h:SEL_IC[k], t:SEL_NAME[k]})));
+    if(S.selMode === 'wand'){
+      h += '<div class="ob-lbl">คลาดสี</div>' +
+           obSeg('wtol', WAND_TOLS.map(n => ({v:n, on:S.wandTol === n, h:n === 0 ? 'เป๊ะ' : String(n)})));
+      h += obSeg('wcontig', [{v:'1', on:S.wandContig, h:'หย่อมเดียว'},
+                             {v:'0', on:!S.wandContig, h:'ทั้งภาพ'}]);
+    }
+  }
+  if(t === 'fill'){
+    h += obSeg('fmode', [{v:'flood', on:S.fillMode === 'flood', h:'ต่อเนื่อง'},
+                         {v:'replace', on:S.fillMode === 'replace', h:'แทนสี'},
+                         {v:'gradient', on:S.fillMode === 'gradient', h:'ไล่เฉด'}]);
+    if(S.fillMode === 'replace')
+      h += obSeg('fscope', [{v:'frame', on:S.fillScope === 'frame', h:'เฟรมนี้'},
+                            {v:'all', on:S.fillScope === 'all', h:'ทุกเฟรม'}]);
+    if(S.fillMode === 'gradient'){
+      h += `<button class="ob-sw" data-ob="color2" style="background:${esc(S.color2)}" title="สีปลายทาง"></button>`;
+      h += '<div class="ob-lbl">ชั้นสี</div>' +
+           obSeg('gsteps', [2,3,4,6,8,1].map(n => ({v:n, on:S.gradSteps === n, h:n === 1 ? 'เนียน' : String(n)})));
+      h += obSeg('gdither', [{v:'1', on:S.gradDither, h:'ดิเธอร์'}, {v:'0', on:!S.gradDither, h:'คม'}]);
+    }
+  }
+  if(t === 'eraser'){
+    h += obSeg('emode', [{v:'brush', on:S.eraseMode === 'brush', h:'ตามที่ลาก'},
+                         {v:'color', on:S.eraseMode === 'color', h:'สีที่ต่อกัน'}]);
+  }
+  if(t === 'pencil'){
+    h += obSeg('pmode', [{v:'paint', on:S.pencilMode === 'paint', h:'ลงสี'},
+                         {v:'shade', on:S.pencilMode === 'shade', h:'ลงเงา'}]);
+    if(S.pencilMode === 'shade'){
+      h += obSeg('shade', [{v:'-1', on:S.shadeDir < 0, h:'◐ เข้ม'}, {v:'1', on:S.shadeDir > 0, h:'◑ สว่าง'}]);
+    } else {
+      h += obSeg('dither', [{v:'0', on:!S.dither, h:'สีเดียว'}, {v:'1', on:S.dither, h:'▚ ฟันปลา'}]);
+      if(S.dither) h += `<button class="ob-sw" data-ob="color2" style="background:${esc(S.color2)}" title="สีที่สอง"></button>`;
+      h += '<div class="ob-lbl">มุมซ้ำ</div>' +
+           obSeg('perfect', [{v:'1', on:S.perfect, h:'ตัด'}, {v:'0', on:!S.perfect, h:'ปิด'}]);
+    }
+  }
+  if(nibOn){
+    h += '<div class="ob-div"></div><div class="ob-lbl">ขนาด</div>' +
+         obSeg('size', BRUSH_SIZES.map(n => ({v:n, on:S.brush === n, h:String(n)})));
+    h += obSeg('nib', NIBS.map(k => ({v:k, on:S.nib === k, h:NIB_SYM[k], t:NIB_NAME[k]})));
+  }
+  if(t === 'picker') h += '<div class="ob-lbl">คลิกบนภาพเพื่อดูดสี · คลิกขวาก็ดูดได้ทุกเครื่องมือ</div>';
+  if(OPT_TOOLS.includes(t)) h += '<button class="ob-more" data-ob="opts">ตั้งค่าทั้งหมด…</button>';
+  return h;
+}
+function wireOptControls(bar){
+  bar.querySelectorAll('[data-ob]').forEach(b => {
+    b.onclick = ()=> obPick(b.dataset.ob, b.dataset.v);
+  });
+}
+function obPick(key, v){
+  switch(key){
+    case 'size':    S.brush = +v; break;
+    case 'nib':     S.nib = v; break;
+    case 'pmode':   S.pencilMode = v; break;
+    case 'shade':   S.shadeDir = +v; break;
+    case 'dither':  S.dither = v === '1'; break;
+    case 'perfect': S.perfect = v === '1'; break;
+    case 'emode':   S.eraseMode = v; break;
+    case 'fmode':   S.fillMode = v; break;
+    case 'fscope':  S.fillScope = v; break;
+    case 'gsteps':  S.gradSteps = +v; break;
+    case 'gdither': S.gradDither = v === '1'; break;
+    case 'wtol':    S.wandTol = +v; break;
+    case 'wcontig': S.wandContig = v === '1'; break;
+    case 'sfill':   S.shapeFill = v === '1'; break;
+    case 'smode':
+      S.selMode = v;
+      if(v === 'rect') S.selMask = null;      // a box replaces any freehand shape
+      if(v !== 'lasso') lassoPts = null;
+      if(v !== 'poly') polyPts = null;
+      markDirty();
+      break;
+    case 'shape':
+      // switching shape from a bar shouldn't tear down the dial around it;
+      // set the shape in place and refresh the controls, arc stays open
+      if(document.body.classList.contains('dial-on')){
+        S.shape = v; S.tool = v;
+        document.querySelectorAll('.tool[data-tool]').forEach(b=>b.classList.toggle('on', b.dataset.tool===v));
+        updateShapeBtn();
+        renderOptBar(); syncDialOpts(); updateSizeRail(); renderView();
+      } else {
+        selectTool(v);   // from the PC bar there is no dial to keep open
+      }
+      return;
+    case 'color2':  showColorPicker(S.color2, hex => { S.color2 = hex; updateToolTags(); }); return;
+    case 'opts':
+      // from the floating dial bar, let the arc fold before the sheet slides up;
+      // from the PC top bar there is no dial, so open it straight away
+      if(document.body.classList.contains('dial-on')){ closeDial(); setTimeout(showBrushOpts, 30); }
+      else showBrushOpts();
+      return;
+    default: return;
+  }
+  updateToolTags();          // ends in renderOptBar()
+  syncDialOpts();            // keep the touch bar in step too
+  renderView();
+}
+
 /* ══════════════ BOOT ══════════════ */
 let lastAnts = 0;
 (function antsLoop(now){
@@ -9975,9 +10637,11 @@ buildPalette();
 renderRecent();
 updateToolTags();
 loadKeys(); rebuildKeys();
+applyUiMode();
 resizeView();
 initProject(64, 64);
 showHome();
+maybeShowTips();
 </script>
 </body>
 </html>
