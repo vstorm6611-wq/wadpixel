@@ -3849,8 +3849,18 @@ function renderFrames(cheap){
       fd.className = 'fd'; fd.textContent = S.durs[i];
       d.appendChild(fd);
     }
-    d.onclick = ()=>{ settleFrame(); S.curFrame = i; bufDirty = true; renderView(); renderFrames(true); renderLayers(); };
-    d.addEventListener('pointerdown', ev => startFrameHold(ev, d, i));
+    /* Do NOT close over i. The strip keeps its DOM nodes when the frame count
+       is unchanged (see `reuse` above), and a reorder drag physically moves a
+       node with insertBefore — so a handler built with the index it was born
+       at addresses the wrong frame from the first drag onwards: taps select a
+       neighbour and the next drag picks up somebody else's pixels. Ask the DOM
+       where this button is standing at the moment the event fires. */
+    d.onclick = ()=>{
+      const fi = frameIndexOf(d);
+      if(fi < 0) return;
+      settleFrame(); S.curFrame = fi; bufDirty = true; renderView(); renderFrames(true); renderLayers();
+    };
+    d.addEventListener('pointerdown', ev => startFrameHold(ev, d, frameIndexOf(d)));
     wrap.appendChild(d);
   }
   if(!reuse){
@@ -4180,6 +4190,12 @@ function moveFrame(from, to){
 function frameEls(){
   return [...$('frames').children].filter(c => c.classList.contains('frame'));
 }
+/* The live position of a thumbnail in the strip = its frame index. Everything
+   that reads an index off the DOM goes through here so a reordered strip never
+   disagrees with the data. */
+function frameIndexOf(el){
+  return frameEls().indexOf(el);
+}
 function renumberFrames(){
   frameEls().forEach((el, i) => { const n = el.querySelector('.n'); if(n) n.textContent = i+1; });
 }
@@ -4192,6 +4208,7 @@ function releaseFramePointer(){
 
 function startFrameHold(e, el, idx){
   if(e.button != null && e.button > 0) return;
+  if(idx < 0) return;                  // node no longer in the strip
   releaseFramePointer();
   const wrap = $('frames');
   fptr = {
@@ -9272,7 +9289,7 @@ if(new URLSearchParams(location.search).has('admin')){
   try{ sessionStorage.setItem('wp_admin', '1'); }catch{}
 }
 /* bump when deploying — the fastest way to tell a stale cache from a real bug */
-const BUILD_ID = '2026-08-05 pwa';
+const BUILD_ID = '2026-08-05 frame-drag-index';
 const APP_VERSION = '0.9.3';
 const APP_UPDATED = '5 ส.ค. 2026';   // bump both when shipping a visible change
 const API_GALLERY = '/api/gallery';
