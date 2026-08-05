@@ -7,6 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="wadpixel">
 <meta name="application-name" content="wadpixel">
 <meta name="theme-color" content="#12131a">
+<link rel="manifest" href="./manifest.webmanifest">
 <title>wadpixel</title>
 <script>
 /* Logo — embedded so the app stays a single portable HTML file.
@@ -21,8 +22,10 @@ const LOGO_URI = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAMAAABl
   });
 })();
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+<!-- JSZip and gif.js used to be parser-blocking here. They are only ever
+     touched by the export menu, so a slow cdnjs was delaying first paint of a
+     drawing app for no reason at all; ensureLib() pulls them in on demand.
+     Hashes are pinned in LIB_SRI / GIF_WORKER_SRI next to the loader. -->
 <style>
 :root{
   --ink:#0d0e14;
@@ -520,9 +523,12 @@ body.dial-on #dialScrim{opacity:1;pointer-events:auto}
   background:var(--accent-2);opacity:0;transition:opacity .25s;pointer-events:none;
 }
 #saveDot.on{opacity:1}
+/* stays lit, not a blink: the autosave is broken until space is freed */
+#saveDot.fail{background:var(--danger);opacity:1}
 #btnSave{position:relative}
 .quota{font-size:10.5px;color:var(--dim);text-align:center;margin-top:10px;line-height:1.5}
 .quota b{color:var(--text);font-variant-numeric:tabular-nums}
+.quota .lnk{font:inherit;color:var(--accent);text-decoration:underline;padding:0}
 .hr{height:1px;background:var(--line);margin:14px 0 12px}
 .sec-lbl{font-size:10px;letter-spacing:1.1px;text-transform:uppercase;color:var(--dim);font-weight:600;margin-bottom:8px}
 
@@ -984,7 +990,9 @@ body.pc{
 body.pc.side-off{grid-template-columns:60px minmax(0,1fr) 0}
 @media (max-width:1180px){
   body.pc{grid-template-columns:56px minmax(0,1fr) 248px}
-  body.pc #palette{max-height:150px}
+  /* the palette cap that pairs with this lives below the base #palette rule —
+     media queries add no specificity, so it has to come later in source order
+     or the 200px default silently wins at every width */
 }
 body.pc #topbar{grid-column:1/-1;grid-row:1}
 body.pc #optBar{
@@ -1019,6 +1027,7 @@ body.pc #palette{
   flex-wrap:wrap;align-content:flex-start;
   overflow-x:hidden;overflow-y:auto;max-height:200px;
 }
+@media (max-width:1180px){ body.pc #palette{max-height:150px} }
 body.pc.side-off #sideR{display:none}
 body.pc #chromeGrab,body.pc #scrim,body.pc #dialBtn,body.pc #dialScrim,body.pc #lens{display:none}
 body.pc.chrome-hidden #timeline,body.pc.chrome-hidden #recentBar,body.pc.chrome-hidden #palette{display:flex}
@@ -1107,10 +1116,10 @@ body.pc.panning #view{cursor:grab}
   <button class="tb-btn" id="btnPlay" title="เล่น">
     <svg id="playIc" viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>
   </button>
-  <button class="tb-btn" id="btnUndo" disabled>
+  <button class="tb-btn" id="btnUndo" aria-label="ย้อนกลับ" title="ย้อนกลับ" disabled>
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
   </button>
-  <button class="tb-btn" id="btnRedo" disabled>
+  <button class="tb-btn" id="btnRedo" aria-label="ทำซ้ำ" title="ทำซ้ำ" disabled>
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg>
   </button>
   <button class="tb-btn" id="btnSave" title="เซฟ">
@@ -1131,7 +1140,7 @@ body.pc.panning #view{cursor:grab}
   <div id="restoreBar">
     <div class="rtx"><b id="rbLabel">ปรับขนาดแล้ว</b><span>undo ย้อนไม่ได้ แต่กู้กลับได้</span></div>
     <button id="rbGo">กู้กลับ</button>
-    <button class="rx" id="rbX">&times;</button>
+    <button class="rx" id="rbX" aria-label="ปิดแถบภาพอ้างอิง">&times;</button>
   </div>
   <div id="refBar">
     <div class="rf-top">
@@ -1141,9 +1150,9 @@ body.pc.panning #view{cursor:grab}
       <button class="rf-txt" id="rfDone">เสร็จ</button>
     </div>
     <div class="rf-row">
-      <button class="rf-step" id="rfMinus">−</button>
+      <button class="rf-step" id="rfMinus" aria-label="ย่อภาพอ้างอิง">−</button>
       <input type="range" id="rfScale" min="5" max="800" value="100">
-      <button class="rf-step" id="rfPlus">+</button>
+      <button class="rf-step" id="rfPlus" aria-label="ขยายภาพอ้างอิง">+</button>
       <span class="rf-val" id="rfVal">100%</span>
       <button class="rf-step" id="rfFlipH" title="พลิกแนวนอน">↔</button>
       <button class="rf-step" id="rfFlipV" title="พลิกแนวตั้ง">↕</button>
@@ -1206,9 +1215,9 @@ body.pc.panning #view{cursor:grab}
     </div>
     <button class="tb-btn" id="btnAddFrameHead" style="height:26px;font-size:11px;padding:0 8px">+ เฟรม</button>
     <button class="tb-btn" id="btnTags" style="height:26px;font-size:11px;padding:0 8px">Tags</button>
-    <button class="tb-btn" id="btnDupFrame" style="height:26px;font-size:11px;padding:0 8px">Dup</button>
+    <button class="tb-btn" id="btnDupFrame" aria-label="คัดลอกเฟรม" style="height:26px;font-size:11px;padding:0 8px">Dup</button>
     <button class="tb-btn" id="btnFrameOps" style="height:26px;font-size:11px;padding:0 8px" title="จัดการเฟรม: กลับลำดับ / ไป-กลับ / คัดลอก-วาง">เฟรม⋯</button>
-    <button class="tb-btn" id="btnDelFrame" style="height:26px;font-size:11px;padding:0 8px">Del</button>
+    <button class="tb-btn" id="btnDelFrame" aria-label="ลบเฟรม" style="height:26px;font-size:11px;padding:0 8px">Del</button>
   </div>
   <div id="frames"></div>
 </div>
@@ -1217,7 +1226,7 @@ body.pc.panning #view{cursor:grab}
 
 <div id="trayScrim"></div>
 <div id="cmdTray">
-  <div class="th"><b>คำสั่งและมุมมอง</b><button class="tb-btn" id="btnTrayClose" style="height:30px;padding:0 10px;font-size:11px">ปิด</button></div>
+  <div class="th"><b>คำสั่งและมุมมอง</b><button class="tb-btn" id="btnTrayClose" aria-label="ปิดถาดเครื่องมือ" style="height:30px;padding:0 10px;font-size:11px">ปิด</button></div>
   <div class="grid">
     <button class="tool" id="btnFit" title="พอดีจอ"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg><span class="cl">พอดีจอ</span></button>
     <button class="tool" id="btnTile" title="โหมดต่อลาย (seamless)"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg><span class="cl">ต่อลาย</span></button>
@@ -1242,12 +1251,12 @@ body.pc.panning #view{cursor:grab}
 <aside id="drawer">
   <div id="drawerHead">
     <h2>Layers</h2>
-    <button class="tb-btn" id="btnCloseDrawer" style="height:32px;padding:0 10px">ปิด</button>
+    <button class="tb-btn" id="btnCloseDrawer" aria-label="ปิดแผงเลเยอร์" style="height:32px;padding:0 10px">ปิด</button>
   </div>
   <div id="layerList"></div>
   <div id="drawerFoot">
     <button class="tb-btn" id="btnAddLayer">+ เพิ่ม</button>
-    <button class="tb-btn" id="btnDelLayer">ลบ</button>
+    <button class="tb-btn" id="btnDelLayer" aria-label="ลบเลเยอร์">ลบ</button>
     <button class="tb-btn" id="btnLayerOps">จัดการ</button>
     <button class="tb-btn" id="btnRefImg" title="นำภาพมาเป็นตัวอย่างให้วาดทับ">+ ภาพอ้างอิง</button>
     <input type="file" id="refImgInput" accept="image/*" style="display:none">
@@ -1460,6 +1469,10 @@ window.addEventListener('scroll', invalidateRects, {passive:true, capture:true})
 const $ = id => document.getElementById(id);
 /* Project and file names end up inside innerHTML in several modals, so a name
    like <img src=x onerror=...> would run. Escape before interpolating. */
+/* Numbers that came off the wire or out of storage are still strings until
+   proven otherwise — everything interpolated into innerHTML goes through esc()
+   or this, never raw. */
+const num = v => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
   c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
 /* Thumbnails come back out of localStorage, which anything on the origin can write. */
@@ -2490,12 +2503,20 @@ function entryBytes(e){
   if(e.snaps) return e.snaps.reduce((n,x)=>n + (x.data ? x.data.length : 0), 0);
   return 0;
 }
-function trimUndo(){
-  while(S.undoStack.length > MAX_UNDO) S.undoStack.shift();
+function trimStack(stack, keepOne){
+  while(stack.length > MAX_UNDO) stack.shift();
   let total = 0;
-  for(const e of S.undoStack) total += entryBytes(e);
+  for(const e of stack) total += entryBytes(e);
+  const floor = keepOne ? 1 : 0;
+  while(stack.length > floor && total > MAX_UNDO_BYTES) total -= entryBytes(stack.shift());
+}
+function trimUndo(){
   // never drop the only entry: one undo must always be available
-  while(S.undoStack.length > 1 && total > MAX_UNDO_BYTES) total -= entryBytes(S.undoStack.shift());
+  trimStack(S.undoStack, true);
+  /* Redo was never trimmed. It is filled from undo so it can't run away, but
+     each redo entry is a fresh snapshot of the same size — the real ceiling was
+     2x MAX_UNDO_BYTES, not the one the constant advertises. */
+  trimStack(S.redoStack, false);
 }
 /* Which layer+frame cells a scope covers, matching what the transforms edit:
    cell = here, layer = every frame of this layer, frame = every layer of this
@@ -2548,14 +2569,16 @@ function undo(){
   // a lifted selection would get stamped back on top of the restored pixels
   if(S.float){ S.float = null; S.floatRect = null; S.sel = null; }
   while(S.undoStack.length){
-    if(applyUndoStep(S.undoStack.pop(), -1)) return;
+    // the step just banked a same-sized snapshot on the redo side; keep that
+    // side inside the byte budget too instead of only trimming on new edits
+    if(applyUndoStep(S.undoStack.pop(), -1)){ trimStack(S.redoStack, false); return; }
   }
   updateUndoBtns();
 }
 function redo(){
   if(S.float){ S.float = null; S.floatRect = null; S.sel = null; }
   while(S.redoStack.length){
-    if(applyUndoStep(S.redoStack.pop(), 1)) return;
+    if(applyUndoStep(S.redoStack.pop(), 1)){ trimStack(S.undoStack, true); return; }
   }
   updateUndoBtns();
 }
@@ -3722,6 +3745,14 @@ function endPointer(e){
 }
 view.addEventListener('pointerup', endPointer);
 view.addEventListener('pointercancel', endPointer);
+/* Safety net. setPointerCapture is allowed to fail (it is wrapped in a silent
+   try at pointerdown), and an OS-level gesture can swallow the rest of a
+   sequence outright — either way the release never reaches the canvas and the
+   id stayed in `pointers` forever, so the NEXT single touch read as size===2
+   and locked the canvas into pinch mode until a reload. These fire only when
+   the canvas handler did not already clear the id, so nothing runs twice. */
+window.addEventListener('pointerup', e => { if(pointers.has(e.pointerId)) endPointer(e); });
+window.addEventListener('pointercancel', e => { if(pointers.has(e.pointerId)) endPointer(e); });
 
 /* right-click sampling shares the picker tool's path so both agree on what
    "nothing there" means */
@@ -3890,7 +3921,18 @@ function remapTags(fn){
     .map(t=>({...t, from: Math.max(0, t.from), to: Math.min(t.to, S.frameCount-1)}))
     .filter(t => t.from <= t.to && t.from < S.frameCount);
 }
+/* One shared ceiling for every path that grows the timeline. Without it a held
+   "+ frame" on a 1024x1024 project with 12 layers allocated 48 MB per tap, with
+   nothing to stop it — duplicateAllFrames was the only guarded route in. */
+function frameRoomFor(n){
+  if(S.frameCount + n > MAX_FRAMES){
+    toast(`จำกัด ${MAX_FRAMES} เฟรม — ลบเฟรมเก่าออกก่อน`);
+    return false;
+  }
+  return true;
+}
 function addFrame(){
+  if(!frameRoomFor(1)) return;
   settleFrame();
   // a reference layer holds one buffer shared by every frame — the guide
   // must stay visible wherever the playhead goes, and it is never written to
@@ -3903,6 +3945,7 @@ function addFrame(){
   bufDirty = true; renderAll(); markProjectDirty();
 }
 function dupFrame(){
+  if(!frameRoomFor(1)) return;
   settleFrame();
   const src = S.curFrame;
   for(const l of S.layers){
@@ -3978,6 +4021,7 @@ function reverseFrames(){
 }
 function pingPongFrames(){
   if(S.frameCount < 2){ toast('ต้องมีอย่างน้อย 2 เฟรม'); return; }
+  if(!frameRoomFor(S.frameCount - 2)) return;
   settleFrame();
   const saved = saveRestorePoint('ก่อนทำ ping-pong');
   const n = S.frameCount;
@@ -3995,7 +4039,7 @@ function pingPongFrames(){
   toast('ต่อเฟรมวนไป-กลับแล้ว ('+S.frameCount+' เฟรม)');
 }
 function duplicateAllFrames(){
-  if(S.frameCount + S.frameCount > 240){ toast('เฟรมจะเกิน 240 — เยอะไป'); return; }
+  if(!frameRoomFor(S.frameCount)) return;
   settleFrame();
   const saved = saveRestorePoint('ก่อนคัดลอกทุกเฟรม');
   const n = S.frameCount;
@@ -5263,11 +5307,38 @@ let expScale = 1;
 const EXP_SCALES = [1, 2, 4, 8];
 // iOS Safari refuses canvases past 4096x4096 and hands back a blank one
 const CANVAS_AREA_CAP = 4096 * 4096;
+/* Area alone was not the limit. iOS refuses any SIDE past 4096 too, so a sheet
+   like 6144x768 (area 4.7M, well under the cap) sailed through the check and
+   came back blank. Both bounds now have to hold. */
+const CANVAS_SIDE_CAP = 4096;
+function fitsCanvas(w, h){
+  return w <= CANVAS_SIDE_CAP && h <= CANVAS_SIDE_CAP && w*h <= CANVAS_AREA_CAP;
+}
 function safeExpScale(w, h){
   let s = expScale;
-  while(s > 1 && w*s * h*s > CANVAS_AREA_CAP) s = s === 8 ? 4 : (s === 4 ? 2 : 1);
+  while(s > 1 && !fitsCanvas(w*s, h*s)) s = s === 8 ? 4 : (s === 4 ? 2 : 1);
   return s;
 }
+/* GIF is 256 colours no matter how big the pixels get, so scaling a sprite past
+   roughly a phone screen buys nothing and costs the square of it: 256x256 at x8
+   is a 2048^2 canvas held per frame — 24 frames was ~400 MB live, which is a
+   tab kill on mobile Safari long before the encoder finishes. */
+const GIF_SIDE_CAP = 1024;
+const GIF_BYTE_BUDGET = 192 * 1024 * 1024;   // every frame is live at once
+function safeGifScale(){
+  let s = expScale > 1
+    ? safeExpScale(S.W, S.H)
+    : Math.max(1, Math.min(8, Math.floor(512/Math.max(S.W, S.H))));
+  const down = () => { s = s === 8 ? 4 : (s === 4 ? 2 : 1); };
+  while(s > 1 && Math.max(S.W, S.H)*s > GIF_SIDE_CAP) down();
+  while(s > 1 && S.W*s * S.H*s * 4 * S.frameCount > GIF_BYTE_BUDGET) down();
+  return s;
+}
+/* gif.js `quality` is NeuQuant's sample interval: 1 reads every pixel and is
+   ten times the work of the library default. Upscaled pixel art repeats each
+   source pixel scale^2 times, so a coarse sample still sees every colour —
+   only a 1:1 export needs the careful pass. */
+const gifQuality = scale => Math.max(1, Math.min(10, scale * 2));
 
 async function exportFramePNG(){
   expStatus('กำลังสร้าง PNG…');
@@ -5287,8 +5358,9 @@ async function exportFramePNG(){
 
 async function exportSheet(){
   expStatus('กำลังสร้าง sprite sheet…');
-  const cols = Math.min(S.frameCount, Math.ceil(Math.sqrt(S.frameCount)));
-  const rows = Math.ceil(S.frameCount / cols);
+  let cols, rows;
+  try{ ({cols, rows} = assertSheetFits()); }
+  catch(err){ expStatus(err.message); return; }
   const k = safeExpScale(S.W*cols, S.H*rows);
   const c = document.createElement('canvas');
   c.width = S.W*cols*k; c.height = S.H*rows*k;
@@ -5308,7 +5380,8 @@ async function exportSheet(){
   }, 'image/png');
 }
 async function exportZip(){
-  if(typeof JSZip === 'undefined'){ expStatus('โหลด JSZip ไม่สำเร็จ — ตรวจอินเทอร์เน็ต'); return; }
+  expStatus('กำลังเตรียมตัวบีบอัด…');
+  if(!await ensureLib('JSZip')){ expStatus('โหลด JSZip ไม่สำเร็จ — ตรวจอินเทอร์เน็ต'); return; }
   expStatus('กำลังบีบอัด…');
   const zip = new JSZip();
   const k = safeExpScale(S.W, S.H);
@@ -5329,43 +5402,98 @@ async function exportZip(){
   download(out, `frames_${S.W*k}x${S.H*k}.zip`);
   expStatus(`เสร็จ · ${S.frameCount} ไฟล์ · ${S.W*k}×${S.H*k}`);
 }
+/* Both export libraries load lazily. Every call site already guarded on the
+   global being undefined, so the guard just becomes "…or fetch it now". */
+const LIB_URL = {
+  JSZip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+  GIF:   'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js'
+};
+/* Subresource Integrity. Without it, anything cdnjs serves runs with full access
+   to every drawing in localStorage, on the word of a third party. Hashes were
+   taken from the bytes themselves — the npm tarball and the upstream repo agree
+   byte for byte, and cdnjs mirrors npm.
+   If a hash ever has to be re-pinned: openssl dgst -sha512 -binary FILE | openssl base64 -A */
+const LIB_SRI = {
+  JSZip: 'sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg==',
+  GIF:   'sha512-nNOFtIS+H0lwgdUDaPn/g1ssw3uN9AkEM7zy2wLaTQeLQNeNiitUcLpEpDIh3Z4T22MdeTNru/SQbNM4ig2rng=='
+};
+const _libLoad = {};
+function ensureLib(name){
+  if(typeof window[name] !== 'undefined') return Promise.resolve(true);
+  if(!_libLoad[name]) _libLoad[name] = new Promise(res => {
+    const el = document.createElement('script');
+    el.src = LIB_URL[name];
+    el.async = true;
+    // setAttribute, not the .integrity property — the property reflection is
+    // patchier than the attribute, and a silently-dropped hash is no hash.
+    // integrity also needs crossorigin, or the browser ignores it outright.
+    el.setAttribute('integrity', LIB_SRI[name]);
+    el.setAttribute('crossorigin', 'anonymous');
+    el.onload  = ()=> res(typeof window[name] !== 'undefined');
+    // a failed load must not be cached, or one flaky moment kills export
+    // for the rest of the session
+    el.onerror = ()=>{ _libLoad[name] = null; res(false); };
+    document.head.appendChild(el);
+  });
+  return _libLoad[name];
+}
 let _gifWorkerURL = null;
+/* The worker can't use the integrity attribute — it is fetched and re-wrapped as
+   a Blob URL so it counts as same-origin, which is the whole point of doing it
+   this way. So the check happens by hand: this file ends up running as code with
+   the same reach as the page, and "it came back 200" is not a guarantee. */
+const GIF_WORKER_SRI = 'sha512-3piO8GKVGn3D+eEWnTquDnlxM00ESMZpYNAnjmOMswHrGihZvdlsRjSW1bHLqahzIoyL9YWlLWVYRV4J8AHwtg==';
+async function sriOf(buf){
+  const d = await crypto.subtle.digest('SHA-512', buf);
+  let s = '';
+  const b = new Uint8Array(d);
+  for(let i=0;i<b.length;i++) s += String.fromCharCode(b[i]);
+  return 'sha512-' + btoa(s);
+}
 async function gifWorkerURL(){
   if(_gifWorkerURL) return _gifWorkerURL;
   const src = 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js';
-  const res = await fetch(src);
+  const res = await fetchWithTimeout(src);
   if(!res.ok) throw new Error('โหลด gif.worker.js ไม่สำเร็จ');
-  const code = await res.text();
-  _gifWorkerURL = URL.createObjectURL(new Blob([code], {type:'application/javascript'}));
+  const buf = await res.arrayBuffer();
+  // subtle.crypto is https-only; on a plain-http origin skip rather than break
+  if(crypto && crypto.subtle){
+    const got = await sriOf(buf);
+    if(got !== GIF_WORKER_SRI)
+      throw new Error('gif.worker.js ที่ CDN ส่งมาไม่ตรงลายเซ็นที่คาดไว้ — ยกเลิกเพื่อความปลอดภัย');
+  }
+  _gifWorkerURL = URL.createObjectURL(new Blob([buf], {type:'application/javascript'}));
   return _gifWorkerURL;
 }
 async function exportGif(){
-  if(typeof GIF === 'undefined'){ expStatus('โหลด gif.js ไม่สำเร็จ — ตรวจอินเทอร์เน็ต'); return; }
+  expStatus('กำลังเตรียมตัวเข้ารหัส…');
+  if(!await ensureLib('GIF')){ expStatus('โหลด gif.js ไม่สำเร็จ — ตรวจอินเทอร์เน็ต'); return; }
   let workerScript;
   try{ workerScript = await gifWorkerURL(); }
   catch(e){ expStatus(e.message); return; }
   expStatus('กำลังเข้ารหัส GIF…');
-  const scale = expScale > 1
-    ? safeExpScale(S.W, S.H)
-    : Math.max(1, Math.min(8, Math.floor(512/Math.max(S.W,S.H))));
+  const scale = safeGifScale();
   const gif = new GIF({
-    workers: 2, quality: 1, width: S.W*scale, height: S.H*scale,
+    workers: 2, quality: gifQuality(scale), width: S.W*scale, height: S.H*scale,
     workerScript
   });
+  /* One canvas for the whole run, snapshotted per frame with copy:true. A fresh
+     canvas per frame left every backing store alive until render() finished,
+     on top of the copies the encoder keeps — twice the peak for no reason. */
+  const c = document.createElement('canvas');
+  c.width = S.W*scale; c.height = S.H*scale;
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
   for(let i=0;i<S.frameCount;i++){
-    const f = flattenFrame(i);
-    const c = document.createElement('canvas');
-    c.width = S.W*scale; c.height = S.H*scale;
-    const ctx = c.getContext('2d');
-    ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,c.width,c.height);
-    ctx.drawImage(f, 0, 0, c.width, c.height);
-    gif.addFrame(c, {delay: frameDur(i)});
+    ctx.drawImage(flattenFrame(i), 0, 0, c.width, c.height);
+    gif.addFrame(ctx, {delay: frameDur(i), copy: true});
   }
   gif.on('progress', p => expStatus('เข้ารหัส ' + Math.round(p*100) + '%'));
   gif.on('finished', blob => {
+    const cut = scale < expScale ? ` (ลดจาก ×${expScale} — GIF ใหญ่เกินกว่าจะเข้ารหัสไหว)` : '';
     download(blob, hasCustomDurs() ? 'animation.gif' : `animation_${S.fps}fps.gif`);
-    expStatus('เสร็จ · GIF ' + (S.W*scale) + '×' + (S.H*scale));
+    expStatus('เสร็จ · GIF ' + (S.W*scale) + '×' + (S.H*scale) + cut);
   });
   gif.render();
 }
@@ -5378,6 +5506,11 @@ const STORE_PREFIX = 'pxloom:';
 const STORE_INDEX  = 'pxloom:index';
 const AUTOSAVE_KEY = 'pxloom:auto';
 const FORMAT_VER   = 1;
+/* Ceilings a project blob has to respect. They match what the app itself can
+   produce: the new/resize dialogs clamp at 1024, addLayer stops at MAX_LAYERS,
+   and duplicateAllFrames caps at 240 — MAX_FRAMES leaves headroom above that. */
+const MAX_CANVAS = 1024;
+const MAX_FRAMES = 480;
 
 /* Hybrid codec: RLE for flat pixel art, base64 fallback for noisy data
    so worst case is 1.33x raw instead of RLE's 2.25x blowup. */
@@ -5475,26 +5608,41 @@ function serialize(name){
     }))
   };
 }
+/* A project blob can arrive from a .json file, a dropped PNG, or another user's
+   gallery post via remix — none of which this app necessarily wrote. Every
+   ceiling is checked against what the editor itself can produce, so a hostile
+   or corrupt header is refused with a readable message instead of being handed
+   to Uint8ClampedArray as an allocation size. */
+function validateProject(obj){
+  const pos = v => Number.isInteger(v) && v > 0;
+  if(!obj || !Array.isArray(obj.layers) || !obj.layers.length || !obj.w || !obj.h)
+    throw new Error('รูปแบบไฟล์ไม่ถูกต้อง');
+  if(!pos(obj.w) || !pos(obj.h) || obj.w > MAX_CANVAS || obj.h > MAX_CANVAS)
+    throw new Error(`ขนาดผืนผ้าใบ ${obj.w}×${obj.h} ไม่ถูกต้อง — รับได้ 1–${MAX_CANVAS} px`);
+  if(obj.layers.length > MAX_LAYERS)
+    throw new Error(`ไฟล์นี้มี ${obj.layers.length} เลเยอร์ — เกินที่รองรับ (${MAX_LAYERS})`);
+  if(obj.frameCount !== undefined && (!pos(obj.frameCount) || obj.frameCount > MAX_FRAMES))
+    throw new Error(`จำนวนเฟรมไม่ถูกต้อง — รับได้ 1–${MAX_FRAMES}`);
+  for(const L of obj.layers){
+    if(!L || typeof L !== 'object' || (L.f !== undefined && !Array.isArray(L.f)))
+      throw new Error('รูปแบบเลเยอร์ไม่ถูกต้อง');
+    if(L.f && L.f.length > MAX_FRAMES)
+      throw new Error(`ไฟล์นี้มี ${L.f.length} เฟรม — เกินที่รองรับ (${MAX_FRAMES})`);
+  }
+}
 function deserialize(obj){
-  if(!obj || !obj.layers || !obj.w || !obj.h) throw new Error('รูปแบบไฟล์ไม่ถูกต้อง');
-  // a float or marquee left over from the previous project would be stamped
-  // into this one on the next commit, at the wrong size
-  stopPlayback();
-  S.sel = null; S.selMask = null; S.float = null; S.floatRect = null; S.selDrag = null;
-  S.pendShape = null; pendDrag = null;
+  validateProject(obj);
   const px = obj.w * obj.h;
-  S.W = obj.w; S.H = obj.h;
-  S.fps = obj.fps || 8;
-  S.durs = Array.isArray(obj.durs) ? obj.durs.slice() : [];
-  S.tags = Array.isArray(obj.tags) ? obj.tags : [];
-  S.tileMode = !!obj.tileMode;
-  setSym(obj.sym || 0);
-  S.palette = Array.isArray(obj.palette) ? obj.palette.slice(0,64) : DEFAULT_PALETTE.slice();
-  S.recent = Array.isArray(obj.recent) ? obj.recent.slice(0,MAX_RECENT) : [];
-  S.frameCount = obj.frameCount || ((obj.layers.find(L=>!L.r)||obj.layers[0]).f.length) || 1;
-  if(!(S.frameCount > 0)) S.frameCount = 1;
-  syncDurs();
-  S.layers = obj.layers.map((L,i) => ({
+  let frameCount = obj.frameCount || ((obj.layers.find(L=>!L.r)||obj.layers[0]).f || []).length || 1;
+  if(!(frameCount > 0)) frameCount = 1;
+  if(frameCount > MAX_FRAMES) frameCount = MAX_FRAMES;
+
+  /* Every buffer is allocated into locals FIRST. A load that ran out of memory
+     partway used to leave S.W/S.H pointing at a canvas whose frames were never
+     built, and every render after that threw — only a reload got the app back.
+     Nothing below the commit line can fail, so a throw here is survivable: the
+     project that was open stays open. */
+  const layers = obj.layers.map((L,i) => ({
     name: L.n || ('Layer '+(i+1)),
     visible: L.v !== false,
     opacity: typeof L.o === 'number' ? L.o : 1,
@@ -5502,12 +5650,12 @@ function deserialize(obj){
     frames: (()=> {
       if(L.r){
         // filled in below by renderRefLayer once the canvas size is bound
-        const fr = (L.f && L.f.length) ? L.f.map(p => unpackFrame(p, px)) : [];
-        while(fr.length < S.frameCount) fr.push(fr[0] || new Uint8ClampedArray(px*4));
+        const fr = (L.f && L.f.length) ? L.f.slice(0, frameCount).map(p => unpackFrame(p, px)) : [];
+        while(fr.length < frameCount) fr.push(fr[0] || new Uint8ClampedArray(px*4));
         return fr;
       }
-      const fr = L.f.map(p => unpackFrame(p, px));
-      while(fr.length < S.frameCount) fr.push(new Uint8ClampedArray(px*4));
+      const fr = (L.f || []).slice(0, frameCount).map(p => unpackFrame(p, px));
+      while(fr.length < frameCount) fr.push(new Uint8ClampedArray(px*4));
       return fr;
     })(),
     ...(L.r ? {
@@ -5518,9 +5666,31 @@ function deserialize(obj){
       xf: Array.isArray(L.xf) ? {x:L.xf[0], y:L.xf[1], s:L.xf[2]} : {x:0, y:0, s:1}
     } : {})
   }));
-  for(const L of S.layers) if(L.ref && L.src) renderRefLayer(L);
-  if(!S.layers.length) S.layers = [{name:'Layer 1', visible:true, opacity:1, frames:[new Uint8ClampedArray(px*4)]}];
+
+  /* ---- commit ---- */
+  // a float or marquee left over from the previous project would be stamped
+  // into this one on the next commit, at the wrong size
+  stopPlayback();
+  S.sel = null; S.selMask = null; S.float = null; S.floatRect = null; S.selDrag = null;
+  S.pendShape = null; pendDrag = null;
+  /* Size and pixels land together. setSym() renders, so leaving the outgoing
+     project's buffers in place for even one statement after S.W changed made
+     frameFor() measure 4x4 frames against an 8x8 canvas and fire the
+     "ขนาดไม่ตรงผ้าใบ ซ่อมให้แล้ว" warning on a load that was perfectly fine. */
+  S.W = obj.w; S.H = obj.h;
+  S.frameCount = frameCount;
+  S.layers = layers.length ? layers
+    : [{name:'Layer 1', visible:true, opacity:1, frames:[new Uint8ClampedArray(px*4)]}];
   S.curLayer = 0; S.curFrame = 0;
+  S.fps = obj.fps || 8;
+  S.durs = Array.isArray(obj.durs) ? obj.durs.slice() : [];
+  syncDurs();
+  S.tags = Array.isArray(obj.tags) ? obj.tags : [];
+  S.tileMode = !!obj.tileMode;
+  S.palette = Array.isArray(obj.palette) ? obj.palette.slice(0,64) : DEFAULT_PALETTE.slice();
+  S.recent = Array.isArray(obj.recent) ? obj.recent.slice(0,MAX_RECENT) : [];
+  for(const L of S.layers) if(L.ref && L.src) renderRefLayer(L);
+  setSym(obj.sym || 0);
   S.undoStack = []; S.redoStack = [];
   buf.width = S.W; buf.height = S.H;
   scratch.width = S.W; scratch.height = S.H;
@@ -5592,7 +5762,14 @@ function saveProject(name, id){
   try { writeIndex(idx); }
   catch(err){
     // index too big from thumbnails — drop thumbs and retry
-    writeIndex(idx.map(p => ({...p, thumb:''})));
+    try { writeIndex(idx.map(p => ({...p, thumb:''}))); }
+    catch(err2){
+      /* Still no room for the index. The blob above already landed, and a blob
+         with no index row is invisible in the project list while still eating
+         the quota — take it back out before reporting the failure. */
+      try { localStorage.removeItem(STORE_PREFIX + pid); } catch(_){}
+      throw new Error('พื้นที่เก็บเต็ม — ลบโปรเจกต์เก่าออกก่อน หรือส่งออกเป็นไฟล์ .json');
+    }
   }
   curProjectId = pid; curProjectName = payload.name;
   dirtySinceSave = false;
@@ -5789,7 +5966,7 @@ async function offerEmbedded(file){
     <h2>ไฟล์นี้เปิดต่อได้</h2>
     <p class="sub">
       <b>${esc(obj.name || 'ไม่มีชื่อ')}</b>${by ? ' · โดย ' + esc(by) : ''}<br>
-      ${obj.w}×${obj.h} · ${obj.frameCount || 1} เฟรม · ${(obj.layers||[]).length} เลเยอร์
+      ${num(obj.w)}×${num(obj.h)} · ${num(obj.frameCount) || 1} เฟรม · ${(obj.layers||[]).length} เลเยอร์
     </p>
     <button class="big-btn" id="ceOpen">เปิดเป็นโปรเจกต์ (แก้ต่อได้)</button>
     <button class="big-btn ghost" id="ceImg">นำเข้าเป็นภาพแบนๆ</button>
@@ -5817,17 +5994,31 @@ function markProjectDirty(){
   clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(runAutosave, 3000);
 }
+let autosaveFailed = false;
 function runAutosave(){
   if(!dirtySinceSave) return;
+  const dot = $('saveDot');
   try {
     const payload = serialize(curProjectName || 'งานล่าสุด');
     payload.autoOf = curProjectId;
     localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(payload));
-    const dot = $('saveDot');
-    dot.classList.add('on');
-    setTimeout(()=>dot.classList.remove('on'), 1200);
+    autosaveFailed = false;
+    if(dot){
+      dot.classList.remove('fail');
+      dot.classList.add('on');
+      setTimeout(()=>dot.classList.remove('on'), 1200);
+    }
   } catch(err){
-    // silent — autosave failure shouldn't interrupt drawing
+    /* Quota. Staying silent meant the dot simply stopped blinking while the
+       user kept drawing for another hour on work that nothing was saving —
+       a 128x128 project with 4 layers and 16 frames already serialises to
+       ~5.3 MB, past what the browser will hold. Say it once, then leave the
+       dot red so the state is visible without nagging every three seconds. */
+    if(dot){ dot.classList.add('fail', 'on'); }
+    if(!autosaveFailed){
+      autosaveFailed = true;
+      toast('เซฟอัตโนมัติไม่ได้ — พื้นที่เบราว์เซอร์เต็ม ส่งออกเป็นไฟล์ .json เก็บไว้ก่อน', 5200);
+    }
   }
 }
 function hasAutosave(){
@@ -5988,10 +6179,40 @@ function doCropToContent(){
 /* ══════════════ ANIMATION TAGS & ATLAS ══════════════ */
 /* Tags let one timeline hold several named clips: idle 0-3, walk 4-9, etc.
    Without tags the whole timeline exports as a single clip. */
+/* Atlases are 1:1 by definition — an engine reads frame rects straight off the
+   sheet — so an oversized sheet can't be scaled down, only laid out differently.
+   The square-ish default overflows on tall or wide frames long before the pixel
+   count is a problem (a 256x32 sprite in 9 frames wants 768x96 and gets it, but
+   a 1024-wide one at 5 columns asks for 5120 and iOS hands back a blank canvas),
+   so try every column count and keep the most square one that actually fits. */
 function sheetLayout(){
-  const cols = Math.min(S.frameCount, Math.ceil(Math.sqrt(S.frameCount)));
-  const rows = Math.ceil(S.frameCount / cols);
-  return {cols, rows, w:S.W*cols, h:S.H*rows};
+  const n = S.frameCount;
+  const square = Math.min(n, Math.ceil(Math.sqrt(n)));
+  const mk = cols => {
+    const rows = Math.ceil(n / cols);
+    return {cols, rows, w:S.W*cols, h:S.H*rows};
+  };
+  const best = mk(square);
+  if(fitsCanvas(best.w, best.h)) return {...best, fits:true};
+  let pick = null;
+  for(let cols=1; cols<=n; cols++){
+    const L = mk(cols);
+    if(!fitsCanvas(L.w, L.h)) continue;
+    // closest aspect ratio to square wins
+    const score = Math.abs(Math.log(L.w / L.h));
+    if(!pick || score < pick.score) pick = {...L, score};
+  }
+  return pick ? {cols:pick.cols, rows:pick.rows, w:pick.w, h:pick.h, fits:true}
+              : {...best, fits:false};
+}
+/* Callers that actually allocate the sheet stop here rather than handing the
+   browser a size it answers with a blank image and no error. */
+function assertSheetFits(){
+  const L = sheetLayout();
+  if(!L.fits) throw new Error(
+    `sprite sheet ${L.w}×${L.h} ใหญ่เกินที่เบราว์เซอร์รับไหว (สูงสุด ${CANVAS_SIDE_CAP} px ต่อด้าน) — ` +
+    `ลดขนาดผ้าใบหรือแบ่งเป็นหลายไฟล์`);
+  return L;
 }
 function frameRect(i, cols){
   return {x:(i%cols)*S.W, y:Math.floor(i/cols)*S.H, w:S.W, h:S.H};
@@ -7178,7 +7399,7 @@ function showHome(){
         <div class="pth">${safeThumb(pj.thumb) ? '<img src="'+safeThumb(pj.thumb)+'" style="width:100%;height:100%;image-rendering:pixelated;display:block">' : ''}</div>
         <div class="pi">
           <b>${esc(pj.name)}</b>
-          <span>${pj.w}×${pj.h} · ${pj.frames} เฟรม · ${fmtTime(pj.saved)}</span>
+          <span>${num(pj.w)}×${num(pj.h)} · ${num(pj.frames)} เฟรม · ${esc(fmtTime(pj.saved))}</span>
         </div>`;
       el.onclick = ()=>{
         if(dirty && !confirm('งานปัจจุบันยังไม่ได้บันทึก จะโหลดทับไหม?')) return;
@@ -7314,7 +7535,7 @@ function showSaveLoad(){
     <div class="hr"></div>
     <div class="sec-lbl">งานในเครื่อง (${idx.length})</div>
     <div id="slList"></div>
-    <p class="quota">ใช้พื้นที่ <b>${fmtSize(used)}</b> · โควตาเบราว์เซอร์ราว 5 MB<br>งานใหญ่ควรส่งออกเป็นไฟล์ .json เก็บไว้<br>build <b>${BUILD_ID}</b></p>
+    <p class="quota">ใช้พื้นที่ <b>${fmtSize(used)}</b> · โควตาเบราว์เซอร์ราว 5 MB<br>งานใหญ่ควรส่งออกเป็นไฟล์ .json เก็บไว้<br>build <b>${BUILD_ID}</b> · ออฟไลน์ <b id="swState">—</b>${swActive() ? ' · <button id="swReset" class="lnk">ล้างแคช</button>' : ''}</p>
     ${IS_ADMIN ? '<button class="big-btn ghost" id="slInit">ตั้งค่าเซิร์ฟเวอร์ครั้งแรก</button>' : ''}
     <button class="big-btn ghost" id="slClose">ปิด</button>
     <button class="sup-btn" id="slSupport"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.7 1.1-1a5.5 5.5 0 0 0 0-7.9Z"/></svg> สนับสนุนผู้พัฒนา</button>
@@ -7331,7 +7552,7 @@ function showSaveLoad(){
         <div class="pth">${safeThumb(p.thumb) ? '<img src="'+safeThumb(p.thumb)+'" style="width:100%;height:100%;image-rendering:pixelated;display:block">' : ''}</div>
         <div class="pi">
           <b>${esc(p.name)}</b>
-          <span>${p.w}×${p.h} · ${p.frames} เฟรม · ${p.layers} เลเยอร์ · ${fmtTime(p.saved)}</span>
+          <span>${num(p.w)}×${num(p.h)} · ${num(p.frames)} เฟรม · ${num(p.layers)} เลเยอร์ · ${esc(fmtTime(p.saved))}</span>
         </div>
         <button class="pdel" title="ลบ"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
       `;
@@ -7359,6 +7580,7 @@ function showSaveLoad(){
       toast('บันทึก "'+nm+'" แล้ว');
     } catch(err){ toast(err.message, 3200); }
   };
+  syncSwState();
   $('slSave').onclick = ()=>doSave(false);
   if($('slSaveNew')) $('slSaveNew').onclick = ()=>doSave(true);
   $('slFileOut').onclick = ()=>{ exportProjectFile(); toast('ส่งออกไฟล์แล้ว'); };
@@ -7736,7 +7958,7 @@ function showTags(){
 /* ---- atlas exports: sheet PNG + engine metadata, bundled in a zip ---- */
 function buildSheetCanvas(){
   commitFloat();
-  const {cols, w, h} = sheetLayout();
+  const {cols, w, h} = assertSheetFits();
   const c = document.createElement('canvas');
   c.width = w; c.height = h;
   const ctx = c.getContext('2d');
@@ -7747,7 +7969,8 @@ function buildSheetCanvas(){
   return c;
 }
 async function exportAtlas(kind){
-  if(typeof JSZip === 'undefined'){ expStatus('โหลด JSZip ไม่สำเร็จ — ตรวจอินเทอร์เน็ต'); return; }
+  expStatus('กำลังเตรียมตัวบีบอัด…');
+  if(!await ensureLib('JSZip')){ expStatus('โหลด JSZip ไม่สำเร็จ — ตรวจอินเทอร์เน็ต'); return; }
   expStatus('กำลังสร้าง atlas…');
   try {
     const base = baseName();
@@ -8466,6 +8689,11 @@ function showColorPicker(startHex, onPick){
     huec.strokeStyle = 'rgba(0,0,0,.55)'; huec.lineWidth = 1; huec.stroke();
   }
   function sync(fromHexField){
+    /* sync() is also called from a requestAnimationFrame when the tab is
+       switched back in. If the modal closed inside that same frame the nodes
+       are already gone and every $() below is null — bail instead of throwing
+       an uncaught TypeError into the console. */
+    if(!$('cpPrev')) return;
     current = hsvToHex(hu,sa,va);
     $('cpPrev').style.background = current;
     if(!fromHexField) $('cpHex').value = current;
@@ -8614,7 +8842,7 @@ async function fetchLospecPalette(input){
   const url = slug
     ? `https://lospec.com/palette-list/${slug}.json`
     : input;
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url);
   if(!res.ok) throw new Error('โหลดไม่ได้ (' + res.status + ')');
   const ctype = res.headers.get('content-type') || '';
   if(ctype.includes('json') || slug){
@@ -9044,7 +9272,7 @@ if(new URLSearchParams(location.search).has('admin')){
   try{ sessionStorage.setItem('wp_admin', '1'); }catch{}
 }
 /* bump when deploying — the fastest way to tell a stale cache from a real bug */
-const BUILD_ID = '2026-08-05 pc-mode-ux';
+const BUILD_ID = '2026-08-05 pwa';
 const APP_VERSION = '0.9.3';
 const APP_UPDATED = '5 ส.ค. 2026';   // bump both when shipping a visible change
 const API_GALLERY = '/api/gallery';
@@ -9070,7 +9298,7 @@ const likedAdd = slug        => { const l = likedAll(); if(!l.includes(slug)){ l
 /* same sheet, with the project embedded — used for sharing so a post can be
    reopened, not just looked at */
 async function sheetDataURLShare(author){
-  const {cols, rows, w, h} = sheetLayout();
+  const {cols, rows, w, h} = assertSheetFits();
   const c = document.createElement('canvas');
   c.width = w; c.height = h;
   const ctx = c.getContext('2d');
@@ -9088,7 +9316,7 @@ async function sheetDataURLShare(author){
   });
 }
 function sheetDataURL(){
-  const {cols, rows, w, h} = sheetLayout();
+  const {cols, rows, w, h} = assertSheetFits();
   const c = document.createElement('canvas');
   c.width = w; c.height = h;
   const ctx = c.getContext('2d');
@@ -9100,23 +9328,23 @@ function sheetDataURL(){
 }
 function gifDataURL(onProgress){
   return new Promise(async (resolve, reject)=>{
-    if(typeof GIF === 'undefined') return reject(new Error('โหลด gif.js ไม่สำเร็จ — ตรวจอินเทอร์เน็ต'));
+    if(!await ensureLib('GIF')) return reject(new Error('โหลด gif.js ไม่สำเร็จ — ตรวจอินเทอร์เน็ต'));
     let workerScript;
     try{ workerScript = await gifWorkerURL(); }
     catch(e){ return reject(e); }
     const scale = Math.max(1, Math.min(6, Math.floor(256/Math.max(S.W, S.H))));
     const gif = new GIF({
-      workers: 2, quality: 1, width: S.W*scale, height: S.H*scale,
+      workers: 2, quality: gifQuality(scale), width: S.W*scale, height: S.H*scale,
       workerScript
     });
+    const c = document.createElement('canvas');           // reused, same as exportGif
+    c.width = S.W*scale; c.height = S.H*scale;
+    const ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
     for(let i=0;i<S.frameCount;i++){
-      const c = document.createElement('canvas');
-      c.width = S.W*scale; c.height = S.H*scale;
-      const ctx = c.getContext('2d');
-      ctx.imageSmoothingEnabled = false;
       ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, c.width, c.height);
       ctx.drawImage(flattenFrame(i), 0, 0, c.width, c.height);
-      gif.addFrame(c, {delay: frameDur(i)});
+      gif.addFrame(ctx, {delay: frameDur(i), copy: true});
     }
     if(onProgress) gif.on('progress', p => onProgress(Math.round(p*100)));
     gif.on('finished', blob => {
@@ -9130,8 +9358,25 @@ function gifDataURL(onProgress){
 }
 
 /* ---- เรียก API ---- */
-async function apiCall(url, opts){
-  const r = await fetch(url, opts);
+/* Every request gets a deadline. A phone that walks out of signal mid-upload
+   leaves fetch pending forever — the share modal used to sit on "กำลังอัปโหลด…"
+   with no error, no retry, and no way back except closing it. */
+const NET_TIMEOUT = 25000;
+async function fetchWithTimeout(url, opts = {}, ms = NET_TIMEOUT){
+  const ac = new AbortController();
+  const t = setTimeout(()=>ac.abort(), ms);
+  try{
+    return await fetch(url, {...opts, signal: ac.signal});
+  }catch(err){
+    if(err && err.name === 'AbortError')
+      throw new Error(`เซิร์ฟเวอร์ไม่ตอบใน ${Math.round(ms/1000)} วินาที — ลองใหม่อีกครั้ง`);
+    throw new Error('ต่อเน็ตไม่ได้ — เช็คสัญญาณแล้วลองใหม่');
+  }finally{
+    clearTimeout(t);
+  }
+}
+async function apiCall(url, opts, ms){
+  const r = await fetchWithTimeout(url, opts, ms);
   let data = null;
   try{ data = await r.json(); }catch{}
   if(!r.ok || !data || data.ok === false){
@@ -9282,7 +9527,7 @@ async function loadPostProject(p){
   for(const url of urls){
     let bytes;
     try{
-      const res = await fetch(url, {cache:'no-store'});
+      const res = await fetchWithTimeout(url, {cache:'no-store'});
       if(!res.ok) throw new Error('HTTP ' + res.status);
       bytes = new Uint8Array(await res.arrayBuffer());
     }catch(err){
@@ -9316,7 +9561,7 @@ async function diagnoseRemix(p){
                 : 'ไม่มี (ปกติ — รายการแกลเลอรีไม่ส่งมาให้)');
 
   try{
-    const r = await fetch(API_PROJECT + '?slug=' + encodeURIComponent(p.slug || ''));
+    const r = await fetchWithTimeout(API_PROJECT + '?slug=' + encodeURIComponent(p.slug || ''));
     const txt = await r.text();
     let body = null;
     try{ body = JSON.parse(txt); }catch{}
@@ -9328,7 +9573,7 @@ async function diagnoseRemix(p){
   }
 
   try{
-    const r = await fetch(p.url, {cache:'no-store'});
+    const r = await fetchWithTimeout(p.url, {cache:'no-store'});
     const bytes = new Uint8Array(await r.arrayBuffer());
     add('ดึงไฟล์รูปตรงๆ จากเบราว์เซอร์', r.ok,
         `HTTP ${r.status} · ${(bytes.length/1024).toFixed(0)} KB · ${r.headers.get('content-type') || 'ไม่บอกชนิด'} · ${isPNG(bytes) ? 'เป็น PNG' : 'ไม่ใช่ PNG'}`);
@@ -9407,7 +9652,19 @@ function showServerInit(){
     btn.disabled = true; btn.textContent = 'กำลังรัน…';
     try{
       // key rides in the query string exactly as admin-init reads it
-      const r = await fetch(API_INIT + '?key=' + encodeURIComponent(key), {method:'POST'});
+      /* The key used to ride in the query string, which puts it in Vercel's
+         access log, the browser history and any Referer that leaks out. Send it
+         in a header and a body first; only fall back to the old form if the
+         deployed endpoint doesn't read them yet. Server side, accept
+         `req.headers['x-admin-key'] || req.query.key` and this stops falling
+         back on its own. */
+      let r = await fetchWithTimeout(API_INIT, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json', 'x-admin-key': key},
+        body: JSON.stringify({key})
+      });
+      if(r.status === 401 || r.status === 400)
+        r = await fetchWithTimeout(API_INIT + '?key=' + encodeURIComponent(key), {method:'POST'});
       let body = null;
       try{ body = await r.json(); }catch{}
       if(r.ok && body && body.ok){
@@ -9502,11 +9759,11 @@ function showGallery(sort){
       <div class="im"><img src="${esc(p.url)}" alt="${esc(p.title)}" loading="lazy"></div>
       <div class="meta">
         <b>${esc(p.title)}</b>
-        <span>${esc(p.author)} · ${p.w}×${p.h} · ${p.frames} เฟรม</span>
+        <span>${esc(p.author)} · ${num(p.w)}×${num(p.h)} · ${num(p.frames)} เฟรม</span>
         <div class="row">
           <button class="lk ${liked ? 'liked' : ''}">
             <svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1L12 21.2l7.7-7.7 1.1-1a5.5 5.5 0 0 0 0-7.9Z"/></svg>
-            <span class="n">${p.likes}</span>
+            <span class="n">${num(p.likes)}</span>
           </button>
           ${p.kind === 'gif' ? '<button class="op">เปิด</button>' : '<button class="op rmx">รีมิกซ์</button>'}
           ${mine ? '<button class="del">ลบ</button>' : ''}
@@ -10306,9 +10563,11 @@ function showGestureTips(){
    screen owns the modal at boot, so this waits for it to clear. */
 function maybeShowTips(){
   if(S.tipsSeen) return;
+  // give up after ~2 minutes rather than polling for the life of the tab
+  let left = 170;
   const t = setInterval(()=>{
     // opening it from the tray first counts — don't ambush them twice
-    if(S.tipsSeen){ clearInterval(t); return; }
+    if(S.tipsSeen || --left <= 0){ clearInterval(t); return; }
     if($('modal').classList.contains('on') || pointers.size) return;
     clearInterval(t);
     showGestureTips();
@@ -10639,6 +10898,59 @@ updateToolTags();
 loadKeys(); rebuildKeys();
 applyUiMode();
 resizeView();
+/* ══════════════ OFFLINE / INSTALL (service worker) ══════════════ */
+/* sw.js is deliberately network-first for the page itself. A cache-first worker
+   would keep serving an old index.html, which would make every deploy look like
+   it silently failed when BUILD_ID in the menu still read the previous value —
+   the check this project relies on. Only the two pinned, SRI-verified cdnjs
+   libraries are cached hard, which is what makes GIF/ZIP export work offline. */
+const swActive = () => !!(navigator.serviceWorker && navigator.serviceWorker.controller);
+
+function syncSwState(){
+  const el = $('swState');
+  if(!el) return;
+  if(!('serviceWorker' in navigator)){
+    el.textContent = 'เบราว์เซอร์นี้ไม่รองรับ';
+    el.style.color = 'var(--dim)';
+    return;
+  }
+  if(location.protocol !== 'https:'){
+    el.textContent = 'ใช้ไม่ได้ (ต้อง https)';
+    el.style.color = 'var(--dim)';
+    return;
+  }
+  navigator.serviceWorker.getRegistration().then(reg => {
+    if(!$('swState')) return;                 // modal closed while we waited
+    const on = !!(reg && navigator.serviceWorker.controller);
+    $('swState').textContent = on ? 'พร้อม' : (reg ? 'กำลังติดตั้ง…' : 'ยังไม่เปิด');
+    $('swState').style.color = on ? 'var(--accent-2)' : 'var(--dim)';
+  }).catch(()=>{});
+
+  const btn = $('swReset');
+  if(btn) btn.onclick = async ()=>{
+    /* Escape hatch. If a cache ever does go stale in a way I did not predict,
+       this has to be reachable from the phone — there is no console there. */
+    btn.disabled = true; btn.textContent = 'กำลังล้าง…';
+    try{
+      if(window.caches) for(const k of await caches.keys()) await caches.delete(k);
+      const reg = await navigator.serviceWorker.getRegistration();
+      if(reg) await reg.unregister();
+      toast('ล้างแคชออฟไลน์แล้ว — กำลังโหลดหน้าใหม่', 2000);
+      setTimeout(()=>location.reload(), 900);
+    }catch(err){
+      btn.disabled = false; btn.textContent = 'ล้างแคช';
+      toast('ล้างแคชไม่สำเร็จ: ' + (err.message || 'ไม่ทราบสาเหตุ'), 3000);
+    }
+  };
+}
+
+if('serviceWorker' in navigator && location.protocol === 'https:'){
+  // after load, so registration never competes with first paint
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+
 initProject(64, 64);
 showHome();
 maybeShowTips();
