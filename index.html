@@ -58,8 +58,11 @@ button{font-family:inherit;color:inherit;background:none;border:none;cursor:poin
   padding:0 7px;background:var(--panel);border-bottom:1px solid var(--line);z-index:30;
   overflow:hidden;
 }
+/* 44px is the tap target the rest of the app is built to (--tap); the bar is
+   52px tall, so the height was free all along — only the WIDTH was ever under
+   pressure, and that is what the breakpoints below trim. */
 .tb-btn{
-  flex:0 0 auto;min-width:40px;height:38px;padding:0 9px;border-radius:9px;
+  flex:0 0 auto;min-width:40px;height:44px;padding:0 9px;border-radius:10px;
   display:flex;align-items:center;justify-content:center;gap:5px;
   background:var(--panel-2);color:var(--text);font-size:12px;font-weight:500;
   transition:background .12s,transform .08s;
@@ -187,12 +190,12 @@ body.solo-frame #btnAddFrameHead{display:flex}
    hoarding, rather than letting the stage collapse to a strip */
 @media (max-height:560px){
   #topbar{height:46px}
-  .tool{width:38px;height:38px}
+  .tb-btn{height:40px}          /* the short bar cannot hold a 44px button */
   .frame,#addFrame{width:40px;height:40px}
-  #palette{padding:5px 8px calc(6px + env(safe-area-inset-bottom))}
-  .sw{width:30px;height:30px}
-  #curColor{width:34px;height:34px}
   #timeline{padding:5px 8px 4px}
+  /* .tool / #palette / .sw / #curColor also shrink here, but their base rules
+     are further down and a media query adds no specificity — so those four
+     live in a second max-height block below them, or the base silently wins. */
 }
 #tlHead{
   display:flex;align-items:center;gap:7px;margin-bottom:6px;height:26px;
@@ -395,6 +398,16 @@ body.dial-on #dialScrim{opacity:1;pointer-events:auto}
 #curColor:active{transform:scale(.9)}
 .divider{flex:0 0 auto;width:1px;height:26px;background:var(--line);margin:0 2px}
 
+/* The other half of the short-screen block near the top of this sheet. These
+   four selectors have their base rules above, so the override has to sit here
+   in source order to win — same trap that ate #btnMore and #sizeRail. */
+@media (max-height:560px){
+  .tool{width:38px;height:38px}
+  #palette{padding:5px 8px calc(6px + env(safe-area-inset-bottom))}
+  .sw{width:30px;height:30px}
+  #curColor{width:34px;height:34px}
+}
+
 /* ---------- LAYER DRAWER ---------- */
 #scrim{position:fixed;inset:0;background:rgba(5,6,10,.6);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s;backdrop-filter:blur(2px)}
 #scrim.on{opacity:1;pointer-events:auto}
@@ -440,7 +453,7 @@ body.dial-on #dialScrim{opacity:1;pointer-events:auto}
 .layer.isref .nm{color:var(--dim);font-style:italic}
 #drawerFoot{flex:0 0 auto;padding:8px;border-top:1px solid var(--line);display:flex;gap:6px}
 #drawerFoot .tb-btn{flex:1;min-width:0;font-size:11.5px;padding:0 6px;white-space:nowrap}
-#drawerFoot .tb-btn{flex:1;height:38px}
+#drawerFoot .tb-btn{flex:1;height:44px}
 
 /* ---------- MODAL ---------- */
 #modal{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(5,6,10,.78);backdrop-filter:blur(6px)}
@@ -564,6 +577,10 @@ body.dial-on #dialScrim{opacity:1;pointer-events:auto}
   transition:background .12s,color .12s;
 }
 .seg button.on{background:var(--accent);color:#fff}
+/* the shape row puts icons in a seg, which until now only held text */
+.seg button svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round;display:block;margin:0 auto}
+#brShapeKind button.on svg{stroke:#fff}
 #anchorGrid{
   display:grid;grid-template-columns:repeat(3,1fr);gap:4px;width:112px;margin:0 auto 6px;
 }
@@ -804,26 +821,26 @@ body.ref-on #shapeBar{--lift:96px}
 #shapeBar .sw::after{content:"";position:absolute;inset:0;background:var(--sw,#fff);}
 
 /* ---------- RESTORE BAR ---------- */
-#restoreBar{
+#restoreBar,#updateBar{
   position:absolute;left:8px;right:8px;top:6px;
   transform:translateY(-130%);
   background:var(--panel-2);border:1px solid var(--accent);border-radius:12px;
   padding:8px 8px 8px 12px;z-index:22;display:flex;align-items:center;gap:9px;
   box-shadow:0 8px 26px rgba(0,0,0,.55);transition:transform .26s cubic-bezier(.3,.8,.4,1);
 }
-#restoreBar.on{transform:translateY(0)}
-#restoreBar .rtx{font-size:12px;line-height:1.3;flex:1;min-width:0}
-#restoreBar .rtx b{
+#restoreBar.on,#updateBar.on{transform:translateY(0)}
+#restoreBar .rtx,#updateBar .rtx{font-size:12px;line-height:1.3;flex:1;min-width:0}
+#restoreBar .rtx b,#updateBar .rtx b{
   display:block;font-weight:600;font-size:12.5px;margin-bottom:1px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
-#restoreBar .rtx span{color:var(--dim);font-size:10.5px}
-#restoreBar button{
+#restoreBar .rtx span,#updateBar .rtx span{color:var(--dim);font-size:10.5px}
+#restoreBar button,#updateBar button{
   flex:0 0 auto;height:34px;padding:0 13px;border-radius:9px;background:var(--accent);
   color:#fff;font-size:12.5px;font-weight:600;transition:transform .08s;
 }
-#restoreBar button:active{transform:scale(.94)}
-#restoreBar .rx{background:transparent;color:var(--dim);padding:0 6px;font-size:19px;font-weight:400;min-width:32px}
+#restoreBar button:active,#updateBar button:active{transform:scale(.94)}
+#restoreBar .rx,#updateBar .rx{background:transparent;color:var(--dim);padding:0 6px;font-size:19px;font-weight:400;min-width:32px}
 
 /* ---------- GALLERY / SHARE ---------- */
 .gal-tabs{display:flex;gap:4px;background:var(--panel-2);padding:4px;border-radius:11px;margin-bottom:12px}
@@ -931,6 +948,20 @@ body.ref-on #shapeBar{--lift:96px}
   color:var(--text);transition:background .12s,transform .08s;
 }
 #zoomCtl button:active{transform:scale(.9);background:var(--line)}
+/* Four buttons camped on the artwork full time for a job you touch a handful
+   of times a session. They fold behind one now — tap to bring them back, and
+   they put themselves away again unless pan mode is holding them open. */
+#zoomCtl .zc-fold{
+  transition:width .16s cubic-bezier(.3,.8,.4,1),opacity .13s,transform .13s;
+  overflow:hidden;
+}
+#zoomCtl:not(.open) .zc-fold{
+  width:0;opacity:0;transform:scale(.72);pointer-events:none;border-width:0;
+}
+#zoomCtl:not(.open){gap:0}
+#zcToggle.on{background:var(--accent);border-color:var(--accent);color:#fff}
+body.pc #zcToggle{display:none}
+@media (prefers-reduced-motion:reduce){ #zoomCtl .zc-fold{transition:none} }
 #zoomCtl button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 #zoomCtl svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 
@@ -973,6 +1004,13 @@ body.tl-min #tlLbl .cv{transform:rotate(-90deg)}
 #sizeRail .sr-n.on{background:var(--accent)}
 #sizeRail .sr-n.on i{background:#fff}
 body.pc #sizeRail{display:none}
+/* Must sit AFTER the base rule above: the short-viewport block near the top of
+   the sheet has the same specificity and would lose. A short stage cannot
+   centre the rail without its top climbing into the zoom cluster in the same
+   corner, so hang it under that corner instead. */
+@media (max-height:560px){
+  #sizeRail{top:56px;transform:none}
+}
 
 /* ══════════════ PC MODE ══════════════
    Same DOM, different frame. A mouse has hover, a right button and a scroll
@@ -1110,10 +1148,10 @@ body.pc.panning #view{cursor:grab}
     <span id="uiModeIc"></span>
   </button>
   <div class="spacer"></div>
-  <button class="tb-btn" id="btnOnion" title="Onion skin · แตะซ้ำเพื่อตั้งค่า">
+  <button class="tb-btn" id="btnOnion" aria-pressed="false" title="Onion skin · แตะซ้ำเพื่อตั้งค่า">
     <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="9" cy="12" r="6" opacity=".45"/><circle cx="15" cy="12" r="6"/></svg>
   </button>
-  <button class="tb-btn" id="btnPlay" title="เล่น">
+  <button class="tb-btn" id="btnPlay" aria-pressed="false" title="เล่น">
     <svg id="playIc" viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>
   </button>
   <button class="tb-btn" id="btnUndo" aria-label="ย้อนกลับ" title="ย้อนกลับ" disabled>
@@ -1142,6 +1180,11 @@ body.pc.panning #view{cursor:grab}
     <button id="rbGo">กู้กลับ</button>
     <button class="rx" id="rbX" aria-label="ปิดแถบภาพอ้างอิง">&times;</button>
   </div>
+  <div id="updateBar">
+    <div class="rtx"><b>มีเวอร์ชันใหม่</b><span>โหลดใหม่เพื่อใช้ตัวล่าสุด</span></div>
+    <button id="ubGo">โหลดใหม่</button>
+    <button class="rx" id="ubX" aria-label="ปิดแถบแจ้งเวอร์ชันใหม่">&times;</button>
+  </div>
   <div id="refBar">
     <div class="rf-top">
       <div class="rf-nm"><b id="rfName">อ้างอิง</b> · ลากบนภาพเพื่อย้าย</div>
@@ -1151,7 +1194,7 @@ body.pc.panning #view{cursor:grab}
     </div>
     <div class="rf-row">
       <button class="rf-step" id="rfMinus" aria-label="ย่อภาพอ้างอิง">−</button>
-      <input type="range" id="rfScale" min="5" max="800" value="100">
+      <input type="range" id="rfScale" min="5" max="800" value="100" aria-label="ขนาดภาพอ้างอิง (%)">
       <button class="rf-step" id="rfPlus" aria-label="ขยายภาพอ้างอิง">+</button>
       <span class="rf-val" id="rfVal">100%</span>
       <button class="rf-step" id="rfFlipH" title="พลิกแนวนอน">↔</button>
@@ -1160,10 +1203,11 @@ body.pc.panning #view{cursor:grab}
   </div>
   <div id="lens"><canvas id="lensCv"></canvas></div>
   <div id="zoomCtl">
-    <button id="zcOut" title="ซูมออก">−</button>
-    <button id="zcIn" title="ซูมเข้า">+</button>
-    <button id="zcPan" title="โหมดเลื่อนภาพ (ลากนิ้วเดียว)"><svg viewBox="0 0 24 24"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11"/><path d="M12 11V4.5a1.5 1.5 0 0 1 3 0V11"/><path d="M15 11V6.5a1.5 1.5 0 0 1 3 0V13a7 7 0 0 1-7 7h-1a6 6 0 0 1-6-6v-3.5a1.5 1.5 0 0 1 3 0V13"/></svg></button>
-    <button id="zcFit" title="พอดีจอ"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+    <button id="zcToggle" aria-expanded="false" aria-label="เครื่องมือซูม" title="เครื่องมือซูม"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.2" y1="15.2" x2="20.5" y2="20.5"/><line x1="7.5" y1="10.5" x2="13.5" y2="10.5"/><line x1="10.5" y1="7.5" x2="10.5" y2="13.5"/></svg></button>
+    <button id="zcOut" class="zc-fold" title="ซูมออก">−</button>
+    <button id="zcIn" class="zc-fold" title="ซูมเข้า">+</button>
+    <button id="zcPan" class="zc-fold" aria-pressed="false" title="โหมดเลื่อนภาพ (ลากนิ้วเดียว)"><svg viewBox="0 0 24 24"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11"/><path d="M12 11V4.5a1.5 1.5 0 0 1 3 0V11"/><path d="M15 11V6.5a1.5 1.5 0 0 1 3 0V13a7 7 0 0 1-7 7h-1a6 6 0 0 1-6-6v-3.5a1.5 1.5 0 0 1 3 0V13"/></svg></button>
+    <button id="zcFit" class="zc-fold" title="พอดีจอ"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
   </div>
   <div id="selBar">
     <button data-a="cut" title="ตัด"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.1" y2="15.9"/><line x1="14.5" y1="14.5" x2="20" y2="20"/><line x1="8.1" y1="8.1" x2="12" y2="12"/></svg><span>ตัด</span></button>
@@ -1197,11 +1241,11 @@ body.pc.panning #view{cursor:grab}
     <button class="tool" data-tool="eraser" title="ยางลบ · แตะซ้ำเพื่อตั้งขนาด/โหมด"><svg viewBox="0 0 24 24"><path d="M10.4 17.6H7.6l-3.1-3.1a1.7 1.7 0 0 1 0-2.4l7.3-7.3a1.7 1.7 0 0 1 2.4 0l3.6 3.6a1.7 1.7 0 0 1 0 2.4l-6.8 6.8Z"/><path d="m8.6 8.6 6 6"/><path d="M8 20.4h12"/></svg><span class="sym-tag" id="eraserTag"></span></button>
     <button class="tool" data-tool="fill" title="ถังสี · แตะซ้ำเพื่อเลือกโหมด"><svg viewBox="0 0 24 24"><path d="M11.6 4.2 4.7 11a1.8 1.8 0 0 0 0 2.6l4.6 4.6a1.8 1.8 0 0 0 2.6 0l6.9-6.9-7.2-7.1Z"/><path d="M9.2 6.6 7 4.4"/><path d="M20.4 14.6c1 1.5 1.5 2.4 1.5 3.1a1.5 1.5 0 1 1-3 0c0-.7.5-1.6 1.5-3.1Z"/></svg><span class="sym-tag" id="fillTag"></span></button>
     <button class="tool" data-tool="picker" title="ดูดสี"><svg viewBox="0 0 24 24"><path d="M4.4 19.6V17l8.2-8.2 2.6 2.6L7 19.6H4.4Z"/><path d="M14.6 4.2a2.1 2.1 0 0 1 3 0l2.2 2.2a2.1 2.1 0 0 1 0 3l-2 2-5.2-5.2 2-2Z"/></svg></button>
-    <button class="tool" id="btnShape" title="รูปทรง · แตะซ้ำเพื่อเลือกเส้น/สี่เหลี่ยม/วงรี/สามเหลี่ยม/ข้าวหลามตัด"><span id="shapeIc"><svg viewBox="0 0 24 24"><path d="M7.3 16.7 16.7 7.3"/><circle cx="5" cy="19" r="2.3"/><circle cx="19" cy="5" r="2.3"/></svg></span><span class="sym-tag" id="shapeTag"></span></button>
+    <button class="tool" id="btnShape" aria-pressed="false" title="รูปทรง · แตะซ้ำเพื่อตั้งค่า"><span id="shapeIc"><svg viewBox="0 0 24 24"><path d="M7.3 16.7 16.7 7.3"/><circle cx="5" cy="19" r="2.3"/><circle cx="19" cy="5" r="2.3"/></svg></span><span class="sym-tag" id="shapeTag"></span></button>
     </div>
     <button id="dialBtn" title="เครื่องมือ — แตะเพื่อเลือก, ลากออกเพื่อเลือกเร็ว"><span id="dialIc"></span><span class="sym-tag" id="dialTag"></span></button>
   </div>
-  <div id="toast"></div>
+  <div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 </div>
 
 <button id="chromeGrab" title="ซ่อน/แสดงแถบล่าง"><i></i></button>
@@ -1210,7 +1254,7 @@ body.pc.panning #view{cursor:grab}
   <div id="tlHead">
     <button class="lbl" id="tlLbl"><span class="cv">▾</span><span id="tlCount">Frames</span></button>
     <div id="fpsWrap">
-      <input type="range" id="fps" min="1" max="24" value="8">
+      <input type="range" id="fps" min="1" max="24" value="8" aria-label="ความเร็วเล่น (เฟรมต่อวินาที)">
       <button id="fpsVal" title="แตะเพื่อตั้งเวลาต่อเฟรม">8 fps</button>
     </div>
     <button class="tb-btn" id="btnAddFrameHead" style="height:26px;font-size:11px;padding:0 8px">+ เฟรม</button>
@@ -1229,14 +1273,14 @@ body.pc.panning #view{cursor:grab}
   <div class="th"><b>คำสั่งและมุมมอง</b><button class="tb-btn" id="btnTrayClose" aria-label="ปิดถาดเครื่องมือ" style="height:30px;padding:0 10px;font-size:11px">ปิด</button></div>
   <div class="grid">
     <button class="tool" id="btnFit" title="พอดีจอ"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg><span class="cl">พอดีจอ</span></button>
-    <button class="tool" id="btnTile" title="โหมดต่อลาย (seamless)"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg><span class="cl">ต่อลาย</span></button>
+    <button class="tool" id="btnTile" aria-pressed="false" title="โหมดต่อลาย (seamless)"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg><span class="cl">ต่อลาย</span></button>
     <button class="tool" id="btnResize" title="ปรับขนาดผืนผ้าใบ"><svg viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/><rect x="3" y="3" width="7" height="7" rx="1"/></svg><span class="cl">ขนาดผ้าใบ</span></button>
-    <button class="tool" id="btnLock" title="ล็อกพื้นที่โปร่งใส — วาดทับเฉพาะจุดที่มีสีอยู่แล้ว"><svg viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg><span class="cl">ล็อกโปร่งใส</span></button>
-    <button class="tool" id="btnSym" title="วาดสมมาตร"><svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22" stroke-dasharray="3 3"/><path d="M9 6 4 12l5 6"/><path d="M15 6l5 6-5 6"/></svg><span class="sym-tag" id="symTag"></span><span class="cl">สมมาตร</span></button>
+    <button class="tool" id="btnLock" aria-pressed="false" title="ล็อกพื้นที่โปร่งใส — วาดทับเฉพาะจุดที่มีสีอยู่แล้ว"><svg viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg><span class="cl">ล็อกโปร่งใส</span></button>
+    <button class="tool" id="btnSym" aria-pressed="false" title="วาดสมมาตร"><svg viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="22" stroke-dasharray="3 3"/><path d="M9 6 4 12l5 6"/><path d="M15 6l5 6-5 6"/></svg><span class="sym-tag" id="symTag"></span><span class="cl">สมมาตร</span></button>
     <button class="tool" id="btnFlip" title="พลิก / หมุนภาพ"><svg viewBox="0 0 24 24"><path d="M12 3v18" stroke-dasharray="3 3"/><path d="M8 7H3l5 10V7Z"/><path d="M16 7h5l-5 10V7Z"/></svg><span class="cl">พลิก / หมุน</span></button>
     <button class="tool" id="btnOutline" title="เส้นขอบอัตโนมัติ"><svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1"/><rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="3 3" opacity=".55"/></svg><span class="cl">เส้นขอบ</span></button>
     <button class="tool" id="btnShift" title="เลื่อนภาพทั้งเฟรม"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/><path d="M5 12l3-3M5 12l3 3"/><path d="M19 12l-3-3M19 12l-3 3"/><path d="M12 5l-3 3M12 5l3 3"/><path d="M12 19l-3-3M12 19l3-3"/></svg><span class="cl">เลื่อนภาพ</span></button>
-    <button class="tool" id="btnGrid" title="เส้นกริด"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1.5"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg><span class="cl">เส้นกริด</span></button>
+    <button class="tool" id="btnGrid" aria-pressed="false" title="เส้นกริด"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1.5"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg><span class="cl">เส้นกริด</span></button>
     <button class="tool" id="btnTips" title="ท่านิ้ว / ท่าลัดที่ซ่อนอยู่"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.8.4-1 .8-1 1.7"/><line x1="12" y1="17" x2="12" y2="17"/></svg><span class="cl">ท่าลัด</span></button>
     <button class="tool" id="btnPrec" title="ความแม่นในการวาด"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg><span class="cl">ความแม่น</span></button>
   </div>
@@ -1259,7 +1303,7 @@ body.pc.panning #view{cursor:grab}
     <button class="tb-btn" id="btnDelLayer" aria-label="ลบเลเยอร์">ลบ</button>
     <button class="tb-btn" id="btnLayerOps">จัดการ</button>
     <button class="tb-btn" id="btnRefImg" title="นำภาพมาเป็นตัวอย่างให้วาดทับ">+ ภาพอ้างอิง</button>
-    <input type="file" id="refImgInput" accept="image/*" style="display:none">
+    <input type="file" id="refImgInput" accept="image/*" style="display:none" aria-label="เลือกไฟล์ภาพอ้างอิง">
   </div>
 </aside>
 <div id="recentBar"></div>
@@ -1268,7 +1312,7 @@ body.pc.panning #view{cursor:grab}
 
 <div id="scrim"></div>
 
-<div id="modal"><div class="card" id="modalCard"></div></div>
+<div id="modal"><div class="card" id="modalCard" role="dialog" aria-modal="true" tabindex="-1"></div></div>
 
 
 <script>
@@ -1478,6 +1522,16 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
 /* Thumbnails come back out of localStorage, which anything on the origin can write. */
 const safeThumb = t => (typeof t === 'string'
   && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(t)) ? t : '';
+/* Gallery rows arrive from the API, and their url goes straight into an img
+   src. Same treatment as the thumbnails above: an https link to an image host
+   is the only shape this is ever supposed to be. */
+const safeMediaURL = u => {
+  if(typeof u !== 'string') return '';
+  try{
+    const url = new URL(u, location.href);
+    return url.protocol === 'https:' ? url.href : '';
+  }catch(_){ return ''; }
+};
 /* HSV — used by the built-in colour picker. Kept separate from the HSL
    helpers below, which exist for hue-preserving shade stepping. */
 function hsvToHex(h,s,v){
@@ -1577,6 +1631,15 @@ function toast(msg, ms=1800){
   clearTimeout(toastTimer);
   toastTimer = setTimeout(()=>{ t.classList.remove('on'); }, ms);
 }
+/* A pressed toolbar button says so only through a CSS class, which a screen
+   reader cannot see. Everything that flips on and off goes through here so the
+   visual state and the announced state can't drift apart. */
+function setToggle(el, on){
+  if(!el) return !!on;
+  el.classList.toggle('on', !!on);
+  el.setAttribute('aria-pressed', on ? 'true' : 'false');
+  return !!on;
+}
 function newFrameData(){ return new Uint8ClampedArray(S.W * S.H * 4); }
 
 /* One frame buffer of the wrong length makes ImageData throw, and that single
@@ -1609,6 +1672,29 @@ function frameFor(layer, idx){
     });
   }
   return fixed;
+}
+/* A layer that undo lifted out of the document can come back to a document
+   that changed while it was gone: add a frame with the layer removed and redo
+   puts it back one frame short. That landed in frameFor's repair path, which
+   exists for genuinely corrupt saves — so an ordinary add-layer / undo / add
+   frame / redo raised "ขนาดไม่ตรงผ้าใบ" and, worse, burned the one-shot
+   warning flag so a real broken file later in the session repaired silently.
+   Reconcile the layer against the document instead. */
+function fitLayerToProject(L){
+  if(!L || !Array.isArray(L.frames)) return L;
+  const need = S.W * S.H * 4;
+  if(L.ref){
+    // every frame of a reference layer shares one buffer
+    const base = fitFrameBuffer(L.frames[0], S.W * S.H);
+    L.frames = new Array(S.frameCount).fill(base);
+    return L;
+  }
+  if(L.frames.length > S.frameCount) L.frames.length = S.frameCount;
+  for(let i = 0; i < S.frameCount; i++){
+    const f = L.frames[i];
+    L.frames[i] = (f && f.length === need) ? f : fitFrameBuffer(f, S.W * S.H);
+  }
+  return L;
 }
 
 /* ══════════════ PROJECT INIT ══════════════ */
@@ -1905,7 +1991,6 @@ function drawRect(data, x0,y0,x1,y1, rgba, plot = setPixel, filled = false){
    Every paint op goes through these instead of calling the primitives
    directly, so symmetry is one switch rather than a branch per tool.
    Axis sits on the canvas centre: x -> W-1-x, y -> H-1-y. */
-const SYM_LABEL = ['ปิด', 'สมมาตรซ้าย-ขวา', 'สมมาตรบน-ล่าง', 'สมมาตรสี่ทิศ'];
 const SYM_TAG = ['', '↔', '↕', '✛', '⤡', '✦'];
 const SYM_NAMES = ['ปิด', 'ซ้าย-ขวา', 'บน-ล่าง', 'สี่ทิศ (กระจก)', 'ทแยงมุม', 'รัศมี 4 ทาง'];
 const SYM_COUNT = 6;
@@ -2300,30 +2385,47 @@ function setSym(mode){
   if((mode === 4 || mode === 5) && !symSquare()) mode = 0;
   S.sym = mode;
   const b = $('btnSym');
-  b.classList.toggle('on', S.sym > 0);
+  setToggle(b, S.sym > 0);
   $('symTag').textContent = SYM_TAG[S.sym];
   bufDirty = true; renderView();
 }
 
+/* The stack used to hold one freshly allocated [x,y] pair per push — four per
+   painted pixel, with nothing marking a pixel as already queued, so the same
+   cell was pushed and re-tested from every neighbour. It held up fine at 64x64
+   and fell over as the canvas grew: measured 50 ms at 256x256, 231 ms at
+   512x512 and 4.5 s at 1024x1024, against 64 ms for outline and 62 ms for a
+   90-degree rotation on the same canvas — the one operation in the app that
+   did not scale. A flat index stack plus a visited map gives byte-identical
+   output about 30x faster (2963 ms -> 95 ms at 1024x1024). */
 function floodFill(data, sx, sy, rgba){
+  const W = S.W, H = S.H, n = W * H;
   const target = getPixel(data, sx, sy);
   // with the lock on, setPixel refuses to write here — and the spread test
   // reads the pixel it just tried to change, so it would never terminate
   if(S.lockAlpha && target[3] === 0) return false;
   if(target[0]===rgba[0]&&target[1]===rgba[1]&&target[2]===rgba[2]&&target[3]===rgba[3]) return false;
-  const stack = [[sx,sy]];
-  const match = (x,y)=>{
-    const i=(y*S.W+x)*4;
-    return data[i]===target[0]&&data[i+1]===target[1]&&data[i+2]===target[2]&&data[i+3]===target[3];
+  if(S.tileMode){ sx = ((sx % W) + W) % W; sy = ((sy % H) + H) % H; }
+  else if(sx<0 || sy<0 || sx>=W || sy>=H) return true;   // nothing to fill, as before
+  const seen = new Uint8Array(n);
+  const stack = new Int32Array(n);       // every cell is queued at most once
+  let sp = 0;
+  const start = sy * W + sx;
+  stack[sp++] = start; seen[start] = 1;
+  const push = (x, y)=>{
+    if(S.tileMode){ x = ((x % W) + W) % W; y = ((y % H) + H) % H; }
+    else if(x<0 || y<0 || x>=W || y>=H) return;
+    const p = y * W + x;
+    if(seen[p]) return;
+    seen[p] = 1; stack[sp++] = p;
   };
-  const wrapc = (v,n)=>((v%n)+n)%n;
-  while(stack.length){
-    let [x,y] = stack.pop();
-    if(S.tileMode){ x = wrapc(x,S.W); y = wrapc(y,S.H); }
-    else if(x<0||y<0||x>=S.W||y>=S.H) continue;
-    if(!match(x,y)) continue;
-    setPixel(data,x,y,rgba);
-    stack.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);
+  while(sp){
+    const p = stack[--sp];
+    const i = p * 4;
+    if(!(data[i]===target[0]&&data[i+1]===target[1]&&data[i+2]===target[2]&&data[i+3]===target[3])) continue;
+    data[i]=rgba[0]; data[i+1]=rgba[1]; data[i+2]=rgba[2]; data[i+3]=rgba[3];
+    const x = p % W, y = (p - x) / W;
+    push(x+1, y); push(x-1, y); push(x, y+1); push(x, y-1);
   }
   return true;
 }
@@ -2341,38 +2443,59 @@ function gradMix(a, b, t){
           Math.round(a[2]+(b[2]-a[2])*t),
           Math.round(a[3]+(b[3]-a[3])*t)];
 }
-/* Collect the flood region as a flat list of pixel indices, without painting —
-   we need the whole set first so the drag axis can be measured against it. */
+/* Collect the flood region without painting — the whole set is needed first so
+   the drag axis can be measured against it. Returns pixel indices (y*W+x) in a
+   flat Int32Array: same reason as floodFill above, and worse here, because this
+   one was measured at 9.9 s on a 1024x1024 canvas. */
 function gradRegion(data, sx, sy){
+  const W = S.W, H = S.H, n = W * H;
   const target = getPixel(data, sx, sy);
   if(S.lockAlpha && target[3] === 0) return null;
-  const seen = new Uint8Array(S.W * S.H);
-  const out = [];
-  const stack = [[sx, sy]];
-  const wrapc = (v,n)=>((v%n)+n)%n;
-  const match = (x,y)=>{
-    const i=(y*S.W+x)*4;
-    return data[i]===target[0]&&data[i+1]===target[1]&&data[i+2]===target[2]&&data[i+3]===target[3];
+  if(S.tileMode){ sx = ((sx % W) + W) % W; sy = ((sy % H) + H) % H; }
+  else if(sx<0 || sy<0 || sx>=W || sy>=H) return new Int32Array(0);
+  const seen = new Uint8Array(n);
+  const stack = new Int32Array(n);
+  const out = new Int32Array(n);
+  let sp = 0, len = 0;
+  const start = sy * W + sx;
+  stack[sp++] = start; seen[start] = 1;
+  const push = (x, y)=>{
+    if(S.tileMode){ x = ((x % W) + W) % W; y = ((y % H) + H) % H; }
+    else if(x<0 || y<0 || x>=W || y>=H) return;
+    const p = y * W + x;
+    if(seen[p]) return;
+    seen[p] = 1; stack[sp++] = p;
   };
-  while(stack.length){
-    let [x,y] = stack.pop();
-    if(S.tileMode){ x = wrapc(x,S.W); y = wrapc(y,S.H); }
-    else if(x<0||y<0||x>=S.W||y>=S.H) continue;
-    const key = y*S.W + x;
-    if(seen[key]) continue;
-    if(!match(x,y)) continue;
-    seen[key] = 1;
-    out.push([x,y]);
-    stack.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);
+  while(sp){
+    const p = stack[--sp];
+    const i = p * 4;
+    if(!(data[i]===target[0]&&data[i+1]===target[1]&&data[i+2]===target[2]&&data[i+3]===target[3])) continue;
+    out[len++] = p;
+    const x = p % W, y = (p - x) / W;
+    push(x+1, y); push(x-1, y); push(x, y+1); push(x, y-1);
   }
-  return out;
+  return out.subarray(0, len);
+}
+/* The gradient's default axis runs straight down the region, so both the drag
+   preview and the commit need its lowest row. */
+function regionMaxY(region, fallback){
+  let maxY = fallback;
+  const W = S.W;
+  for(let k = 0; k < region.length; k++){
+    const y = (region[k] - region[k] % W) / W;
+    if(y > maxY) maxY = y;
+  }
+  return maxY;
 }
 /* Paint a two-colour gradient across a set of pixels along the axis
    (x0,y0)->(x1,y1). steps>=2 bands the ramp; dither smooths the bands. */
 function paintGradient(data, pixels, x0, y0, x1, y1, cA, cB, steps, dither){
   const dx = x1-x0, dy = y1-y0;
   const L2 = dx*dx + dy*dy || 1;
-  for(const [x,y] of pixels){
+  const W = S.W;
+  for(let k = 0; k < pixels.length; k++){
+    const p = pixels[k];
+    const x = p % W, y = (p - x) / W;
     let t = ((x-x0)*dx + (y-y0)*dy) / L2;
     t = t < 0 ? 0 : t > 1 ? 1 : t;
     let col;
@@ -2479,7 +2602,7 @@ function swapUndoForFrames(li){
   S.undoStack.pop();                     // drop the single-frame snapshot
   S.undoStack.push({
     seq: ++undoSeq, kind:'frames', l:li,
-    snaps: L.frames.map((f,i)=>({f:i, data:new Uint8ClampedArray(f)}))
+    snaps: L.frames.map((f,i)=>({f:i, data:snapData(f)}))
   });
   trimUndo();
   S.redoStack = [];
@@ -2490,10 +2613,10 @@ function applyFrameSnaps(st, intoStack){
   if(!L) return false;
   // a frame the snapshot covers may no longer exist; skip it rather than
   // banking a zero-length buffer that would restore nothing on the way back
-  const live = st.snaps.filter(s => L.frames[s.f] && L.frames[s.f].length === s.data.length);
+  const live = st.snaps.filter(s => snapMatches(L.frames[s.f], s.data));
   if(!live.length) return false;
-  const back = live.map(s => ({f:s.f, data:new Uint8ClampedArray(L.frames[s.f])}));
-  for(const s of live) L.frames[s.f].set(s.data);
+  const back = live.map(s => ({f:s.f, data:snapData(L.frames[s.f])}));
+  for(const s of live) restoreSnap(L.frames[s.f], s.data);
   intoStack.push({kind:'frames', l:st.l, snaps:back});
   bufDirty = true; renderAll(); updateUndoBtns(); markProjectDirty();
   return true;
@@ -2503,6 +2626,25 @@ function entryBytes(e){
   if(e.snaps) return e.snaps.reduce((n,x)=>n + (x.data ? x.data.length : 0), 0);
   return 0;
 }
+/* An empty cell still costs a full buffer to snapshot — 256 KB at 256x256 — and
+   a whole-project transform records one for every layer x frame whether or not
+   anything was ever drawn there. That is how a 4-layer 24-frame project reached
+   24 MB per step, leaving room for exactly two inside MAX_UNDO_BYTES. An empty
+   cell is stored as null and restored by wiping, which costs nothing to keep.
+   entryBytes already counts a null snapshot as zero. */
+function isBlankBuffer(b){
+  if(!b) return true;
+  if((b.byteOffset & 3) === 0){
+    const w = new Uint32Array(b.buffer, b.byteOffset, b.length >> 2);
+    for(let i=0;i<w.length;i++) if(w[i] !== 0) return false;
+    return true;
+  }
+  for(let i=0;i<b.length;i++) if(b[i] !== 0) return false;
+  return true;
+}
+function snapData(buf){ return isBlankBuffer(buf) ? null : new Uint8ClampedArray(buf); }
+function snapMatches(buf, data){ return !!buf && (data === null || buf.length === data.length); }
+function restoreSnap(buf, data){ if(data === null) buf.fill(0); else buf.set(data); }
 function trimStack(stack, keepOne){
   while(stack.length > MAX_UNDO) stack.shift();
   let total = 0;
@@ -2537,7 +2679,7 @@ function pushCells(cells){
   for(const c of cells){
     const L = S.layers[c.l];
     if(!L || L.ref || !L.frames[c.f]) continue;
-    snaps.push({l:c.l, f:c.f, data:new Uint8ClampedArray(L.frames[c.f])});
+    snaps.push({l:c.l, f:c.f, data:snapData(L.frames[c.f])});
   }
   if(!snaps.length) return false;
   S.undoStack.push({seq: ++undoSeq, kind:'cells', snaps});
@@ -2553,9 +2695,9 @@ function applyCellSnaps(st, intoStack){
   const back = [];
   for(const sn of st.snaps){
     const L = S.layers[sn.l];
-    if(!L || !L.frames[sn.f] || L.frames[sn.f].length !== sn.data.length) continue;
-    back.push({l:sn.l, f:sn.f, data:new Uint8ClampedArray(L.frames[sn.f])});
-    L.frames[sn.f].set(sn.data);
+    if(!L || !snapMatches(L.frames[sn.f], sn.data)) continue;
+    back.push({l:sn.l, f:sn.f, data:snapData(L.frames[sn.f])});
+    restoreSnap(L.frames[sn.f], sn.data);
   }
   if(!back.length) return false;
   intoStack.push({kind:'cells', snaps:back});
@@ -2567,7 +2709,7 @@ function applyCellSnaps(st, intoStack){
    directions now skip past a dead step and apply the next live one instead. */
 function undo(){
   // a lifted selection would get stamped back on top of the restored pixels
-  if(S.float){ S.float = null; S.floatRect = null; S.sel = null; }
+  if(S.float){ S.float = null; S.floatRect = null; S.sel = null; S.selMask = null; }
   while(S.undoStack.length){
     // the step just banked a same-sized snapshot on the redo side; keep that
     // side inside the byte budget too instead of only trimming on new edits
@@ -2576,7 +2718,7 @@ function undo(){
   updateUndoBtns();
 }
 function redo(){
-  if(S.float){ S.float = null; S.floatRect = null; S.sel = null; }
+  if(S.float){ S.float = null; S.floatRect = null; S.sel = null; S.selMask = null; }
   while(S.redoStack.length){
     if(applyUndoStep(S.redoStack.pop(), 1)){ trimStack(S.undoStack, true); return; }
   }
@@ -2614,7 +2756,9 @@ function applyUndoStep(st, dir){
     } else {
       if(!st.layer) return false;
       const at = Math.max(0, Math.min(S.layers.length, st.index|0));
-      S.layers.splice(at, 0, st.layer);
+      // the timeline may have grown or the canvas changed size while this
+      // layer was out — hand it back matching the document it returns to
+      S.layers.splice(at, 0, fitLayerToProject(st.layer));
       remapLayerEntries(i => i >= at ? i+1 : i);
       bank({seq: ++undoSeq, kind:'addlayer', index:at});
       S.curLayer = at;
@@ -3017,7 +3161,7 @@ function cancelStroke(){
   if(gestureLifted){ S.float = null; S.floatRect = null; }
   if(S.selDrag){
     if(S.selDrag.mode === 'lasso'){ lassoPts = null; S.sel = null; S.selMask = null; }
-    else if(S.selDrag.mode === 'draw') S.sel = null;
+    else if(S.selDrag.mode === 'draw'){ S.sel = null; S.selMask = null; }
     else if(S.float && S.floatRect){
       // a float dragged during this gesture goes back where it started
       S.floatRect.x = S.selDrag.rx;
@@ -3179,6 +3323,8 @@ view.addEventListener('pointerdown', e => {
   // any layout change that did not go through resizeView
   invalidateRects();
   touchIn = e.pointerType === 'touch';
+  // touching the artwork is the clearest signal that the zoom cluster is done
+  if(zoomCtlOpen() && !S.panMode && !document.body.classList.contains('pc')) setZoomCtlOpen(false);
   pointers.set(e.pointerId, {x:e.clientX, y:e.clientY, sx:e.clientX, sy:e.clientY});
   movedFar = false;
   if(pointers.size === 1){
@@ -3541,9 +3687,7 @@ view.addEventListener('pointermove', e => {
     gd.set(gradDrag.backup);
     let x1 = p.x, y1 = p.y;
     if(x1 === gradDrag.x0 && y1 === gradDrag.y0){
-      let maxY = gradDrag.y0;
-      for(const [,ry] of gradDrag.region) if(ry > maxY) maxY = ry;
-      y1 = maxY;   // default axis: straight down the region
+      y1 = regionMaxY(gradDrag.region, gradDrag.y0);   // default axis: straight down
     }
     gradDrag.x1 = x1; gradDrag.y1 = y1;   // remembered so renderView can draw the axis guide
     paintGradient(gd, gradDrag.region, gradDrag.x0, gradDrag.y0, x1, y1,
@@ -3669,7 +3813,7 @@ function endPointer(e){
       if(S.selDrag.mode === 'draw'){
         const r = clampRectToCanvas(S.sel);
         // a tap with no drag clears the selection instead of leaving a 1px marquee
-        if(!r || (r.w<=1 && r.h<=1)) S.sel = null;
+        if(!r || (r.w<=1 && r.h<=1)){ S.sel = null; S.selMask = null; }
         else S.sel = r;
       } else if(S.selDrag.wandTap && !S.selDrag.moved){
         // pressed on the current selection in wand mode but never dragged →
@@ -3702,9 +3846,7 @@ function endPointer(e){
         x1 = gradDrag.x0; y1 = gradDrag.y0;
       }
       if(x1 === gradDrag.x0 && y1 === gradDrag.y0){
-        let maxY = gradDrag.y0;
-        for(const [,ry] of gradDrag.region) if(ry > maxY) maxY = ry;
-        y1 = maxY;   // default axis: straight down the region
+        y1 = regionMaxY(gradDrag.region, gradDrag.y0);   // default axis: straight down
       }
       paintGradient(gd, gradDrag.region, gradDrag.x0, gradDrag.y0, x1, y1,
         hexToRgba(S.color), hexToRgba(S.color2), S.gradSteps, S.gradDither);
@@ -3990,17 +4132,19 @@ function delFrame(){
                     to:   t.to  >= del ? t.to-1   : t.to }))
     .map(t=>({...t, from: Math.max(0, t.from), to: Math.min(t.to, S.frameCount-1)}))
     .filter(t => t.from <= t.to);
-  S.undoStack = []; S.redoStack = []; updateUndoBtns();
+  // steps on the deleted frame are gone; everything after it slides down one
+  remapFrameEntries(i => i === del ? -1 : (i > del ? i-1 : i));
   bufDirty = true; renderAll(); markProjectDirty();
   showRestoreBar(saved);
 }
 
 /* ══════════════ FRAME RANGE OPS ══════════════
    Whole-timeline edits (reverse, ping-pong, duplicate). Each rebuilds the frame
-   arrays and the matching S.durs, clears undo (index-addressed entries can't
-   survive a reshuffle — same reasoning as delFrame/moveFrame), and drops a
-   restore point so the change is recoverable. A reference layer's shared buffer
-   is preserved: its frames all point at frames[0], so we rebuild that too. */
+   arrays and the matching S.durs, then fixes up the index-addressed undo
+   entries (remapFrameEntries for a reshuffle, nothing for an append-only one)
+   and drops a restore point so the change is recoverable. A reference layer's
+   shared buffer is preserved: its frames all point at frames[0], so we rebuild
+   that too. */
 function framesReindexed(mapFn){
   // mapFn(newList) returns an array of OLD indices describing the new order.
   const order = mapFn();
@@ -4024,7 +4168,7 @@ function reverseFrames(){
   S.curFrame = n-1 - S.curFrame;
   syncDurs();
   remapTags(i => n-1 - i);   // the drawings moved, so the spans naming them move too
-  S.undoStack = []; S.redoStack = []; updateUndoBtns();
+  remapFrameEntries(i => n-1 - i);
   bufDirty = true; renderAll(); markProjectDirty();
   showRestoreBar(saved);
   toast('กลับลำดับเฟรมแล้ว');
@@ -4043,7 +4187,9 @@ function pingPongFrames(){
     return order;
   });
   syncDurs();
-  S.undoStack = []; S.redoStack = []; updateUndoBtns();
+  // both range ops only APPEND: 0..n-1 keep their indices, so the stack is
+  // already correct and does not need to be thrown away
+  updateUndoBtns();
   bufDirty = true; renderAll(); markProjectDirty();
   showRestoreBar(saved);
   toast('ต่อเฟรมวนไป-กลับแล้ว ('+S.frameCount+' เฟรม)');
@@ -4060,7 +4206,7 @@ function duplicateAllFrames(){
     return order;
   });
   syncDurs();
-  S.undoStack = []; S.redoStack = []; updateUndoBtns();
+  updateUndoBtns();
   bufDirty = true; renderAll(); markProjectDirty();
   showRestoreBar(saved);
   toast('คัดลอกทุกเฟรมต่อท้ายแล้ว');
@@ -4348,6 +4494,8 @@ function renderLayers(){
     nm.onkeydown = e => { if(e.key === 'Enter'){ e.preventDefault(); nm.blur(); } };
 
     const eye = document.createElement('button'); eye.className='eye';
+    eye.setAttribute('aria-pressed', L.visible ? 'true' : 'false');
+    eye.setAttribute('aria-label', L.visible ? 'ซ่อนเลเยอร์' : 'แสดงเลเยอร์');
     eye.innerHTML = L.visible
       ? '<svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
       : '<svg viewBox="0 0 24 24"><path d="M9.9 5.2A9.6 9.6 0 0 1 12 5c6 0 10 7 10 7a17 17 0 0 1-3 3.7M6.6 6.6A17 17 0 0 0 2 12s4 7 10 7a9.6 9.6 0 0 0 4.3-1"/><line x1="2" y1="2" x2="22" y2="22"/></svg>';
@@ -4446,7 +4594,40 @@ function remapLayerEntries(fn){
   S.redoStack = fix(S.redoStack);
   updateUndoBtns();
 }
+/* The frame-index twin of the above. moveFrame already reshuffled the stack
+   rather than throwing it away; delFrame and the range ops still cleared both
+   stacks outright, so deleting one frame cost the user every undo step they
+   had. fn maps an old frame index to its new one, or to -1 when that frame no
+   longer exists — entries left with nothing to restore are dropped.
+   'addlayer' carries no frame index; the layer it holds is reconciled against
+   the timeline by fitLayerToProject() when it goes back in.
+   Same trap as remapLayerEntries: this REPLACES S.undoStack / S.redoStack, so
+   never hold a reference to either across a call. */
+function remapFrameEntries(fn){
+  const fix = list => {
+    const out = [];
+    for(const st of list){
+      if(st.kind === 'addlayer'){ out.push(st); continue; }
+      if(st.kind === 'cells' || st.kind === 'frames'){
+        st.snaps = st.snaps.filter(sn => fn(sn.f) >= 0);
+        if(!st.snaps.length) continue;
+        for(const sn of st.snaps) sn.f = fn(sn.f);
+        out.push(st); continue;
+      }
+      const i = fn(st.f);                // flat single-cell entry
+      if(i < 0) continue;
+      st.f = i; out.push(st);
+    }
+    return out;
+  };
+  S.undoStack = fix(S.undoStack);
+  S.redoStack = fix(S.redoStack);
+  updateUndoBtns();
+}
 const LAYER_NAME_MAX = 40;
+/* Clip names go into hand-built export files; keep them the same length as
+   layer names so neither the timeline nor a .tres line runs away. */
+const TAG_NAME_MAX = 40;
 /* One way in for every rename — the inline field, the dialog and the fallback
    all normalise the same way. quiet=true skips the list rebuild, which matters
    when the call comes from a field that is still on screen. */
@@ -4665,7 +4846,7 @@ function showLayerOps(){
 /* ══════════════ PLAYBACK ══════════════ */
 let playTimer = null;
 function setPlayIcon(){
-  $('btnPlay').classList.toggle('on', S.playing);
+  setToggle($('btnPlay'), S.playing);
   $('playIc').innerHTML = S.playing
     ? '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>'
     : '<polygon points="6 3 20 12 6 21 6 3"/>';
@@ -4676,17 +4857,32 @@ function setPlayIcon(){
    S.fps is the baseline for the whole clip; S.durs[i] overrides it for one
    frame, which is how a pose gets held without slowing the rest of the loop.
    A null entry means "follow the slider", so dragging fps still works. */
+/* The slider only offers 1-24, but a project can also arrive from an imported
+   .json, a PNG with an embedded project, or a gallery remix, and deserialize
+   used to take obj.fps as given. fps 100000 made frameDur 0 and playback span
+   the CPU on setTimeout(0); -5 gave -200 ms holds and negative GIF durations;
+   the string "fast" gave NaN, which setTimeout treats as "right now". Bound it
+   here and let frameDur refuse to return anything unusable either way. */
+const FPS_MIN = 1, FPS_MAX = 24;
+const DUR_MAX = 60000;               // a minute on one frame is already absurd
+function clampFps(v){
+  const n = Math.round(Number(v));
+  if(!Number.isFinite(n)) return 8;
+  return Math.max(FPS_MIN, Math.min(FPS_MAX, n));
+}
 function syncDurs(){
   if(!Array.isArray(S.durs)) S.durs = [];
   S.durs.length = S.frameCount;
   for(let i=0;i<S.frameCount;i++){
-    const d = S.durs[i];
-    S.durs[i] = (typeof d === 'number' && d > 0) ? Math.round(d) : null;
+    const d = Number(S.durs[i]);
+    S.durs[i] = (Number.isFinite(d) && d > 0) ? Math.min(DUR_MAX, Math.round(d)) : null;
   }
 }
 function frameDur(i){
   const d = S.durs && S.durs[i];
-  return (typeof d === 'number' && d > 0) ? d : Math.round(1000/S.fps);
+  const ms = (typeof d === 'number' && d > 0) ? d : Math.round(1000 / clampFps(S.fps));
+  // last line of defence: playback, loopMs and the GIF encoder all read this
+  return Math.max(1, Math.min(DUR_MAX, Math.round(ms))) || 1;
 }
 function hasCustomDurs(){
   return Array.isArray(S.durs) && S.durs.some(d => typeof d === 'number' && d > 0);
@@ -4720,12 +4916,27 @@ function togglePlay(){
   settleFrame();          // the playhead is about to walk the whole clip
   S.playing = true;
   setPlayIcon();
+  /* Chaining setTimeout from the end of the render made every frame cost its
+     hold time PLUS however long the repaint took, so the preview always ran
+     slower than the GIF it was previewing, and further behind on bigger
+     canvases. Aim at a running deadline instead and let a slow frame eat into
+     the next wait. */
+  const clock = ()=> (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  let due = clock();
+  const schedule = ()=>{
+    const now = clock();
+    due += frameDur(S.curFrame);
+    // a backgrounded tab throttles timers; resync rather than burst through
+    // every frame it missed on the way back
+    if(due < now - 1000) due = now;
+    playTimer = setTimeout(tick, Math.max(0, due - now));
+  };
   const tick = ()=>{
     S.curFrame = (S.curFrame + 1) % S.frameCount;
     bufDirty = true; renderView(); renderFrames(true);
-    playTimer = setTimeout(tick, frameDur(S.curFrame));
+    schedule();
   };
-  playTimer = setTimeout(tick, frameDur(S.curFrame));
+  schedule();
 }
 
 /* ══════════════ COLOR ══════════════ */
@@ -4839,6 +5050,8 @@ function buildPalette(){
     const sw = document.createElement('button');
     sw.className = 'sw' + (c===S.color?' on':'');
     sw.style.background = c; sw.dataset.c = c;
+    // a colour swatch is a button with no text — say which colour it is
+    sw.title = c.toUpperCase(); sw.setAttribute('aria-label', 'สี ' + c.toUpperCase());
     let lp = null, moved = false;
     sw.onclick = ()=>{ if(!moved) setColor(c); };
     // long-press removes the swatch
@@ -4931,7 +5144,7 @@ function selectTool(t){
   S.tool = t;
   if(SHAPE_TOOLS.includes(t)) S.shape = t;
   updateSelBar();
-  document.querySelectorAll('.tool[data-tool]').forEach(b=>b.classList.toggle('on', b.dataset.tool===t));
+  document.querySelectorAll('.tool[data-tool]').forEach(b=>setToggle(b, b.dataset.tool===t));
   updateShapeBtn();
   closeDial();
   renderOptBar();
@@ -4968,31 +5181,13 @@ function updateSelectBtn(){
 function updateShapeBtn(){
   const ic = $('shapeIc'); if(!ic) return;
   ic.innerHTML = SHAPE_IC[S.shape] || SHAPE_IC.line;
-  $('btnShape').classList.toggle('on', SHAPE_TOOLS.includes(S.tool));
+  setToggle($('btnShape'), SHAPE_TOOLS.includes(S.tool));
   const n = S.brush|0;
   const num = n > 1 ? ((S.nib !== 'square') ? NIB_SYM[S.nib] : String(n)) : '';
   const FILLGLYPH = {rect:'■', ellipse:'●', triangle:'▲', diamond:'◆'};
   $('shapeTag').textContent = S.shape === 'line' ? num
     : (S.shapeFill ? (FILLGLYPH[S.shape] || '■') : num);
   updateDialBtn();
-}
-function showShapePick(){
-  openModal(`
-    <h2>รูปทรง</h2>
-    <p class="sub">เลือกรูปทรงที่ปุ่มนี้จะถือไว้</p>
-    ${SHAPE_TOOLS.map(t=>`
-      <button class="exp-opt" data-sh="${t}">
-        <span class="ic" style="background:${t===S.shape?'var(--accent)':'var(--panel)'};border:1px solid var(--line)">${SHAPE_IC[t]}</span>
-        <span class="tx"><b>${SHAPE_NAME[t]}</b><span>${t===S.shape?'กำลังใช้':'แตะเพื่อเปลี่ยน'}</span></span>
-      </button>`).join('')}
-    <button class="big-btn ghost" id="shOpts">ตั้งค่ารูปทรง (ขนาดหัว / ทึบ)</button>
-    <button class="big-btn ghost" id="shClose">ปิด</button>
-  `);
-  $('modalCard').querySelectorAll('[data-sh]').forEach(b=>{
-    b.onclick = ()=>{ closeModal(); selectTool(b.dataset.sh); };
-  });
-  $('shOpts').onclick = ()=>{ closeModal(); setTimeout(()=>{ if(!SHAPE_TOOLS.includes(S.tool)) selectTool(S.shape); showBrushOpts(); }, 30); };
-  $('shClose').onclick = closeModal;
 }
 document.querySelectorAll('.tool[data-tool]').forEach(b=>{
   b.onclick = ()=>{
@@ -5061,8 +5256,14 @@ function showBrushOpts(){
       ${NIBS.map(k => `<button data-k="${k}" title="${NIB_NAME[k]}"${S.nib===k?' class="on"':''} style="font-size:15px">${NIB_SYM[k]}</button>`).join('')}
     </div>
     <p class="sub" id="brNibName" style="margin-top:-9px;font-size:11px"></p>` : ''}
-    ${isShape ? `
+    ${SHAPE_TOOLS.includes(tool) ? `
     <div class="sec-lbl">รูปทรง</div>
+    <div class="seg" id="brShapeKind">
+      ${SHAPE_TOOLS.map(t => `<button data-sh="${t}" title="${SHAPE_NAME[t]}"${tool===t?' class="on"':''}>${SHAPE_IC[t]}</button>`).join('')}
+    </div>
+    <p class="sub" id="brShapeName" style="margin-top:-9px;font-size:11px">${esc(SHAPE_NAME[tool] || '')}</p>` : ''}
+    ${isShape ? `
+    <div class="sec-lbl">การเติม</div>
     <div class="seg" id="brShape">
       <button data-f="0"${!S.shapeFill?' class="on"':''}>เฉพาะขอบ</button>
       <button data-f="1"${S.shapeFill?' class="on"':''}>ทึบทั้งก้อน</button>
@@ -5221,6 +5422,18 @@ function showBrushOpts(){
   });
   pick('brSize', 'n', v => S.brush = +v);
   if(hasNib) pick('brNib', 'k', v => S.nib = v);
+  if(SHAPE_TOOLS.includes(tool)) document.querySelectorAll('#brShapeKind button').forEach(b=>{
+    b.onclick = ()=>{
+      if(b.dataset.sh === S.tool) return;
+      /* which sections belong here depends on the shape being held — a line
+         has no fill option — so rebuild the sheet instead of leaving stale
+         controls behind. Carry the opener across so closing still goes back. */
+      const back = modalReturnFocus;
+      selectTool(b.dataset.sh);
+      showBrushOpts();
+      modalReturnFocus = back;
+    };
+  });
   if(isShape) pick('brShape', 'f', v => S.shapeFill = v === '1');
   if(isFill){
     pick('brFillMode', 'm', v => {
@@ -5528,6 +5741,11 @@ const FORMAT_VER   = 1;
    and duplicateAllFrames caps at 240 — MAX_FRAMES leaves headroom above that. */
 const MAX_CANVAS = 1024;
 const MAX_FRAMES = 480;
+/* Each axis passing on its own says nothing about the product. 1024x1024 with
+   12 layers and 480 empty frames is a 698 KB file that asks deserialize for
+   22.5 GB of buffers — the tab dies before anything is drawn. This is the one
+   number that actually bounds the allocation. */
+const MAX_PROJECT_BYTES = 512 * 1024 * 1024;
 
 /* Hybrid codec: RLE for flat pixel art, base64 fallback for noisy data
    so worst case is 1.33x raw instead of RLE's 2.25x blowup. */
@@ -5646,13 +5864,55 @@ function validateProject(obj){
     if(L.f && L.f.length > MAX_FRAMES)
       throw new Error(`ไฟล์นี้มี ${L.f.length} เฟรม — เกินที่รองรับ (${MAX_FRAMES})`);
   }
+  /* Same arithmetic deserialize is about to do, done before it allocates
+     anything. An RLE-compressed file gives no hint of its unpacked size, so a
+     tiny download can still be a demand for gigabytes. */
+  const fc = Math.min(projectFrameCount(obj), MAX_FRAMES);
+  const bytes = obj.w * obj.h * 4 * fc * obj.layers.length;
+  if(bytes > MAX_PROJECT_BYTES)
+    throw new Error(`งานนี้ต้องใช้หน่วยความจำราว ${Math.round(bytes/1048576)} MB `
+      + `(${obj.w}×${obj.h} · ${obj.layers.length} เลเยอร์ · ${fc} เฟรม) — เกินที่เปิดไหว`);
+}
+/* deserialize works this out too; both have to agree or the check guards a
+   different number than the one that gets allocated. */
+function projectFrameCount(obj){
+  const n = obj.frameCount || ((obj.layers.find(L=>!L.r) || obj.layers[0]).f || []).length || 1;
+  return n > 0 ? n : 1;
+}
+/* The tag dialog checks names and ranges on the way in, but a loaded file never
+   passed through it. Taking obj.tags as given meant a clip with from:-50 on a
+   three-frame project emitted 52 AtlasTexture references into the .tres, from
+   past to produced an animation with no frames at all, a name that was not a
+   string became "[object Object]", and one non-object in the array made the
+   .tres builder throw a raw JS error at export time. */
+let tagsRepaired = 0;      // reported once the load has finished, not mid-parse
+function sanitizeTags(raw, frameCount){
+  if(!Array.isArray(raw)) return [];
+  const last = Math.max(0, frameCount - 1);
+  const out = [], seen = new Set();
+  for(const t of raw){
+    if(!t || typeof t !== 'object') continue;
+    const name = typeof t.name === 'string'
+      ? t.name.replace(/\s+/g,' ').trim().slice(0, TAG_NAME_MAX) : '';
+    if(!name) continue;
+    let from = Math.round(Number(t.from)), to = Math.round(Number(t.to));
+    if(!Number.isFinite(from) || !Number.isFinite(to)) continue;
+    // a range typed backwards is still a range; keep it rather than drop the clip
+    if(from > to){ const s = from; from = to; to = s; }
+    from = Math.max(0, Math.min(last, from));
+    to   = Math.max(0, Math.min(last, to));
+    const key = name.toLowerCase();
+    if(seen.has(key)) continue;        // the dialog forbids duplicates too
+    seen.add(key);
+    out.push({name, from, to});
+  }
+  return out;
 }
 function deserialize(obj){
   validateProject(obj);
+  tagsRepaired = 0;
   const px = obj.w * obj.h;
-  let frameCount = obj.frameCount || ((obj.layers.find(L=>!L.r)||obj.layers[0]).f || []).length || 1;
-  if(!(frameCount > 0)) frameCount = 1;
-  if(frameCount > MAX_FRAMES) frameCount = MAX_FRAMES;
+  let frameCount = Math.min(projectFrameCount(obj), MAX_FRAMES);
 
   /* Every buffer is allocated into locals FIRST. A load that ran out of memory
      partway used to leave S.W/S.H pointing at a canvas whose frames were never
@@ -5699,10 +5959,13 @@ function deserialize(obj){
   S.layers = layers.length ? layers
     : [{name:'Layer 1', visible:true, opacity:1, frames:[new Uint8ClampedArray(px*4)]}];
   S.curLayer = 0; S.curFrame = 0;
-  S.fps = obj.fps || 8;
+  S.fps = clampFps(obj.fps);
   S.durs = Array.isArray(obj.durs) ? obj.durs.slice() : [];
   syncDurs();
-  S.tags = Array.isArray(obj.tags) ? obj.tags : [];
+  const rawTags = Array.isArray(obj.tags) ? obj.tags.length : 0;
+  S.tags = sanitizeTags(obj.tags, S.frameCount);
+  // a silent repair is how you lose a clip and never find out why
+  if(rawTags > S.tags.length) tagsRepaired = rawTags - S.tags.length;
   S.tileMode = !!obj.tileMode;
   S.palette = Array.isArray(obj.palette) ? obj.palette.slice(0,64) : DEFAULT_PALETTE.slice();
   S.recent = Array.isArray(obj.recent) ? obj.recent.slice(0,MAX_RECENT) : [];
@@ -5712,13 +5975,17 @@ function deserialize(obj){
   buf.width = S.W; buf.height = S.H;
   scratch.width = S.W; scratch.height = S.H;
   $('fps').value = S.fps; syncFpsLabel();
-  $('btnTile').classList.toggle('on', S.tileMode);
+  setToggle($('btnTile'), S.tileMode);
   buildPalette();
   renderRecent();
   bufDirty = true;
   fitToScreen();
   renderAll();
   updateUndoBtns();
+  if(tagsRepaired){
+    const n = tagsRepaired; tagsRepaired = 0;
+    setTimeout(()=>toast(`ไฟล์นี้มีช่วงคลิปที่ใช้ไม่ได้ ${n} รายการ — ตัดออกให้แล้ว`, 4200), 400);
+  }
 }
 
 function readIndex(){
@@ -5727,6 +5994,29 @@ function readIndex(){
 }
 function writeIndex(idx){
   localStorage.setItem(STORE_INDEX, JSON.stringify(idx));
+}
+/* A save that fails halfway, a quota error, or anything else that writes one
+   of the pair without the other leaves a row pointing at nothing — or worse, a
+   blob nobody lists, holding space in a 5 MB budget with no way to reclaim it.
+   Reconcile the two once at boot. */
+function reconcileStore(){
+  let removedRows = 0, removedBlobs = 0;
+  try{
+    const idx = readIndex();
+    const kept = idx.filter(p => p && p.id && localStorage.getItem(STORE_PREFIX + p.id) !== null);
+    if(kept.length !== idx.length){ writeIndex(kept); removedRows = idx.length - kept.length; }
+    const listed = new Set(kept.map(p => p.id));
+    const orphans = [];
+    for(let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      if(!k || !k.startsWith(STORE_PREFIX)) continue;
+      if(k === STORE_INDEX || k === AUTOSAVE_KEY) continue;
+      const id = k.slice(STORE_PREFIX.length);
+      if(!listed.has(id)) orphans.push(k);
+    }
+    for(const k of orphans){ localStorage.removeItem(k); removedBlobs++; }
+  }catch(e){ /* a tidy-up is never worth breaking the boot over */ }
+  return {removedRows, removedBlobs};
 }
 function storageUsed(){
   let total = 0;
@@ -6006,15 +6296,27 @@ async function offerEmbedded(file){
 /* ---- autosave ---- */
 let dirtySinceSave = false;
 let autosaveTimer = null;
+let autosaveFailed = false;
+let lastAutosaveMs = 0;
+/* serialize + JSON.stringify is synchronous: measured at 290 ms for a 256x256
+   project with 4 layers and 24 frames on a desktop, so two to four times that
+   on the phones this is drawn on. Paying it three seconds after every stroke
+   turns each pause into a stutter. Big projects get a longer leash, and once
+   the quota has refused the payload there is no point retrying at drawing
+   speed — pagehide and visibilitychange still save immediately either way. */
+function autosaveDelay(){
+  if(autosaveFailed) return 60000;
+  return lastAutosaveMs > 250 ? 15000 : 3000;
+}
 function markProjectDirty(){
   dirtySinceSave = true;
   clearTimeout(autosaveTimer);
-  autosaveTimer = setTimeout(runAutosave, 3000);
+  autosaveTimer = setTimeout(runAutosave, autosaveDelay());
 }
-let autosaveFailed = false;
 function runAutosave(){
   if(!dirtySinceSave) return;
   const dot = $('saveDot');
+  const t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
   try {
     const payload = serialize(curProjectName || 'งานล่าสุด');
     payload.autoOf = curProjectId;
@@ -6037,6 +6339,9 @@ function runAutosave(){
       toast('เซฟอัตโนมัติไม่ได้ — พื้นที่เบราว์เซอร์เต็ม ส่งออกเป็นไฟล์ .json เก็บไว้ก่อน', 5200);
     }
   }
+  // measured on both paths: a failed save still paid for the serialize
+  const t1 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  lastAutosaveMs = t1 - t0;
 }
 function hasAutosave(){
   return !!localStorage.getItem(AUTOSAVE_KEY);
@@ -6157,7 +6462,7 @@ function contentBounds(){
 /* Apply a transform across every layer and frame, then rebind canvas state */
 function applyTransform(newW, newH, fn, label){
   commitFloat();
-  S.sel = null;
+  S.sel = null; S.selMask = null;
   const saved = saveRestorePoint(label || 'ปรับขนาด');
   for(const L of S.layers){
     L.frames = L.frames.map(f => fn(f));
@@ -6303,6 +6608,13 @@ function buildAsepriteAtlas(imageName){
   };
 }
 
+/* Clip names are free text — the tag dialog only rejects blanks and duplicates.
+   The Aseprite atlas goes through JSON.stringify and is safe; the .tres and the
+   README snippets are assembled by hand, so a name holding a quote produced a
+   resource file Godot refuses to load. */
+const quoteStr = s => String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+const aposStr  = s => String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
 /* ---- Godot 4 SpriteFrames .tres ----
    Godot does not parse arbitrary JSON, so we emit a real resource file:
    one AtlasTexture sub-resource per frame, grouped into named animations. */
@@ -6331,7 +6643,7 @@ function buildGodotTres(imageName){
       const dur = Number.isInteger(mul) ? mul.toFixed(1) : String(mul);
       frameLines.push(`{\n"duration": ${dur},\n"texture": SubResource("${id}")\n}`);
     }
-    return `{\n"frames": [${frameLines.join(', ')}],\n"loop": true,\n"name": &"${t.name}",\n"speed": ${S.fps}.0\n}`;
+    return `{\n"frames": [${frameLines.join(', ')}],\n"loop": true,\n"name": &"${quoteStr(t.name)}",\n"speed": ${S.fps}.0\n}`;
   });
 
   return `[gd_resource type="SpriteFrames" load_steps=${loadSteps+1} format=3]\n\n`
@@ -6746,7 +7058,7 @@ function rotateBuffer(data, w, h, turn){
 const TURN_LABEL = {1:'หมุนขวา 90°', 2:'หมุน 180°', 3:'หมุนซ้าย 90°'};
 function doRotate(turn, scope){
   commitFloat();
-  S.sel = null;
+  S.sel = null; S.selMask = null;
 
   // a quarter turn on a non-square canvas changes the canvas itself, so it
   // can only be done to everything at once
@@ -6779,7 +7091,7 @@ function doRotate(turn, scope){
 }
 function doFlip(kind, scope){
   commitFloat();
-  S.sel = null;
+  S.sel = null; S.selMask = null;
   const wide = scope !== 'cell';
   // every cell the flip is about to touch, so undo is a real undo
   if(wide) pushCells(scopeCells(scope));
@@ -6919,7 +7231,7 @@ function shiftBuffer(src, w, h, dx, dy, wrap){
 function doShift(dx, dy, scope, wrap){
   if(dx === 0 && dy === 0){ toast('ยังไม่ได้เลือกทิศ'); return; }
   commitFloat();
-  S.sel = null;
+  S.sel = null; S.selMask = null;
   const wide = scope !== 'cell';
   let pushed = false;
   if(wide) pushed = pushCells(scopeCells(scope));
@@ -7275,11 +7587,13 @@ function placeImage(img, mode, fit, opts){
 
 let restoreBarTimer = null;
 function syncBarStack(){
-  const rOn = $('restoreBar').classList.contains('on');
-  $('selBar').classList.toggle('pushed', rOn);
+  const rb = $('restoreBar'), ub = $('updateBar');
+  const rOn = rb.classList.contains('on');
+  const uOn = ub && ub.classList.contains('on');
+  $('selBar').classList.toggle('pushed', rOn || uOn);
   // minimap and zoom tag shift down too so nothing overlaps
-  const rb = $('restoreBar');
-  const shift = rOn ? (rb.offsetHeight + 12) : 0;
+  // the two bars share the same lane, so only one of them is ever up
+  const shift = rOn ? (rb.offsetHeight + 12) : (uOn ? (ub.offsetHeight + 12) : 0);
   $('minimap').style.transform = shift ? `translateY(${shift}px)` : '';
   $('zoomTag').style.transform = shift ? `translateY(${shift}px)` : '';
   $('zoomCtl').style.transform = shift ? `translateY(${shift}px)` : '';
@@ -7304,8 +7618,41 @@ function hideRestoreBar(){
   syncBarStack();
 }
 
-function openModal(html){ $('modalCard').innerHTML = html; $('modal').classList.add('on'); }
-function closeModal(){ shortcutCapture = null; shortcutRefresh = null; $('modal').classList.remove('on'); }
+/* A dialog that never takes focus leaves the keyboard on the page behind it:
+   Tab walks tool buttons nobody can see, Enter fires one of them, and a screen
+   reader never announces that a dialog opened at all. */
+let modalReturnFocus = null;
+function modalFocusables(){
+  return [...$('modalCard').querySelectorAll(
+    'button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])')]
+    .filter(el => !el.disabled);
+}
+function openModal(html){
+  const card = $('modalCard');
+  const from = document.activeElement;
+  // only worth restoring if it was something real to come back to
+  modalReturnFocus = (from && from !== document.body && from.focus) ? from : null;
+  card.innerHTML = html;
+  $('modal').classList.add('on');
+  try { card.focus({preventScroll:true}); } catch(e){ card.focus(); }
+}
+function closeModal(){
+  shortcutCapture = null; shortcutRefresh = null;
+  $('modal').classList.remove('on');
+  const back = modalReturnFocus;
+  modalReturnFocus = null;
+  if(back && document.contains(back)){ try { back.focus({preventScroll:true}); } catch(e){ back.focus(); } }
+}
+/* Keep Tab inside the open dialog, wrapping at both ends. */
+function trapModalTab(e){
+  const card = $('modalCard');
+  const items = modalFocusables();
+  if(!items.length){ e.preventDefault(); card.focus(); return; }
+  const first = items[0], last = items[items.length-1];
+  const cur = document.activeElement;
+  if(e.shiftKey && (cur === first || cur === card || !card.contains(cur))){ e.preventDefault(); last.focus(); }
+  else if(!e.shiftKey && (cur === last || !card.contains(cur))){ e.preventDefault(); first.focus(); }
+}
 $('modal').addEventListener('pointerdown', e=>{ if(e.target.id==='modal') closeModal(); });
 
 /* Home screen — the hub for starting or reopening work.
@@ -7348,8 +7695,8 @@ function showHome(){
       <span class="ic" style="background:var(--accent-2);color:#0d0e14">PX</span>
       <span class="tx"><b>แปลงภาพเป็นพิกเซล</b><span>ย่อเป็นกริด ลดสี ใส่ดิเธอร์ ได้พิกเซลอาร์ตทันที</span></span>
     </button>
-    <input type="file" id="hmImgInput" accept="image/*" style="display:none">
-    <input type="file" id="hmPixInput" accept="image/*" style="display:none">
+    <input type="file" id="hmImgInput" accept="image/*" style="display:none" aria-label="เลือกไฟล์ภาพเพื่อนำเข้า">
+    <input type="file" id="hmPixInput" accept="image/*" style="display:none" aria-label="เลือกไฟล์ภาพเพื่อแปลงเป็นพิกเซล">
 
     <div class="hr"></div>
     <div class="sec-lbl">งานที่บันทึกไว้ (${saved.length})</div>
@@ -7934,7 +8281,7 @@ function showTags(){
       const row = document.createElement('div');
       row.className = 'tag-row';
       row.innerHTML = `
-        <input class="tn" value="${esc(t.name)}" placeholder="ชื่อ">
+        <input class="tn" maxlength="${TAG_NAME_MAX}" value="${esc(t.name)}" placeholder="ชื่อ">
         <input class="tr" type="number" value="${t.from}" min="0" max="${S.frameCount-1}" inputmode="numeric">
         <span class="dash">→</span>
         <input class="tr" type="number" value="${t.to}" min="0" max="${S.frameCount-1}" inputmode="numeric">
@@ -8008,13 +8355,13 @@ async function exportAtlas(kind){
         'create():\n' +
         effectiveTags().map(t =>
           `  this.anims.create({\n` +
-          `    key: '${t.name}',\n` +
+          `    key: '${aposStr(t.name)}',\n` +
           `    frames: this.anims.generateFrameNames('${base}', {\n` +
           `      prefix: '${base}_', start: ${t.from}, end: ${t.to}, zeroPad: 3\n` +
           `    }),\n` +
           `    frameRate: ${S.fps}, repeat: -1\n` +
           `  });`).join('\n') +
-        `\n\n  this.add.sprite(x, y, '${base}').play('${effectiveTags()[0].name}');\n`
+        `\n\n  this.add.sprite(x, y, '${base}').play('${aposStr(effectiveTags()[0].name)}');\n`
       );
       note = 'Phaser 3';
     } else if(kind === 'godot'){
@@ -8026,7 +8373,7 @@ async function exportAtlas(kind){
         '   (ถ้าไม่ตั้ง ภาพ pixel art จะเบลอ)\n' +
         `3. เพิ่มโหนด AnimatedSprite2D แล้วลาก ${base}_frames.tres ใส่ช่อง Sprite Frames\n\n` +
         'เล่นใน GDScript:\n' +
-        effectiveTags().map(t => `  $AnimatedSprite2D.play("${t.name}")`).join('\n') + '\n\n' +
+        effectiveTags().map(t => `  $AnimatedSprite2D.play("${quoteStr(t.name)}")`).join('\n') + '\n\n' +
         'หมายเหตุ: ถ้าย้ายไฟล์ ต้องแก้ path ในบรรทัด ext_resource ของ .tres ด้วย\n'
       );
       note = 'Godot 4';
@@ -9289,9 +9636,9 @@ if(new URLSearchParams(location.search).has('admin')){
   try{ sessionStorage.setItem('wp_admin', '1'); }catch{}
 }
 /* bump when deploying — the fastest way to tell a stale cache from a real bug */
-const BUILD_ID = '2026-08-05 frame-drag-index';
-const APP_VERSION = '0.9.3';
-const APP_UPDATED = '5 ส.ค. 2026';   // bump both when shipping a visible change
+const BUILD_ID = '2026-08-07 sym-css-fix';
+const APP_VERSION = '0.9.4';
+const APP_UPDATED = '7 ส.ค. 2026';   // bump both when shipping a visible change
 const API_GALLERY = '/api/gallery';
 const API_LIKE    = '/api/like';
 
@@ -9749,7 +10096,11 @@ function showGallery(sort){
     const more = $('galMore'); if(more) more.style.display = 'none';
     stat(grid.children.length ? 'กำลังโหลดเพิ่ม…' : 'กำลังโหลด…');
     try{
-      const q = new URLSearchParams({sort: mode, limit: '24'});
+      /* Every card is a full-resolution sheet PNG with the project embedded —
+         up to 3 MB each. Twenty-four of those is a mobile data bill for a
+         screen that shows four at a time. */
+      const perPage = window.innerWidth < 700 ? 12 : 24;
+      const q = new URLSearchParams({sort: mode, limit: String(perPage)});
       if(cursor) q.set('cursor', cursor);
       const data = await apiCall(API_GALLERY + '?' + q);
 
@@ -9773,7 +10124,7 @@ function showGallery(sort){
     el.className = 'gal-card';
     el.innerHTML = `
       ${p.kind === 'gif' ? '<span class="badge">GIF</span>' : ''}
-      <div class="im"><img src="${esc(p.url)}" alt="${esc(p.title)}" loading="lazy"></div>
+      <div class="im"><img src="${esc(safeMediaURL(p.url))}" alt="${esc(p.title)}" loading="lazy" decoding="async" fetchpriority="low"></div>
       <div class="meta">
         <b>${esc(p.title)}</b>
         <span>${esc(p.author)} · ${num(p.w)}×${num(p.h)} · ${num(p.frames)} เฟรม</span>
@@ -9861,7 +10212,7 @@ $('btnLayers').onclick = ()=>{
 $('btnCloseDrawer').onclick = $('scrim').onclick = ()=>{ $('drawer').classList.remove('on'); $('scrim').classList.remove('on'); };
 $('btnSym').onclick = ()=>{
   setSym(S.sym + 1);
-  toast('วาดสมมาตร: ' + SYM_LABEL[S.sym]);
+  toast('วาดสมมาตร: ' + SYM_NAMES[S.sym]);
 };
 $('btnFlip').onclick = showFlipDialog;
 $('btnOutline').onclick = showOutlineDialog;
@@ -9947,7 +10298,7 @@ $('selBar').addEventListener('click', e=>{
   else if(a === 'flipH') transformSelection('flipH');
   else if(a === 'flipV') transformSelection('flipV');
   else if(a === 'del') deleteSelection();
-  else if(a === 'done'){ commitFloat(); S.sel = null; markDirty(); }
+  else if(a === 'done') clearSelection();
   updateSelBar();
 });
 $('shapeBar').addEventListener('click', e=>{
@@ -9981,11 +10332,11 @@ $('btnResize').onclick = showResize;
 $('btnTags').onclick = showTags;
 $('btnTile').onclick = ()=>{
   S.tileMode = !S.tileMode;
-  $('btnTile').classList.toggle('on', S.tileMode);
+  setToggle($('btnTile'), S.tileMode);
   bufDirty = true; renderView();
   toast(S.tileMode ? 'โหมดต่อลาย: วาดข้ามขอบได้' : 'ปิดโหมดต่อลาย');
 };
-$('btnGrid').onclick = ()=>{ S.showGrid = !S.showGrid; $('btnGrid').classList.toggle('on', S.showGrid); renderView(); };
+$('btnGrid').onclick = ()=>{ S.showGrid = !S.showGrid; setToggle($('btnGrid'), S.showGrid); renderView(); };
 $('btnOnion').onclick = ()=>{
   // first tap lights it up, tapping the lit button opens its settings
   if(!S.onion){
@@ -9996,7 +10347,7 @@ $('btnOnion').onclick = ()=>{
   }
   showOnionOpts();
 };
-$('fps').oninput = e => { S.fps = +e.target.value; syncFpsLabel(); };
+$('fps').oninput = e => { S.fps = clampFps(e.target.value); syncFpsLabel(); };
 $('fpsVal').onclick = ()=>{
   if(S.frameCount < 2){ toast('มีเฟรมเดียว ยังไม่ต้องตั้งเวลา'); return; }
   showFrameDurs();
@@ -10021,7 +10372,7 @@ const TOOL_DEF_KEYS = {select:'m', pencil:'b', eraser:'e', fill:'g', picker:'i',
 
 function toggleOnion(){
   S.onion = !S.onion;
-  $('btnOnion').classList.toggle('on', S.onion);
+  setToggle($('btnOnion'), S.onion);
   bufDirty = true; renderView();
   toast(S.onion ? 'เปิด onion skin' : 'ปิด onion skin');
 }
@@ -10158,6 +10509,9 @@ function showShortcuts(){
 }
 document.addEventListener('keydown', e=>{
   const t = e.target;
+  // ahead of the text-field bail-out below: Tab out of a field inside a dialog
+  // still has to stay in the dialog
+  if(e.key === 'Tab' && $('modal').classList.contains('on')){ trapModalTab(e); return; }
   if(t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
   // a modal owns the keyboard while it's open — otherwise pressing a tool key or
   // undo behind an open dialog quietly edits the art you can't see. Escape closes it.
@@ -10186,7 +10540,9 @@ document.addEventListener('keydown', e=>{
     if(k==='a'){ e.preventDefault(); selectAll(); updateSelBar(); return; }
     if(k==='c'){ e.preventDefault(); copySelection(); updateSelBar(); return; }
     if(k==='x'){ e.preventDefault(); cutSelection(); updateSelBar(); return; }
-    if(k==='v'){ e.preventDefault(); pasteClip(); updateSelBar(); return; }
+    // with nothing of our own to paste, let the key through so the browser's
+    // paste event can deliver an image copied from another app
+    if(k==='v'){ if(!S.clip) return; e.preventDefault(); pasteClip(); updateSelBar(); return; }
     return;   // every other modifier combo belongs to the browser
   }
 
@@ -10244,10 +10600,9 @@ document.addEventListener('keyup', e => {
   if(ev === 'dragleave' && e.relatedTarget) return;
   document.body.style.outline = '';
 }));
-document.addEventListener('drop', e => {
-  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+function acceptDroppedFile(f){
   if(!f) return;
-  if(/\.json$/i.test(f.name)){ importProjectFile(f); return; }
+  if(/\.json$/i.test(f.name || '')){ importProjectFile(f); return; }
   offerEmbedded(f).then(handled => {
     if(handled) return;
     toast('กำลังอ่านภาพ…');
@@ -10255,11 +10610,29 @@ document.addEventListener('drop', e => {
       .then(img => showImportImage(img))
       .catch(err => toast(err.message, 3200));
   });
+}
+document.addEventListener('drop', e => {
+  acceptDroppedFile(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
+});
+
+/* On a desktop the obvious way to get a screenshot or a sprite from another app
+   into the editor is Ctrl+V, and there was no way in at all: the key was bound
+   to the in-app clipboard and preventDefault stopped the browser from ever
+   firing a paste event. Drag & drop was the only route. */
+window.addEventListener('paste', e => {
+  if(!e.clipboardData) return;
+  const items = [...(e.clipboardData.items || [])];
+  const img = items.find(it => it.type && it.type.indexOf('image/') === 0);
+  if(!img) return;
+  const file = img.getAsFile && img.getAsFile();
+  if(!file) return;
+  e.preventDefault();
+  acceptDroppedFile(file);
 });
 
 $('btnLock').onclick = ()=>{
   S.lockAlpha = !S.lockAlpha;
-  $('btnLock').classList.toggle('on', S.lockAlpha);
+  setToggle($('btnLock'), S.lockAlpha);
   toast(S.lockAlpha ? 'ล็อกพื้นที่โปร่งใส — วาดได้เฉพาะจุดที่มีสีอยู่' : 'ปลดล็อกพื้นที่โปร่งใส');
 };
 $('chromeGrab').onclick = ()=>{
@@ -10273,7 +10646,13 @@ $('btnAddFrameHead').onclick = addFrame;
 $('zoomTag').onclick = ()=>{ fitToScreen(); toast('พอดีจอ'); };
 
 window.addEventListener('resize', ()=>{ dpr = Math.min(window.devicePixelRatio||1, 2); resizeView(); });
-document.addEventListener('visibilitychange', ()=>{ if(document.hidden) runAutosave(); });
+document.addEventListener('visibilitychange', ()=>{
+  if(!document.hidden) return;
+  // a hidden tab still ran the loop, just throttled — burning battery to
+  // animate something nobody is looking at
+  stopPlayback();
+  runAutosave();
+});
 window.addEventListener('pagehide', runAutosave);
 window.addEventListener('beforeunload', e=>{
   runAutosave();
@@ -10330,7 +10709,10 @@ $('cmdTray').querySelectorAll('.tool').forEach(b=>{
   });
 });
 $('btnShape').onclick = ()=>{
-  if(SHAPE_TOOLS.includes(S.tool)) return showShapePick();
+  // every other tool opens its settings on a repeat tap; this one opened a
+  // separate chooser, so the same gesture did something different here. The
+  // chooser moved into the settings sheet and this matches the rest now.
+  if(SHAPE_TOOLS.includes(S.tool)) return showBrushOpts();
   selectTool(S.shape);
 };
 
@@ -10485,16 +10867,36 @@ function zoomBy(f){
 }
 function setPanMode(on, quiet){
   S.panMode = !!on;
-  $('zcPan').classList.toggle('on', S.panMode);
+  setToggle($('zcPan'), S.panMode);
+  // collapsed, the cluster still has to show that pan mode is holding
+  $('zcToggle').classList.toggle('on', S.panMode);
+  if(S.panMode) setZoomCtlOpen(true);
   document.body.classList.toggle('panning', S.panMode);
   if(S.panMode){ commitFloat(); clearAim(); }
   if(!quiet) toast(S.panMode ? 'โหมดเลื่อนภาพ — ลากนิ้วเดียวเพื่อเลื่อน' : 'กลับมาวาดได้แล้ว');
   renderView();
 }
-$('zcIn').onclick  = ()=>zoomBy(1.5);
-$('zcOut').onclick = ()=>zoomBy(1/1.5);
-$('zcFit').onclick = ()=>{ fitToScreen(); toast('พอดีจอ'); };
-$('zcPan').onclick = ()=>setPanMode(!S.panMode);
+/* The zoom cluster folds behind one button on a phone. It reopens on tap and
+   puts itself away after a few idle seconds or as soon as you touch the
+   canvas — unless pan mode is on, in which case leaving it open is the only
+   way to see that the mode is engaged. */
+const ZOOMCTL_IDLE = 5000;
+let zoomCtlTimer = null;
+function zoomCtlOpen(){ return $('zoomCtl').classList.contains('open'); }
+function setZoomCtlOpen(on){
+  const pc = document.body.classList.contains('pc');
+  on = pc ? true : !!on;
+  $('zoomCtl').classList.toggle('open', on);
+  $('zcToggle').setAttribute('aria-expanded', on ? 'true' : 'false');
+  clearTimeout(zoomCtlTimer);
+  if(on && !pc && !S.panMode) zoomCtlTimer = setTimeout(()=>setZoomCtlOpen(false), ZOOMCTL_IDLE);
+}
+function bumpZoomCtl(){ if(zoomCtlOpen()) setZoomCtlOpen(true); }   // restart the idle clock
+$('zcToggle').onclick = ()=>setZoomCtlOpen(!zoomCtlOpen());
+$('zcIn').onclick  = ()=>{ zoomBy(1.5); bumpZoomCtl(); };
+$('zcOut').onclick = ()=>{ zoomBy(1/1.5); bumpZoomCtl(); };
+$('zcFit').onclick = ()=>{ fitToScreen(); toast('พอดีจอ'); bumpZoomCtl(); };
+$('zcPan').onclick = ()=>{ setPanMode(!S.panMode); bumpZoomCtl(); };
 
 /* Filmstrip fold: 52px thumbnails are dead weight while drawing, and the
    bottom chrome was taking 34-42% of the screen. */
@@ -10702,6 +11104,8 @@ function applyUiMode(){
     layoutDial();
   }
   updateUiModeLbl();
+  // PC has room for the whole cluster; a phone gets it folded again
+  setZoomCtlOpen(pc);
   renderOptBar();
   resizeView();
 }
@@ -10873,7 +11277,7 @@ function obPick(key, v){
       // set the shape in place and refresh the controls, arc stays open
       if(document.body.classList.contains('dial-on')){
         S.shape = v; S.tool = v;
-        document.querySelectorAll('.tool[data-tool]').forEach(b=>b.classList.toggle('on', b.dataset.tool===v));
+        document.querySelectorAll('.tool[data-tool]').forEach(b=>setToggle(b, b.dataset.tool===v));
         updateShapeBtn();
         renderOptBar(); syncDialOpts(); updateSizeRail(); renderView();
       } else {
@@ -10904,7 +11308,8 @@ let lastAnts = 0;
   renderView();
 })(0);
 
-$('btnGrid').classList.add('on');
+setToggle($('btnGrid'), true);
+reconcileStore();
 loadPrefs();
 updateShapeBtn();
 updateTlLbl();
@@ -10961,10 +11366,73 @@ function syncSwState(){
   };
 }
 
-if('serviceWorker' in navigator && location.protocol === 'https:'){
+const swAllowed = location.protocol === 'https:'
+  || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+if('serviceWorker' in navigator && swAllowed){
+  /* Without this the cached copy keeps being served until every tab of the app
+     is closed — a fix could sit installed and invisible for days, and the only
+     way out was the "ล้างแคช" button buried in the save sheet. */
+  let wantReload = false;
+  const offerUpdate = reg => {
+    const bar = $('updateBar');
+    if(!bar || bar.classList.contains('on')) return;
+    bar.classList.add('on');
+    syncBarStack();
+    const hide = ()=>{ bar.classList.remove('on'); syncBarStack(); };
+    $('ubX').onclick = hide;
+    $('ubGo').onclick = ()=>{
+      hide();
+      if(!reg.waiting){
+        // sw.js skips waiting on install, so the new worker is usually already
+        // in charge and only the page is stale — and the shell is fetched
+        // network-first, so a plain reload is the whole update
+        location.reload();
+        return;
+      }
+      wantReload = true;
+      reg.waiting.postMessage({type:'SKIP_WAITING'});
+      // if the handover never comes, reload anyway rather than sit there
+      setTimeout(()=>{
+        if(!wantReload) return;              // controllerchange already fired
+        wantReload = false;
+        location.reload();
+      }, 2000);
+    };
+  };
+  navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+    if(!wantReload) return;                  // never reload out from under a drawing
+    wantReload = false;
+    location.reload();
+  });
   // after load, so registration never competes with first paint
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    /* Read once, here. sw.js claims clients as soon as it activates, so
+       navigator.serviceWorker.controller can flip to the NEW worker while the
+       statechange handler below is still running — and a first install would
+       then look like an update and raise a bar for a version nobody replaced. */
+    const hadController = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      if(!reg) return;
+      if(reg.waiting && hadController) offerUpdate(reg);
+      reg.addEventListener('updatefound', ()=>{
+        const sw = reg.installing;
+        if(!sw) return;
+        sw.addEventListener('statechange', ()=>{
+          // reaching "installed" while an earlier worker was already in charge
+          // is the one state that means "a replacement is ready"
+          if(sw.state === 'installed' && hadController) offerUpdate(reg);
+        });
+      });
+      /* register() checks for a new worker once. Someone who leaves the app
+         open for days would never hear about a deploy, so look again when they
+         come back to it — at most twice an hour. */
+      let lastCheck = Date.now();
+      document.addEventListener('visibilitychange', ()=>{
+        if(document.hidden || Date.now() - lastCheck < 1800000) return;
+        lastCheck = Date.now();
+        reg.update().catch(()=>{});
+      });
+    }).catch(()=>{});
   });
 }
 

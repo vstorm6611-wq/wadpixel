@@ -22,8 +22,24 @@ const LIBS = [
 ];
 
 self.addEventListener('install', e => {
-  // only the shell is precached; the libraries land on first export
-  e.waitUntil(caches.open(CACHE).then(c => c.add(PAGE)).then(()=>self.skipWaiting()));
+  /* only the shell is precached; the libraries land on first export.
+     cache:'reload' matters here — without it the precache can be filled from
+     the browser's own HTTP cache, so the copy kept for offline use is the one
+     that was already stale at install time. */
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c => c.add(new Request(PAGE, {cache:'reload'})))
+      .then(()=>self.skipWaiting())
+  );
+});
+
+/* The page shows an "update ready" bar and offers a reload. This worker calls
+   skipWaiting() above, so it normally never parks in "waiting" and the bar's
+   button only has to reload. The handler is here so the two halves still agree
+   if that ever changes — a worker that does wait can be told to take over, and
+   the page reloads on the controllerchange that follows. */
+self.addEventListener('message', e => {
+  if(e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
